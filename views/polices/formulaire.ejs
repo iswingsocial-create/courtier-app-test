@@ -41,6 +41,7 @@
           <option value="<%= s %>" <%= police.statut === s ? 'selected' : '' %>><%= NOMS_STATUTS[s] %></option>
         <% }) %>
       </select></div>
+    <% if (peutChangerResponsable) { %>
     <div><label for="responsable_id">Courtier responsable</label>
       <select id="responsable_id" name="responsable_id">
         <option value="">— Aucun —</option>
@@ -48,6 +49,7 @@
           <option value="<%= u.id %>" <%= String(police.responsable_id) === String(u.id) ? 'selected' : '' %>><%= u.nom %> (<%= u.role %>)</option>
         <% }) %>
       </select></div>
+    <% } %>
   </div>
   <label for="notes">Notes</label>
   <textarea id="notes" name="notes"><%= police.notes || '' %></textarea>

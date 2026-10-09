@@ -6,7 +6,8 @@
 const express = require('express');
 
 const bd = require('../lib/bd');
-const { exigeAuth, exigeMotDePasseChange, journal, estDateValide } = require('../lib/middleware');
+const { exigeAuth, exigeMotDePasseChange, journal, estDateValide,
+  estAdmin, clausePortefeuille, clientHorsPortefeuille, reponseHorsPortefeuille } = require('../lib/middleware');
 
 const router = express.Router();
 router.use(exigeAuth, exigeMotDePasseChange);
@@ -51,6 +52,22 @@ function nombreOuNull(v) {
   return (v === '' || v == null) ? null : Number(v);
 }
 
+// La police choisie doit appartenir à l'entreprise de la réclamation.
+// Entreprises proposées dans les menus : portefeuille du courtier le cas échéant.
+function entreprisesMenu(req, cabinetId) {
+  return bd.prepare(
+    'SELECT id, raison_sociale FROM clients WHERE cabinet_id = ? AND archive = 0'
+    + clausePortefeuille(req, 'clients') + ' ORDER BY raison_sociale'
+  ).all(cabinetId);
+}
+
+function policeAppartientClient(policeId, clientId, cabinetId) {
+  if (!policeId || !clientId) return true;
+  return !!bd.prepare(
+    'SELECT 1 FROM polices WHERE id = ? AND client_id = ? AND cabinet_id = ?'
+  ).get(Number(policeId), Number(clientId), cabinetId);
+}
+
 // --- Liste ----------------------------------------------------------------------------------
 router.get('/', (req, res) => {
   const statut = req.query.statut;
@@ -61,7 +78,7 @@ router.get('/', (req, res) => {
     JOIN clients c ON c.id = r.client_id
     LEFT JOIN polices p ON p.id = r.police_id
     LEFT JOIN users u ON u.id = r.responsable_id
-    WHERE r.cabinet_id = ? AND r.archive = ${voirArchives ? '1' : '0'}`;
+    WHERE r.cabinet_id = ? AND r.archive = ${voirArchives ? '1' : '0'}${clausePortefeuille(req, 'c')}`;
   const reclamations = (statut && STATUTS.includes(statut))
     ? bd.prepare(base + ' AND r.statut = ? ORDER BY r.date_sinistre DESC').all(res.locals.cabinetId, statut)
     : bd.prepare(base + ' ORDER BY r.date_sinistre DESC').all(res.locals.cabinetId);
@@ -70,14 +87,14 @@ router.get('/', (req, res) => {
 
 // --- Nouvelle réclamation -----------------------------------------------------------------------
 router.get('/nouvelle', (req, res) => {
-  const entreprises = bd.prepare('SELECT id, raison_sociale FROM clients WHERE cabinet_id = ? AND archive = 0 ORDER BY raison_sociale').all(res.locals.cabinetId);
+  const entreprises = entreprisesMenu(req, res.locals.cabinetId);
   const polices = bd.prepare(`
-    SELECT p.id, p.numero_police, p.ligne, c.raison_sociale FROM polices p
+    SELECT p.id, p.numero_police, p.ligne, p.client_id, c.raison_sociale FROM polices p
     JOIN clients c ON c.id = p.client_id WHERE p.cabinet_id = ? ORDER BY c.raison_sociale, p.numero_police
   `).all(res.locals.cabinetId);
   res.render('reclamations/formulaire', {
     erreur: null, reclamation: { client_id: req.query.client || '', police_id: req.query.police || '', statut: 'ouverte' },
-    entreprises, polices, utilisateurs: utilisateursCabinet(res.locals.cabinetId), STATUTS, NOMS_RECLAMATION,
+    entreprises, polices, utilisateurs: utilisateursCabinet(res.locals.cabinetId), peutChangerResponsable: estAdmin(req), STATUTS, NOMS_RECLAMATION,
   });
 });
 
@@ -85,22 +102,24 @@ router.post('/', (req, res) => {
   const erreurs = validerReclamation(req.body);
   const client = bd.prepare('SELECT id FROM clients WHERE id = ? AND cabinet_id = ?').get(Number(req.body.client_id), res.locals.cabinetId);
   if (!client) erreurs.push('Entreprise invalide.');
+  else if (clientHorsPortefeuille(res.locals.cabinetId, req.utilisateur, client.id)) erreurs.push('Cette entreprise n’est pas dans votre portefeuille.');
   let policeId = null;
   if (req.body.police_id) {
     const police = bd.prepare('SELECT id FROM polices WHERE id = ? AND cabinet_id = ?').get(Number(req.body.police_id), res.locals.cabinetId);
     if (!police) erreurs.push('Police invalide.');
+    else if (client && !policeAppartientClient(police.id, client.id, res.locals.cabinetId)) erreurs.push('La police choisie n’appartient pas à l’entreprise sélectionnée.');
     else policeId = police.id;
   }
-  const responsableId = req.body.responsable_id ? Number(req.body.responsable_id) : null;
+  const responsableId = estAdmin(req) && req.body.responsable_id ? Number(req.body.responsable_id) : null;
   if (responsableId && !bd.prepare('SELECT id FROM users WHERE id = ? AND cabinet_id = ?').get(responsableId, res.locals.cabinetId)) {
     erreurs.push('Courtier responsable invalide.');
   }
   if (erreurs.length) {
-    const entreprises = bd.prepare('SELECT id, raison_sociale FROM clients WHERE cabinet_id = ? AND archive = 0 ORDER BY raison_sociale').all(res.locals.cabinetId);
-    const polices = bd.prepare('SELECT p.id, p.numero_police, c.raison_sociale FROM polices p JOIN clients c ON c.id = p.client_id WHERE p.cabinet_id = ? ORDER BY p.numero_police').all(res.locals.cabinetId);
+    const entreprises = entreprisesMenu(req, res.locals.cabinetId);
+    const polices = bd.prepare('SELECT p.id, p.numero_police, p.client_id, c.raison_sociale FROM polices p JOIN clients c ON c.id = p.client_id WHERE p.cabinet_id = ? ORDER BY p.numero_police').all(res.locals.cabinetId);
     return res.status(400).render('reclamations/formulaire', {
       erreur: erreurs.join(' '), reclamation: req.body, entreprises, polices,
-      utilisateurs: utilisateursCabinet(res.locals.cabinetId), STATUTS, NOMS_RECLAMATION,
+      utilisateurs: utilisateursCabinet(res.locals.cabinetId), peutChangerResponsable: estAdmin(req), STATUTS, NOMS_RECLAMATION,
     });
   }
   const r = bd.prepare(`
@@ -123,6 +142,7 @@ router.post('/', (req, res) => {
 router.get('/:id', (req, res) => {
   const reclamation = reclamationDuCabinet(req.params.id, res.locals.cabinetId);
   if (!reclamation) return res.status(404).render('erreur', { titre: 'Introuvable', message: 'Réclamation introuvable.' });
+  if (clientHorsPortefeuille(res.locals.cabinetId, req.utilisateur, reclamation.client_id)) return reponseHorsPortefeuille(res);
   const suivis = bd.prepare(`
     SELECT s.*, u.nom AS auteur FROM reclamation_suivis s
     LEFT JOIN users u ON u.id = s.user_id
@@ -135,34 +155,40 @@ router.get('/:id', (req, res) => {
 router.get('/:id/modifier', (req, res) => {
   const reclamation = reclamationDuCabinet(req.params.id, res.locals.cabinetId);
   if (!reclamation) return res.status(404).render('erreur', { titre: 'Introuvable', message: 'Réclamation introuvable.' });
-  const entreprises = bd.prepare('SELECT id, raison_sociale FROM clients WHERE cabinet_id = ? AND archive = 0 ORDER BY raison_sociale').all(res.locals.cabinetId);
-  const polices = bd.prepare('SELECT p.id, p.numero_police, c.raison_sociale FROM polices p JOIN clients c ON c.id = p.client_id WHERE p.cabinet_id = ? ORDER BY p.numero_police').all(res.locals.cabinetId);
+  if (clientHorsPortefeuille(res.locals.cabinetId, req.utilisateur, reclamation.client_id)) return reponseHorsPortefeuille(res);
+  const entreprises = entreprisesMenu(req, res.locals.cabinetId);
+  const polices = bd.prepare('SELECT p.id, p.numero_police, p.client_id, c.raison_sociale FROM polices p JOIN clients c ON c.id = p.client_id WHERE p.cabinet_id = ? ORDER BY p.numero_police').all(res.locals.cabinetId);
   res.render('reclamations/formulaire', {
     erreur: null, reclamation, entreprises, polices,
-    utilisateurs: utilisateursCabinet(res.locals.cabinetId), STATUTS, NOMS_RECLAMATION,
+    utilisateurs: utilisateursCabinet(res.locals.cabinetId), peutChangerResponsable: estAdmin(req), STATUTS, NOMS_RECLAMATION,
   });
 });
 
 router.post('/:id', (req, res) => {
   const reclamation = reclamationDuCabinet(req.params.id, res.locals.cabinetId);
   if (!reclamation) return res.status(404).render('erreur', { titre: 'Introuvable', message: 'Réclamation introuvable.' });
+  if (clientHorsPortefeuille(res.locals.cabinetId, req.utilisateur, reclamation.client_id)) return reponseHorsPortefeuille(res);
   const erreurs = validerReclamation(req.body);
   let policeId = null;
   if (req.body.police_id) {
     const police = bd.prepare('SELECT id FROM polices WHERE id = ? AND cabinet_id = ?').get(Number(req.body.police_id), res.locals.cabinetId);
     if (!police) erreurs.push('Police invalide.');
+    else if (!policeAppartientClient(police.id, reclamation.client_id, res.locals.cabinetId)) erreurs.push('La police choisie n’appartient pas à l’entreprise de cette réclamation.');
     else policeId = police.id;
   }
-  const responsableId = req.body.responsable_id ? Number(req.body.responsable_id) : null;
+  // Seul l'admin peut changer le courtier responsable (sinon on garde l'existant).
+  const responsableId = estAdmin(req)
+    ? (req.body.responsable_id ? Number(req.body.responsable_id) : null)
+    : reclamation.responsable_id;
   if (responsableId && !bd.prepare('SELECT id FROM users WHERE id = ? AND cabinet_id = ?').get(responsableId, res.locals.cabinetId)) {
     erreurs.push('Courtier responsable invalide.');
   }
   if (erreurs.length) {
-    const entreprises = bd.prepare('SELECT id, raison_sociale FROM clients WHERE cabinet_id = ? AND archive = 0 ORDER BY raison_sociale').all(res.locals.cabinetId);
-    const polices = bd.prepare('SELECT p.id, p.numero_police, c.raison_sociale FROM polices p JOIN clients c ON c.id = p.client_id WHERE p.cabinet_id = ? ORDER BY p.numero_police').all(res.locals.cabinetId);
+    const entreprises = entreprisesMenu(req, res.locals.cabinetId);
+    const polices = bd.prepare('SELECT p.id, p.numero_police, p.client_id, c.raison_sociale FROM polices p JOIN clients c ON c.id = p.client_id WHERE p.cabinet_id = ? ORDER BY p.numero_police').all(res.locals.cabinetId);
     return res.status(400).render('reclamations/formulaire', {
       erreur: erreurs.join(' '), reclamation: { ...reclamation, ...req.body }, entreprises, polices,
-      utilisateurs: utilisateursCabinet(res.locals.cabinetId), STATUTS, NOMS_RECLAMATION,
+      utilisateurs: utilisateursCabinet(res.locals.cabinetId), peutChangerResponsable: estAdmin(req), STATUTS, NOMS_RECLAMATION,
     });
   }
   bd.prepare(`

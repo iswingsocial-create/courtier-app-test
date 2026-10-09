@@ -8,7 +8,8 @@ const fs = require('fs');
 const multer = require('multer');
 
 const bd = require('../lib/bd');
-const { exigeAuth, exigeMotDePasseChange, verifieCsrf, journal, estDateValide, estNombreValide } = require('../lib/middleware');
+const { exigeAuth, exigeMotDePasseChange, verifieCsrf, journal, estDateValide, estNombreValide,
+  estAdmin, estCourtier, clausePortefeuille, clientHorsPortefeuille, reponseHorsPortefeuille } = require('../lib/middleware');
 
 const router = express.Router();
 router.use(exigeAuth, exigeMotDePasseChange);
@@ -73,6 +74,14 @@ function nomAssureur(id, cabinetId) {
   return a ? a.nom : null;
 }
 
+// Entreprises proposées dans les menus : portefeuille du courtier le cas échéant.
+function entreprisesMenu(req, cabinetId) {
+  return bd.prepare(
+    'SELECT id, raison_sociale, prenom, nom FROM clients WHERE cabinet_id = ? AND archive = 0'
+    + clausePortefeuille(req, 'clients') + ' ORDER BY raison_sociale'
+  ).all(cabinetId);
+}
+
 // --- Versioning (règle d'or) ---------------------------------------------------------------------------
 // Chaque version est un snapshot complet (champs + protections) en lecture seule.
 // v1 = création ; chaque modification (formulaire, protection) crée v(n+1).
@@ -109,7 +118,7 @@ router.get('/', (req, res) => {
            (SELECT COALESCE(SUM(prime), 0) FROM police_protections pp WHERE pp.police_id = p.id) AS prime_totale
     FROM polices p JOIN clients c ON c.id = p.client_id
     LEFT JOIN users u ON u.id = p.responsable_id
-    WHERE p.cabinet_id = ? AND c.archive = 0`;
+    WHERE p.cabinet_id = ? AND c.archive = 0${clausePortefeuille(req, 'c')}`;
   if (ligne && LIGNES.includes(ligne)) {
     polices = bd.prepare(base + ' AND p.ligne = ? ORDER BY p.date_echeance').all(res.locals.cabinetId, ligne);
   } else {
@@ -120,10 +129,10 @@ router.get('/', (req, res) => {
 
 // --- Nouvelle police ----------------------------------------------------------------------------
 router.get('/nouvelle', (req, res) => {
-  const clients = bd.prepare('SELECT id, raison_sociale, prenom, nom FROM clients WHERE cabinet_id = ? AND archive = 0 ORDER BY raison_sociale').all(res.locals.cabinetId);
+  const clients = entreprisesMenu(req, res.locals.cabinetId);
   const preselection = req.query.client ? Number(req.query.client) : null;
   const utilisateurs = utilisateursCabinet(res.locals.cabinetId);
-  res.render('polices/formulaire', { erreur: null, police: { client_id: preselection }, clients, utilisateurs, assureurs: assureursCabinet(res.locals.cabinetId), NOMS_LIGNES, NOMS_STATUTS, LIGNES });
+  res.render('polices/formulaire', { erreur: null, police: { client_id: preselection }, clients, utilisateurs, peutChangerResponsable: estAdmin(req), assureurs: assureursCabinet(res.locals.cabinetId), NOMS_LIGNES, NOMS_STATUTS, LIGNES });
 });
 
 router.post('/', (req, res) => {
@@ -133,14 +142,16 @@ router.post('/', (req, res) => {
   if (req.body.assureur_id && !nomAss) erreurs.push('Assureur invalide.');
   const client = bd.prepare('SELECT id FROM clients WHERE id = ? AND cabinet_id = ?').get(Number(req.body.client_id), res.locals.cabinetId);
   if (!client) erreurs.push('Entreprise invalide.');
-  const responsableId = req.body.responsable_id ? Number(req.body.responsable_id) : null;
+  else if (clientHorsPortefeuille(res.locals.cabinetId, req.utilisateur, client.id)) erreurs.push('Cette entreprise n’est pas dans votre portefeuille.');
+  // Seul l'admin peut désigner le courtier responsable.
+  const responsableId = estAdmin(req) && req.body.responsable_id ? Number(req.body.responsable_id) : null;
   if (responsableId && !bd.prepare('SELECT id FROM users WHERE id = ? AND cabinet_id = ?').get(responsableId, res.locals.cabinetId)) {
     erreurs.push('Courtier responsable invalide.');
   }
   if (erreurs.length) {
-    const clients = bd.prepare('SELECT id, raison_sociale, prenom, nom FROM clients WHERE cabinet_id = ? AND archive = 0 ORDER BY raison_sociale').all(res.locals.cabinetId);
+    const clients = entreprisesMenu(req, res.locals.cabinetId);
     const utilisateurs = utilisateursCabinet(res.locals.cabinetId);
-    return res.status(400).render('polices/formulaire', { erreur: erreurs.join(' '), police: req.body, clients, utilisateurs, assureurs: assureursCabinet(res.locals.cabinetId), NOMS_LIGNES, NOMS_STATUTS, LIGNES });
+    return res.status(400).render('polices/formulaire', { erreur: erreurs.join(' '), police: req.body, clients, utilisateurs, peutChangerResponsable: estAdmin(req), assureurs: assureursCabinet(res.locals.cabinetId), NOMS_LIGNES, NOMS_STATUTS, LIGNES });
   }
   try {
     const r = bd.prepare(`
@@ -153,10 +164,10 @@ router.post('/', (req, res) => {
     journal(res.locals.cabinetId, req.utilisateur.id, 'police_creee', `Police ${req.body.numero_police} (id ${r.lastInsertRowid})`);
     res.redirect('/echeances/police/' + r.lastInsertRowid);
   } catch (e) {
-    const clients = bd.prepare('SELECT id, raison_sociale, prenom, nom FROM clients WHERE cabinet_id = ? AND archive = 0 ORDER BY raison_sociale').all(res.locals.cabinetId);
+    const clients = entreprisesMenu(req, res.locals.cabinetId);
     const utilisateurs = utilisateursCabinet(res.locals.cabinetId);
     const msg = e.message.includes('UNIQUE') ? 'Ce numéro de police existe déjà dans votre cabinet.' : 'Erreur d’enregistrement.';
-    res.status(400).render('polices/formulaire', { erreur: msg, police: req.body, clients, utilisateurs, assureurs: assureursCabinet(res.locals.cabinetId), NOMS_LIGNES, NOMS_STATUTS, LIGNES });
+    res.status(400).render('polices/formulaire', { erreur: msg, police: req.body, clients, utilisateurs, peutChangerResponsable: estAdmin(req), assureurs: assureursCabinet(res.locals.cabinetId), NOMS_LIGNES, NOMS_STATUTS, LIGNES });
   }
 });
 
@@ -164,26 +175,31 @@ router.post('/', (req, res) => {
 router.get('/:id/modifier', (req, res) => {
   const police = policeDuCabinet(req.params.id, res.locals.cabinetId);
   if (!police) return res.status(404).render('erreur', { titre: 'Introuvable', message: 'Police introuvable.' });
-  const clients = bd.prepare('SELECT id, raison_sociale, prenom, nom FROM clients WHERE cabinet_id = ? AND archive = 0 ORDER BY raison_sociale').all(res.locals.cabinetId);
+  if (clientHorsPortefeuille(res.locals.cabinetId, req.utilisateur, police.client_id)) return reponseHorsPortefeuille(res);
+  const clients = entreprisesMenu(req, res.locals.cabinetId);
   const utilisateurs = utilisateursCabinet(res.locals.cabinetId);
-  res.render('polices/formulaire', { erreur: null, police, clients, utilisateurs, assureurs: assureursCabinet(res.locals.cabinetId), NOMS_LIGNES, NOMS_STATUTS, LIGNES });
+  res.render('polices/formulaire', { erreur: null, police, clients, utilisateurs, peutChangerResponsable: estAdmin(req), assureurs: assureursCabinet(res.locals.cabinetId), NOMS_LIGNES, NOMS_STATUTS, LIGNES });
 });
 
 router.post('/:id', (req, res) => {
   const police = policeDuCabinet(req.params.id, res.locals.cabinetId);
   if (!police) return res.status(404).render('erreur', { titre: 'Introuvable', message: 'Police introuvable.' });
+  if (clientHorsPortefeuille(res.locals.cabinetId, req.utilisateur, police.client_id)) return reponseHorsPortefeuille(res);
   _cabinetValidation = res.locals.cabinetId;
   const erreurs = validerPolice(req.body);
   const nomAss = nomAssureur(req.body.assureur_id, res.locals.cabinetId);
   if (req.body.assureur_id && !nomAss) erreurs.push('Assureur invalide.');
-  const responsableId = req.body.responsable_id ? Number(req.body.responsable_id) : null;
+  // Seul l'admin peut changer le courtier responsable (sinon on garde l'existant).
+  const responsableId = estAdmin(req)
+    ? (req.body.responsable_id ? Number(req.body.responsable_id) : null)
+    : police.responsable_id;
   if (responsableId && !bd.prepare('SELECT id FROM users WHERE id = ? AND cabinet_id = ?').get(responsableId, res.locals.cabinetId)) {
     erreurs.push('Courtier responsable invalide.');
   }
   if (erreurs.length) {
-    const clients = bd.prepare('SELECT id, raison_sociale, prenom, nom FROM clients WHERE cabinet_id = ? AND archive = 0 ORDER BY raison_sociale').all(res.locals.cabinetId);
+    const clients = entreprisesMenu(req, res.locals.cabinetId);
     const utilisateurs = utilisateursCabinet(res.locals.cabinetId);
-    return res.status(400).render('polices/formulaire', { erreur: erreurs.join(' '), police: { ...police, ...req.body }, clients, utilisateurs, assureurs: assureursCabinet(res.locals.cabinetId), NOMS_LIGNES, NOMS_STATUTS, LIGNES });
+    return res.status(400).render('polices/formulaire', { erreur: erreurs.join(' '), police: { ...police, ...req.body }, clients, utilisateurs, peutChangerResponsable: estAdmin(req), assureurs: assureursCabinet(res.locals.cabinetId), NOMS_LIGNES, NOMS_STATUTS, LIGNES });
   }
   bd.prepare(`
     UPDATE polices SET ligne = ?, assureur = ?, assureur_id = ?, numero_police = ?, date_effet = ?, date_echeance = ?,

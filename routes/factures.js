@@ -7,7 +7,8 @@
 const express = require('express');
 
 const bd = require('../lib/bd');
-const { exigeAuth, exigeMotDePasseChange, journal, estDateValide } = require('../lib/middleware');
+const { exigeAuth, exigeMotDePasseChange, journal, estDateValide,
+  clausePortefeuille, clientHorsPortefeuille, reponseHorsPortefeuille } = require('../lib/middleware');
 const { genererBrouillonRelance } = require('../lib/ia');
 
 const router = express.Router();
@@ -98,7 +99,7 @@ router.get('/', (req, res) => {
   const base = `
     SELECT f.*, c.raison_sociale AS entreprise
     FROM factures f JOIN clients c ON c.id = f.client_id
-    WHERE f.cabinet_id = ?`;
+    WHERE f.cabinet_id = ?${clausePortefeuille(req, 'c')}`;
   const factures = (statut && STATUTS.includes(statut))
     ? bd.prepare(base + ' AND f.statut = ? ORDER BY f.date_echeance').all(res.locals.cabinetId, statut)
     : bd.prepare(base + " ORDER BY CASE f.statut WHEN 'en_retard' THEN 0 WHEN 'emise' THEN 1 WHEN 'partielle' THEN 2 ELSE 3 END, f.date_echeance").all(res.locals.cabinetId);
@@ -114,7 +115,7 @@ router.get('/', (req, res) => {
 
 // --- Nouvelle facture ----------------------------------------------------------------------------
 router.get('/nouvelle', (req, res) => {
-  const entreprises = bd.prepare('SELECT id, raison_sociale FROM clients WHERE cabinet_id = ? AND archive = 0 ORDER BY raison_sociale').all(res.locals.cabinetId);
+  const entreprises = bd.prepare('SELECT id, raison_sociale FROM clients WHERE cabinet_id = ? AND archive = 0' + clausePortefeuille(req, 'clients') + ' ORDER BY raison_sociale').all(res.locals.cabinetId);
   res.render('factures/formulaire', {
     erreur: null, facture: { client_id: req.query.client || '', date_emission: aujourdhui(), numero_facture: prochainNumero(res.locals.cabinetId) },
     entreprises, polices: [], NOMS_STATUTS_FACTURE,
@@ -123,6 +124,7 @@ router.get('/nouvelle', (req, res) => {
 
 // Polices d'une entreprise (pour le formulaire, via fetch)
 router.get('/polices-entreprise/:clientId', (req, res) => {
+  if (clientHorsPortefeuille(res.locals.cabinetId, req.utilisateur, req.params.clientId)) return res.status(403).json({ erreur: 'hors portefeuille' });
   const polices = bd.prepare(`
     SELECT id, numero_police, ligne, assureur FROM polices
     WHERE client_id = ? AND cabinet_id = ? AND statut != 'resiliee' ORDER BY numero_police
@@ -134,6 +136,7 @@ router.post('/', (req, res) => {
   const erreurs = validerFacture(req.body);
   const client = bd.prepare('SELECT id FROM clients WHERE id = ? AND cabinet_id = ?').get(Number(req.body.client_id), res.locals.cabinetId);
   if (!client) erreurs.push('Entreprise invalide.');
+  else if (clientHorsPortefeuille(res.locals.cabinetId, req.utilisateur, client.id)) erreurs.push('Cette entreprise n’est pas dans votre portefeuille.');
   let policeId = null;
   if (req.body.police_id) {
     const police = bd.prepare('SELECT id, client_id FROM polices WHERE id = ? AND cabinet_id = ?').get(Number(req.body.police_id), res.locals.cabinetId);
@@ -142,7 +145,7 @@ router.post('/', (req, res) => {
     else policeId = police.id;
   }
   if (erreurs.length) {
-    const entreprises = bd.prepare('SELECT id, raison_sociale FROM clients WHERE cabinet_id = ? AND archive = 0 ORDER BY raison_sociale').all(res.locals.cabinetId);
+    const entreprises = bd.prepare('SELECT id, raison_sociale FROM clients WHERE cabinet_id = ? AND archive = 0' + clausePortefeuille(req, 'clients') + ' ORDER BY raison_sociale').all(res.locals.cabinetId);
     return res.status(400).render('factures/formulaire', {
       erreur: erreurs.join(' '), facture: req.body, entreprises, polices: [], NOMS_STATUTS_FACTURE,
     });
@@ -163,6 +166,7 @@ router.post('/', (req, res) => {
 router.get('/:id', (req, res) => {
   const facture = factureDuCabinet(req.params.id, res.locals.cabinetId);
   if (!facture) return res.status(404).render('erreur', { titre: 'Introuvable', message: 'Facture introuvable.' });
+  if (clientHorsPortefeuille(res.locals.cabinetId, req.utilisateur, facture.client_id)) return reponseHorsPortefeuille(res);
   const paiements = bd.prepare('SELECT * FROM paiements WHERE facture_id = ? ORDER BY date_paiement DESC').all(facture.id);
   const solde = Number(facture.montant) - Number(facture.montant_paye);
   res.render('factures/fiche', {
@@ -176,6 +180,7 @@ router.get('/:id', (req, res) => {
 router.post('/:id/paiements', (req, res) => {
   const facture = factureDuCabinet(req.params.id, res.locals.cabinetId);
   if (!facture) return res.status(404).render('erreur', { titre: 'Introuvable', message: 'Facture introuvable.' });
+  if (clientHorsPortefeuille(res.locals.cabinetId, req.utilisateur, facture.client_id)) return reponseHorsPortefeuille(res);
   if (facture.statut === 'annulee') {
     return res.status(400).render('erreur', { titre: 'Facture annulée', message: 'On ne peut pas enregistrer de paiement sur une facture annulée.' });
   }
@@ -198,6 +203,7 @@ router.post('/:id/paiements', (req, res) => {
 router.post('/:id/annuler', (req, res) => {
   const facture = factureDuCabinet(req.params.id, res.locals.cabinetId);
   if (!facture) return res.status(404).render('erreur', { titre: 'Introuvable', message: 'Facture introuvable.' });
+  if (clientHorsPortefeuille(res.locals.cabinetId, req.utilisateur, facture.client_id)) return reponseHorsPortefeuille(res);
   bd.prepare("UPDATE factures SET statut = 'annulee' WHERE id = ? AND cabinet_id = ?").run(facture.id, res.locals.cabinetId);
   journal(res.locals.cabinetId, req.utilisateur.id, 'facture_annulee', `Facture id ${facture.id} annulée`);
   res.redirect('/factures/' + facture.id);
@@ -207,6 +213,7 @@ router.post('/:id/annuler', (req, res) => {
 router.post('/:id/relance', async (req, res) => {
   const facture = factureDuCabinet(req.params.id, res.locals.cabinetId);
   if (!facture) return res.status(404).render('erreur', { titre: 'Introuvable', message: 'Facture introuvable.' });
+  if (clientHorsPortefeuille(res.locals.cabinetId, req.utilisateur, facture.client_id)) return reponseHorsPortefeuille(res);
   const solde = Number(facture.montant) - Number(facture.montant_paye);
   if (solde <= 0.005) {
     return res.status(400).render('erreur', { titre: 'Facture soldée', message: 'Cette facture est déjà soldée, aucune relance nécessaire.' });

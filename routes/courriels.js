@@ -6,7 +6,8 @@
 const express = require('express');
 
 const bd = require('../lib/bd');
-const { exigeAuth, exigeMotDePasseChange, exigeRole, journal, estCourrielValide, echapperHtml } = require('../lib/middleware');
+const { exigeAuth, exigeMotDePasseChange, exigeRole, journal, estCourrielValide, echapperHtml,
+  clausePortefeuilleCourriels, clientHorsPortefeuille, reponseHorsPortefeuille } = require('../lib/middleware');
 const {
   PRECONFIGS, chiffrerMotDePasse, assainirHtml, synchroniserCompte,
   synchroniserTousLesComptes, testerCompte, envoyerCourriel,
@@ -41,7 +42,7 @@ router.get('/', (req, res) => {
     FROM courriels c
     LEFT JOIN clients cl ON cl.id = c.client_id
     LEFT JOIN courriel_comptes cc ON cc.id = c.compte_id
-    WHERE c.cabinet_id = ? AND c.dossier = 'reception' AND c.archive = ${voirArchives ? '1' : '0'}`;
+    WHERE c.cabinet_id = ? AND c.dossier = 'reception' AND c.archive = ${voirArchives ? '1' : '0'}${clausePortefeuilleCourriels(req)}`;
   const params = [res.locals.cabinetId];
   if (nonLus) sql += ' AND c.lu = 0';
   if (clientId) { sql += ' AND c.client_id = ?'; params.push(clientId); }
@@ -60,7 +61,7 @@ router.get('/envoyes', (req, res) => {
     FROM courriels c
     LEFT JOIN clients cl ON cl.id = c.client_id
     LEFT JOIN courriel_comptes cc ON cc.id = c.compte_id
-    WHERE c.cabinet_id = ? AND c.dossier = 'envoyes' AND c.archive = ${voirArchives ? '1' : '0'}
+    WHERE c.cabinet_id = ? AND c.dossier = 'envoyes' AND c.archive = ${voirArchives ? '1' : '0'}${clausePortefeuilleCourriels(req)}
     ORDER BY c.cree_le DESC LIMIT 200
   `).all(res.locals.cabinetId);
   res.render('courriels/liste', { titre: 'Courriels envoyés', courriels, comptes: [], q: '', nonLus: false, voirArchives, clientId: '', dossier: 'envoyes' });
@@ -221,6 +222,7 @@ router.get('/rediger', (req, res) => {
     }
   }
   if (req.query.client_id) {
+    if (clientHorsPortefeuille(res.locals.cabinetId, req.utilisateur, req.query.client_id)) return reponseHorsPortefeuille(res);
     const cli = bd.prepare('SELECT courriel FROM clients WHERE id = ? AND cabinet_id = ?').get(req.query.client_id, res.locals.cabinetId);
     if (cli && cli.courriel) prefill.a = cli.courriel;
   }
@@ -289,6 +291,9 @@ router.get('/:id', (req, res) => {
     WHERE c.id = ? AND c.cabinet_id = ?
   `).get(req.params.id, res.locals.cabinetId);
   if (!courriel) return res.status(404).render('erreur', { titre: 'Introuvable', message: 'Courriel introuvable.' });
+  if (courriel.client_id && clientHorsPortefeuille(res.locals.cabinetId, req.utilisateur, courriel.client_id)) {
+    return reponseHorsPortefeuille(res);
+  }
   if (!courriel.lu) bd.prepare('UPDATE courriels SET lu = 1 WHERE id = ?').run(courriel.id);
   const corpsHtml = courriel.corps_html ? assainirHtml(courriel.corps_html) : null;
   const clients = bd.prepare(
@@ -311,6 +316,7 @@ router.post('/:id/lier', (req, res) => {
   const courriel = bd.prepare('SELECT * FROM courriels WHERE id = ? AND cabinet_id = ?').get(req.params.id, res.locals.cabinetId);
   if (!courriel) return res.status(404).render('erreur', { titre: 'Introuvable', message: 'Courriel introuvable.' });
   const client = bd.prepare('SELECT id FROM clients WHERE id = ? AND cabinet_id = ?').get(req.body.client_id, res.locals.cabinetId);
+  if (client && clientHorsPortefeuille(res.locals.cabinetId, req.utilisateur, client.id)) return reponseHorsPortefeuille(res);
   bd.prepare('UPDATE courriels SET client_id = ? WHERE id = ?').run(client ? client.id : null, courriel.id);
   journal(res.locals.cabinetId, req.utilisateur.id, 'courriel_lie',
     `Courriel « ${courriel.sujet} » lié à ${client ? 'entreprise id ' + client.id : 'aucune entreprise'}`);

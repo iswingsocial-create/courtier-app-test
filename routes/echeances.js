@@ -5,7 +5,8 @@
 const express = require('express');
 
 const bd = require('../lib/bd');
-const { exigeAuth, exigeMotDePasseChange } = require('../lib/middleware');
+const { exigeAuth, exigeMotDePasseChange,
+  clausePortefeuille, clientHorsPortefeuille, reponseHorsPortefeuille } = require('../lib/middleware');
 const { NOMS_LIGNES, NOMS_STATUTS } = require('./polices');
 const { marquerRetards } = require('./factures');
 
@@ -18,12 +19,12 @@ function joursRestants(dateEcheance) {
   return Math.round((ech - auj) / 86400000);
 }
 
-function policesAvecEcheance(cabinetId) {
+function policesAvecEcheance(req, cabinetId) {
   const polices = bd.prepare(`
     SELECT p.*, c.raison_sociale AS client_raison_sociale, c.prenom AS client_prenom, c.nom AS client_nom,
            (SELECT COALESCE(SUM(prime), 0) FROM police_protections pp WHERE pp.police_id = p.id) AS prime_totale
     FROM polices p JOIN clients c ON c.id = p.client_id
-    WHERE p.cabinet_id = ? AND p.statut != 'resiliee' AND c.archive = 0
+    WHERE p.cabinet_id = ? AND p.statut != 'resiliee' AND c.archive = 0${clausePortefeuille(req, 'c')}
     ORDER BY p.date_echeance
   `).all(cabinetId);
   return polices.map((p) => ({ ...p, jours: joursRestants(p.date_echeance) }));
@@ -35,15 +36,15 @@ function aujourdhui() {
 
 // --- Tableau de bord ----------------------------------------------------------------------------------
 router.get('/', (req, res) => {
-  const polices = policesAvecEcheance(res.locals.cabinetId);
+  const polices = policesAvecEcheance(req, res.locals.cabinetId);
   const echus = polices.filter((p) => p.jours < 0);
   const j30 = polices.filter((p) => p.jours >= 0 && p.jours <= 30);
   const j60 = polices.filter((p) => p.jours > 30 && p.jours <= 60);
   const j90 = polices.filter((p) => p.jours > 60 && p.jours <= 90);
   const plusLoin = polices.filter((p) => p.jours > 90);
 
-  const nbEntreprises = bd.prepare('SELECT COUNT(*) AS n FROM clients WHERE cabinet_id = ? AND archive = 0').get(res.locals.cabinetId).n;
-  const nbPolices = bd.prepare(`SELECT COUNT(*) AS n FROM polices p JOIN clients c ON c.id = p.client_id WHERE p.cabinet_id = ? AND c.archive = 0`).get(res.locals.cabinetId).n;
+  const nbEntreprises = bd.prepare('SELECT COUNT(*) AS n FROM clients WHERE cabinet_id = ? AND archive = 0' + clausePortefeuille(req, 'clients')).get(res.locals.cabinetId).n;
+  const nbPolices = bd.prepare(`SELECT COUNT(*) AS n FROM polices p JOIN clients c ON c.id = p.client_id WHERE p.cabinet_id = ? AND c.archive = 0${clausePortefeuille(req, 'c')}`).get(res.locals.cabinetId).n;
   const nbBrouillons = bd.prepare("SELECT COUNT(*) AS n FROM brouillons WHERE cabinet_id = ? AND statut = 'brouillon' AND archive = 0").get(res.locals.cabinetId).n;
 
   // Réclamations avec rappel dépassé
@@ -51,16 +52,19 @@ router.get('/', (req, res) => {
     SELECT r.id, r.date_rappel, r.numero_reclamation, c.raison_sociale AS entreprise
     FROM reclamations r JOIN clients c ON c.id = r.client_id
     WHERE r.cabinet_id = ? AND r.date_rappel IS NOT NULL AND r.date_rappel < ?
-      AND r.statut = 'ouverte' AND r.archive = 0
+      AND r.statut = 'ouverte' AND r.archive = 0${clausePortefeuille(req, 'c')}
     ORDER BY r.date_rappel
   `).all(res.locals.cabinetId, aujourdhui());
 
   // Tâches en retard (non terminées, échéance dépassée)
+  const pfTaches = req.utilisateur && req.utilisateur.role === 'courtier'
+    ? ` AND (t.entreprise_id IS NULL OR c.responsable_id = ${Number(req.utilisateur.id)})` : '';
   const tachesRetard = bd.prepare(`
     SELECT t.id, t.titre, t.date_echeance, u.nom AS assigne_nom
     FROM taches t LEFT JOIN users u ON u.id = t.assigne_a
+    LEFT JOIN clients c ON c.id = t.entreprise_id
     WHERE t.cabinet_id = ? AND t.statut != 'terminee' AND t.archive = 0
-      AND t.date_echeance IS NOT NULL AND t.date_echeance < ?
+      AND t.date_echeance IS NOT NULL AND t.date_echeance < ?${pfTaches}
     ORDER BY t.date_echeance
   `).all(res.locals.cabinetId, aujourdhui());
   const nbTachesRetard = tachesRetard.length;
@@ -71,7 +75,7 @@ router.get('/', (req, res) => {
     SELECT f.id, f.numero_facture, f.date_echeance, (f.montant - f.montant_paye) AS solde,
            c.raison_sociale AS entreprise
     FROM factures f JOIN clients c ON c.id = f.client_id
-    WHERE f.cabinet_id = ? AND f.statut = 'en_retard'
+    WHERE f.cabinet_id = ? AND f.statut = 'en_retard'${clausePortefeuille(req, 'c')}
     ORDER BY f.date_echeance
   `).all(res.locals.cabinetId);
   const totalRetard = comptesRetard.reduce((s, f) => s + Number(f.solde), 0);
@@ -135,6 +139,7 @@ function ficheRevision(policeId, cabinetId) {
 router.get('/police/:id', (req, res) => {
   const fiche = ficheRevision(req.params.id, res.locals.cabinetId);
   if (!fiche) return res.status(404).render('erreur', { titre: 'Introuvable', message: 'Police introuvable.' });
+  if (clientHorsPortefeuille(res.locals.cabinetId, req.utilisateur, fiche.client_id)) return reponseHorsPortefeuille(res);
   res.render('echeances/revision', { ...fiche, NOMS_LIGNES, NOMS_STATUTS });
 });
 

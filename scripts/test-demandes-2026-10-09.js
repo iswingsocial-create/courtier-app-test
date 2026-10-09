@@ -116,9 +116,9 @@ function dansJours(n) { const d = new Date(); d.setDate(d.getDate() + n); return
   test('formulaire tâche → 200', r.statut === 200, r.statut);
   test('options police portent data-client-id', new RegExp(`data-client-id="${idA}"`).test(r.texte));
   test('options réclamation portent data-client-id', new RegExp(`data-client-id="${idB}"`).test(r.texte));
-  test('script de filtrage servi', /taches\.js/.test(r.texte));
-  r = await req(jar, 'GET', '/taches.js');
-  test('/taches.js → 200', r.statut === 200 && /data-filtre-client/.test(r.texte), r.statut);
+  test('script de filtrage servi', /filtre-client\.js/.test(r.texte));
+  r = await req(jar, 'GET', '/filtre-client.js');
+  test('/filtre-client.js → 200', r.statut === 200 && /data-filtre-client/.test(r.texte), r.statut);
 
   async function posterTache(entrepriseId, policeId, reclamationId) {
     r = await req(jar, 'GET', '/taches/nouvelle');

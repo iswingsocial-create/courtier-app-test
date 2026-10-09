@@ -11,7 +11,7 @@
   <input type="hidden" name="_csrf" value="<%= csrfToken %>">
   <div class="grille-form">
     <div><label for="client_id">Entreprise *</label>
-      <select id="client_id" name="client_id" required <%= reclamation.id ? 'disabled' : '' %>>
+      <select id="client_id" name="client_id" required data-maitre-client <%= reclamation.id ? 'disabled' : '' %>>
         <option value="">— Choisir —</option>
         <% entreprises.forEach((e) => { %>
           <option value="<%= e.id %>" <%= String(reclamation.client_id) === String(e.id) ? 'selected' : '' %>><%= e.raison_sociale %></option>
@@ -19,12 +19,13 @@
       </select>
       <% if (reclamation.id) { %><input type="hidden" name="client_id" value="<%= reclamation.client_id %>"><% } %></div>
     <div><label for="police_id">Police concernée</label>
-      <select id="police_id" name="police_id">
+      <select id="police_id" name="police_id" data-filtre-client>
         <option value="">— Aucune —</option>
         <% polices.forEach((p) => { %>
-          <option value="<%= p.id %>" <%= String(reclamation.police_id) === String(p.id) ? 'selected' : '' %>><%= p.numero_police %> (<%= p.raison_sociale %>)</option>
+          <option value="<%= p.id %>" data-client-id="<%= p.client_id %>" <%= String(reclamation.police_id) === String(p.id) ? 'selected' : '' %>><%= p.numero_police %> (<%= p.raison_sociale %>)</option>
         <% }) %>
-      </select></div>
+      </select>
+      <p class="petit">Seules les polices de l’entreprise choisie sont proposées.</p></div>
     <div><label for="numero_reclamation">N° de réclamation (assureur)</label>
       <input type="text" id="numero_reclamation" name="numero_reclamation" value="<%= reclamation.numero_reclamation || '' %>"></div>
     <div><label for="statut">Statut *</label>
@@ -47,6 +48,7 @@
       <input type="text" id="expert_nom" name="expert_nom" value="<%= reclamation.expert_nom || '' %>"></div>
     <div><label for="expert_contact">Contact de l’expert</label>
       <input type="text" id="expert_contact" name="expert_contact" value="<%= reclamation.expert_contact || '' %>"></div>
+    <% if (peutChangerResponsable) { %>
     <div><label for="responsable_id">Courtier responsable</label>
       <select id="responsable_id" name="responsable_id">
         <option value="">— Aucun —</option>
@@ -54,6 +56,7 @@
           <option value="<%= u.id %>" <%= String(reclamation.responsable_id) === String(u.id) ? 'selected' : '' %>><%= u.nom %> (<%= u.role %>)</option>
         <% }) %>
       </select></div>
+    <% } %>
     <div><label for="date_rappel">Date de rappel</label>
       <input type="date" id="date_rappel" name="date_rappel" value="<%= reclamation.date_rappel || '' %>"></div>
   </div>
@@ -75,4 +78,5 @@
   </form>
 </div>
 <% } %>
+<script src="/filtre-client.js" defer></script>
 <%- include('../partials/bas') %>

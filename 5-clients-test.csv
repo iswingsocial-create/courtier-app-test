@@ -1,0 +1,6 @@
+﻿type;raison_sociale;neq;secteur_activite;courriel_entreprise;telephone_entreprise;chiffre_affaires;nb_employes;prenom;nom;titre_contact;courriel;telephone;adresse;ville;code_postal;langue
+entreprise;Boulangerie Saint-Henri inc.;1145678901;Commerce de détail;boulangerie@sthenri.ca;514-555-0101;850000;12;Marie;Dubois;Propriétaire;marie.dubois@sthenri.ca;514-555-0102;4867 boul. Saint-Laurent;Montréal;H2T 1R6;FR
+entreprise;Garage Pneus Express inc.;2245678901;Automobile;info@pneusexpress.ca;450-555-0201;2300000;8;Jean;Tremblay;Gérant;jean.tremblay@pneusexpress.ca;450-555-0202;1250 rue Principale;Longueuil;J4K 1A1;FR
+entreprise;Clinique Dentaire Sourire inc.;3345678901;Santé;contact@cliniquesourire.ca;514-555-0301;1500000;15;Dr. Alain;Lavoie;Dentiste propriétaire;alain.lavoie@cliniquesourire.ca;514-555-0302;789 avenue du Parc;Montréal;H2V 4H2;FR
+entreprise;Toitures Pro Québec inc.;4445678901;Construction;admin@toiturespro.ca;418-555-0401;3100000;22;Sylvie;Gagnon;Directrice;sylvie.gagnon@toiturespro.ca;418-555-0402;4560 boul. Henri-Bourassa;Québec;G1H 3A9;FR
+entreprise;Café Bistro Plateau inc.;5545678901;Restauration;bonjour@cafeplateau.ca;514-555-0501;620000;9;Pierre;Bouchard;Propriétaire;pierre.bouchard@cafeplateau.ca;514-555-0502;231 rue Rachel Est;Montréal;H2J 2J3;FR

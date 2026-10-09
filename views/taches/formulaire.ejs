@@ -28,7 +28,7 @@
         <% }) %>
       </select></div>
     <div><label for="entreprise_id">Entreprise liée</label>
-      <select id="entreprise_id" name="entreprise_id">
+      <select id="entreprise_id" name="entreprise_id" data-maitre-client>
         <option value="">— Aucune —</option>
         <% entreprises.forEach((e) => { %>
           <option value="<%= e.id %>" <%= String(tache.entreprise_id) === String(e.id) ? 'selected' : '' %>><%= e.raison_sociale %></option>
@@ -56,7 +56,7 @@
   <div class="actions"><button class="btn" type="submit">Enregistrer</button></div>
 </form>
 </div>
-<script src="/taches.js" defer></script>
+<script src="/filtre-client.js" defer></script>
 
 <% if (tache.id) { %>
 <div class="carte">

@@ -29,15 +29,16 @@ const televersement = multer({
   },
 });
 
-const ENTETE = ['type', 'raison_sociale', 'neq', 'secteur_activite', 'prenom', 'nom', 'titre_contact',
+const ENTETE = ['type', 'raison_sociale', 'neq', 'secteur_activite', 'courriel_entreprise', 'telephone_entreprise',
+  'chiffre_affaires', 'nb_employes', 'prenom', 'nom', 'titre_contact',
   'courriel', 'telephone', 'adresse', 'ville', 'code_postal', 'langue', 'produit', 'assureur',
   'numero_police', 'date_effet', 'date_echeance', 'franchise', 'statut',
   'protection_code', 'protection_libelle', 'prime'];
 
 const EXEMPLES = [
-  ['entreprise', 'Constructions Méthot inc.', '1161234567', 'Construction', 'Sylvain', 'Méthot', 'Président', 'sylvain.methot@constructionsmethot.ca', '514-555-0123', '1200 boul. Industriel', 'Laval', 'H7L 4B2', 'FR', '', '', '', '', '', '', '', '', '', ''],
-  ['police', 'Constructions Méthot inc.', '', '', '', '', '', '', '', '', '', '', '', 'cgl', 'Intact Assurance', 'CGL-2025-10001', '2025-06-01', '2026-06-01', '2500', 'active', '', '', ''],
-  ['protection', '', '', '', '', '', '', '', '', '', '', '', '', '', '', 'CGL-2025-10001', '', '', '', '', 'RC-GEN', 'Responsabilité civile générale (2 000 000 $)', '2850.00'],
+  ['entreprise', 'Constructions Méthot inc.', '1161234567', 'Construction', 'info@constructionsmethot.ca', '450-555-0199', '5200000', '35', 'Sylvain', 'Méthot', 'Président', 'sylvain.methot@constructionsmethot.ca', '514-555-0123', '1200 boul. Industriel', 'Laval', 'H7L 4B2', 'FR', '', '', '', '', '', '', '', '', '', ''],
+  ['police', 'Constructions Méthot inc.', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', 'cgl', 'Intact Assurance', 'CGL-2025-10001', '2025-06-01', '2026-06-01', '2500', 'active', '', '', ''],
+  ['protection', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', 'CGL-2025-10001', '', '', '', '', 'RC-GEN', 'Responsabilité civile générale (2 000 000 $)', '2850.00'],
 ];
 
 // --- Page d'import ---------------------------------------------------------------------------------
@@ -103,14 +104,27 @@ router.post('/', televersement.single('fichier'), verifieCsrf, (req, res) => {
     if (!['FR', 'EN'].includes(langue)) throw new Error('langue invalide (FR/EN)');
     const neq = (l.neq || '').replace(/\s/g, '');
     if (neq && !/^\d{10}$/.test(neq)) throw new Error('neq invalide (10 chiffres)');
+    const ca = l.chiffre_affaires ? Number(l.chiffre_affaires) : null;
+    if (l.chiffre_affaires && (isNaN(ca) || ca < 0)) throw new Error('chiffre_affaires invalide');
+    const nbEmp = l.nb_employes ? Number(l.nb_employes) : null;
+    if (l.nb_employes && (!Number.isInteger(nbEmp) || nbEmp < 0)) throw new Error('nb_employes invalide');
+    if (l.courriel_entreprise && !estCourrielValide(l.courriel_entreprise)) throw new Error('courriel_entreprise invalide');
     const r = bd.prepare(`
-      INSERT INTO clients (cabinet_id, raison_sociale, neq, secteur_activite, prenom, nom, titre_contact,
+      INSERT INTO clients (cabinet_id, raison_sociale, neq, secteur_activite,
+                           courriel_entreprise, telephone_entreprise, chiffre_affaires, nb_employes,
+                           prenom, nom, titre_contact,
                            courriel, telephone, adresse, ville, code_postal, langue)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `).run(cabinetId, raison, neq || null, (l.secteur_activite || '').trim() || null,
+      (l.courriel_entreprise || '').trim() || null, (l.telephone_entreprise || '').trim() || null, ca, nbEmp,
       prenom, nom, (l.titre_contact || '').trim() || null,
       l.courriel || null, l.telephone || null, l.adresse || null,
       l.ville || null, l.code_postal || null, langue);
+    bd.prepare(`
+      INSERT INTO contacts (cabinet_id, client_id, prenom, nom, titre, courriel, telephone, principal)
+      VALUES (?, ?, ?, ?, ?, ?, ?, 1)
+    `).run(cabinetId, r.lastInsertRowid, prenom, nom,
+      (l.titre_contact || '').trim() || null, l.courriel || null, l.telephone || null);
     ok(numeroLigne, `Entreprise ${raison} créée`);
     return r.lastInsertRowid;
   }
@@ -138,11 +152,16 @@ router.post('/', televersement.single('fichier'), verifieCsrf, (req, res) => {
     if (!['active', 'a_renouveler', 'resiliee'].includes(statut)) throw new Error('statut invalide');
     const franchise = l.franchise === '' || l.franchise == null ? 0 : Number(l.franchise);
     if (isNaN(franchise)) throw new Error('franchise invalide');
+    const nomAssureur = l.assureur.trim();
+    let ficheAss = bd.prepare('SELECT id FROM assureurs WHERE cabinet_id = ? AND lower(nom) = lower(?)').get(cabinetId, nomAssureur);
+    if (!ficheAss) {
+      ficheAss = { id: bd.prepare('INSERT INTO assureurs (cabinet_id, nom) VALUES (?, ?)').run(cabinetId, nomAssureur).lastInsertRowid };
+    }
     try {
       const r = bd.prepare(`
-        INSERT INTO polices (cabinet_id, client_id, ligne, assureur, numero_police, date_effet, date_echeance, franchise, statut)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-      `).run(cabinetId, clientId, produit, l.assureur.trim(), l.numero_police.trim(), l.date_effet, l.date_echeance, franchise, statut);
+        INSERT INTO polices (cabinet_id, client_id, ligne, assureur, assureur_id, numero_police, date_effet, date_echeance, franchise, statut)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `).run(cabinetId, clientId, produit, nomAssureur, ficheAss.id, l.numero_police.trim(), l.date_effet, l.date_echeance, franchise, statut);
       ok(numeroLigne, `Police ${l.numero_police} créée`);
       return r.lastInsertRowid;
     } catch (e) {

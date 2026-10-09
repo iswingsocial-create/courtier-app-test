@@ -9,7 +9,7 @@
 const express = require('express');
 
 const bd = require('../lib/bd');
-const { exigeAuth, exigeMotDePasseChange, journal, estCourrielValide } = require('../lib/middleware');
+const { exigeAuth, exigeMotDePasseChange, journal, estCourrielValide, estCourtier } = require('../lib/middleware');
 
 const router = express.Router();
 router.use(exigeAuth, exigeMotDePasseChange);
@@ -189,7 +189,7 @@ router.post('/:id/convertir', (req, res) => {
   `).run(res.locals.cabinetId, raisonSociale, prenom, nom,
     lead.courriel, lead.telephone,
     `Converti du lead #${lead.id} (source : ${NOMS_SOURCES[lead.source] || lead.source}${lead.campagne ? `, campagne « ${lead.campagne} »` : ''}). Besoin exprimé : ${lead.besoin || '—'}`,
-    lead.responsable_id);
+    lead.responsable_id || (estCourtier(req) ? req.utilisateur.id : null));
   bd.prepare("UPDATE leads SET client_id = ?, statut = 'client' WHERE id = ? AND cabinet_id = ?")
     .run(r.lastInsertRowid, lead.id, res.locals.cabinetId);
   bd.prepare('INSERT INTO lead_suivis (lead_id, user_id, texte) VALUES (?, ?, ?)')

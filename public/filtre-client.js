@@ -1,11 +1,11 @@
 /**
- * public/taches.js — Filtrage des menus Police / Réclamation selon l'entreprise
- * choisie. Les infos d'un assuré restent dans son dossier : on ne propose que
- * ses polices et ses réclamations.
+ * public/filtre-client.js — Filtrage des menus Police / Réclamation selon
+ * l'entreprise choisie (tâches ET réclamations). Les infos d'un assuré restent
+ * dans son dossier : on ne propose que ses polices et ses réclamations.
  * Compatible avec la politique CSP (pas de gestionnaires inline).
  */
 document.addEventListener('DOMContentLoaded', () => {
-  const selEntreprise = document.getElementById('entreprise_id');
+  const selEntreprise = document.querySelector('[data-maitre-client]');
   if (!selEntreprise) return;
   const selects = document.querySelectorAll('select[data-filtre-client]');
 

@@ -8,7 +8,8 @@ const fs = require('fs');
 const multer = require('multer');
 
 const bd = require('../lib/bd');
-const { exigeAuth, exigeMotDePasseChange, verifieCsrf, journal, estCourrielValide } = require('../lib/middleware');
+const { exigeAuth, exigeMotDePasseChange, verifieCsrf, journal, estCourrielValide,
+  estAdmin, estCourtier, clausePortefeuille, clientHorsPortefeuille, reponseHorsPortefeuille } = require('../lib/middleware');
 
 const router = express.Router();
 router.use(exigeAuth, exigeMotDePasseChange);
@@ -88,10 +89,11 @@ router.get('/', (req, res) => {
   const q = String(req.query.q || '').trim();
   const voirArchives = req.query.archives === '1';
   let clients;
+  const pf = clausePortefeuille(req, 'cl');
   const base = `
     SELECT cl.*, u.nom AS responsable_nom FROM clients cl
     LEFT JOIN users u ON u.id = cl.responsable_id
-    WHERE cl.cabinet_id = ? AND cl.archive = ${voirArchives ? '1' : '0'}`;
+    WHERE cl.cabinet_id = ? AND cl.archive = ${voirArchives ? '1' : '0'}${pf}`;
   if (q) {
     clients = bd.prepare(base + `
       AND (cl.raison_sociale LIKE ? OR cl.neq LIKE ? OR cl.prenom LIKE ? OR cl.nom LIKE ?
@@ -106,7 +108,7 @@ router.get('/', (req, res) => {
 
 // --- Nouveau / modifier --------------------------------------------------------------------
 router.get('/nouveau', (req, res) => {
-  res.render('clients/formulaire', { erreur: null, client: null, consentements: {}, TYPES_CONSENTEMENT, utilisateurs: utilisateursCabinet(res.locals.cabinetId) });
+  res.render('clients/formulaire', { erreur: null, client: null, consentements: {}, TYPES_CONSENTEMENT, utilisateurs: utilisateursCabinet(res.locals.cabinetId), peutChangerResponsable: estAdmin(req) });
 });
 
 function corpsClient(corps) {
@@ -134,10 +136,12 @@ function corpsClient(corps) {
 
 router.post('/', (req, res) => {
   const erreurs = validerClient(req.body);
-  const resp = responsableValide(req.body.responsable_id, res.locals.cabinetId);
+  const resp = estAdmin(req)
+    ? responsableValide(req.body.responsable_id, res.locals.cabinetId)
+    : (estCourtier(req) ? req.utilisateur.id : responsableValide(req.body.responsable_id, res.locals.cabinetId));
   if (resp === 'invalide') erreurs.push('Courtier responsable invalide.');
   if (erreurs.length) {
-    return res.status(400).render('clients/formulaire', { erreur: erreurs.join(' '), client: req.body, consentements: {}, TYPES_CONSENTEMENT, utilisateurs: utilisateursCabinet(res.locals.cabinetId) });
+    return res.status(400).render('clients/formulaire', { erreur: erreurs.join(' '), client: req.body, consentements: {}, TYPES_CONSENTEMENT, utilisateurs: utilisateursCabinet(res.locals.cabinetId), peutChangerResponsable: estAdmin(req) });
   }
   const c = corpsClient(req.body);
   const r = bd.prepare(`
@@ -159,18 +163,21 @@ router.post('/', (req, res) => {
 router.get('/:id/modifier', (req, res) => {
   const client = bd.prepare('SELECT * FROM clients WHERE id = ? AND cabinet_id = ?').get(req.params.id, res.locals.cabinetId);
   if (!client) return res.status(404).render('erreur', { titre: 'Introuvable', message: 'Entreprise introuvable.' });
+  if (clientHorsPortefeuille(res.locals.cabinetId, req.utilisateur, client.id)) return reponseHorsPortefeuille(res);
   const consentements = lireConsentements(client.id);
-  res.render('clients/formulaire', { erreur: null, client, consentements, TYPES_CONSENTEMENT, utilisateurs: utilisateursCabinet(res.locals.cabinetId) });
+  res.render('clients/formulaire', { erreur: null, client, consentements, TYPES_CONSENTEMENT, utilisateurs: utilisateursCabinet(res.locals.cabinetId), peutChangerResponsable: estAdmin(req) });
 });
 
 router.post('/:id', (req, res) => {
   const client = bd.prepare('SELECT * FROM clients WHERE id = ? AND cabinet_id = ?').get(req.params.id, res.locals.cabinetId);
   if (!client) return res.status(404).render('erreur', { titre: 'Introuvable', message: 'Entreprise introuvable.' });
+  if (clientHorsPortefeuille(res.locals.cabinetId, req.utilisateur, client.id)) return reponseHorsPortefeuille(res);
   const erreurs = validerClient(req.body);
-  const resp = responsableValide(req.body.responsable_id, res.locals.cabinetId);
+  // Seul l'admin peut changer le courtier responsable d'un compte.
+  const resp = estAdmin(req) ? responsableValide(req.body.responsable_id, res.locals.cabinetId) : client.responsable_id;
   if (resp === 'invalide') erreurs.push('Courtier responsable invalide.');
   if (erreurs.length) {
-    return res.status(400).render('clients/formulaire', { erreur: erreurs.join(' '), client: { ...client, ...req.body }, consentements: lireConsentements(client.id), TYPES_CONSENTEMENT, utilisateurs: utilisateursCabinet(res.locals.cabinetId) });
+    return res.status(400).render('clients/formulaire', { erreur: erreurs.join(' '), client: { ...client, ...req.body }, consentements: lireConsentements(client.id), TYPES_CONSENTEMENT, utilisateurs: utilisateursCabinet(res.locals.cabinetId), peutChangerResponsable: estAdmin(req) });
   }
   const c = corpsClient(req.body);
   bd.prepare(`
@@ -195,6 +202,7 @@ router.post('/:id', (req, res) => {
 router.post('/:id/archiver', (req, res) => {
   const client = bd.prepare('SELECT * FROM clients WHERE id = ? AND cabinet_id = ?').get(req.params.id, res.locals.cabinetId);
   if (!client) return res.status(404).render('erreur', { titre: 'Introuvable', message: 'Entreprise introuvable.' });
+  if (clientHorsPortefeuille(res.locals.cabinetId, req.utilisateur, client.id)) return reponseHorsPortefeuille(res);
   bd.prepare('UPDATE clients SET archive = 1 WHERE id = ? AND cabinet_id = ?').run(client.id, res.locals.cabinetId);
   journal(res.locals.cabinetId, req.utilisateur.id, 'entreprise_archivee', `Entreprise ${client.raison_sociale} (id ${client.id})`);
   res.redirect('/clients');
@@ -203,6 +211,7 @@ router.post('/:id/archiver', (req, res) => {
 router.post('/:id/desarchiver', (req, res) => {
   const client = bd.prepare('SELECT * FROM clients WHERE id = ? AND cabinet_id = ?').get(req.params.id, res.locals.cabinetId);
   if (!client) return res.status(404).render('erreur', { titre: 'Introuvable', message: 'Entreprise introuvable.' });
+  if (clientHorsPortefeuille(res.locals.cabinetId, req.utilisateur, client.id)) return reponseHorsPortefeuille(res);
   bd.prepare('UPDATE clients SET archive = 0 WHERE id = ? AND cabinet_id = ?').run(client.id, res.locals.cabinetId);
   journal(res.locals.cabinetId, req.utilisateur.id, 'entreprise_desarchivee', `Entreprise ${client.raison_sociale} (id ${client.id})`);
   res.redirect('/clients/' + client.id);
@@ -228,6 +237,7 @@ function validerContact(corps) {
 router.post('/:id/contacts', (req, res) => {
   const client = clientDuCabinet(req.params.id, res.locals.cabinetId);
   if (!client) return res.status(404).render('erreur', { titre: 'Introuvable', message: 'Entreprise introuvable.' });
+  if (clientHorsPortefeuille(res.locals.cabinetId, req.utilisateur, client.id)) return reponseHorsPortefeuille(res);
   const erreurs = validerContact(req.body);
   if (erreurs.length) {
     return res.status(400).render('erreur', { titre: 'Contact invalide', message: erreurs.join(' ') });
@@ -248,6 +258,7 @@ router.post('/:id/contacts', (req, res) => {
 router.post('/contacts/:contactId', (req, res) => {
   const contact = contactDuCabinet(req.params.contactId, res.locals.cabinetId);
   if (!contact) return res.status(404).render('erreur', { titre: 'Introuvable', message: 'Contact introuvable.' });
+  if (clientHorsPortefeuille(res.locals.cabinetId, req.utilisateur, contact.client_id)) return reponseHorsPortefeuille(res);
   const erreurs = validerContact(req.body);
   if (erreurs.length) {
     return res.status(400).render('erreur', { titre: 'Contact invalide', message: erreurs.join(' ') });
@@ -267,6 +278,7 @@ router.post('/contacts/:contactId', (req, res) => {
 router.post('/contacts/:contactId/principal', (req, res) => {
   const contact = contactDuCabinet(req.params.contactId, res.locals.cabinetId);
   if (!contact) return res.status(404).render('erreur', { titre: 'Introuvable', message: 'Contact introuvable.' });
+  if (clientHorsPortefeuille(res.locals.cabinetId, req.utilisateur, contact.client_id)) return reponseHorsPortefeuille(res);
   const changer = bd.transaction(() => {
     bd.prepare('UPDATE contacts SET principal = 0 WHERE client_id = ?').run(contact.client_id);
     bd.prepare('UPDATE contacts SET principal = 1 WHERE id = ?').run(contact.id);
@@ -281,6 +293,7 @@ router.post('/contacts/:contactId/principal', (req, res) => {
 router.post('/contacts/:contactId/archiver', (req, res) => {
   const contact = contactDuCabinet(req.params.contactId, res.locals.cabinetId);
   if (!contact) return res.status(404).render('erreur', { titre: 'Introuvable', message: 'Contact introuvable.' });
+  if (clientHorsPortefeuille(res.locals.cabinetId, req.utilisateur, contact.client_id)) return reponseHorsPortefeuille(res);
   if (contact.principal) {
     return res.status(400).render('erreur', { titre: 'Action refusée', message: 'Le contact principal ne peut pas être archivé. Désignez d’abord un autre contact principal.' });
   }
@@ -292,6 +305,7 @@ router.post('/contacts/:contactId/archiver', (req, res) => {
 router.post('/contacts/:contactId/desarchiver', (req, res) => {
   const contact = contactDuCabinet(req.params.contactId, res.locals.cabinetId);
   if (!contact) return res.status(404).render('erreur', { titre: 'Introuvable', message: 'Contact introuvable.' });
+  if (clientHorsPortefeuille(res.locals.cabinetId, req.utilisateur, contact.client_id)) return reponseHorsPortefeuille(res);
   bd.prepare('UPDATE contacts SET archive = 0 WHERE id = ?').run(contact.id);
   journal(res.locals.cabinetId, req.utilisateur.id, 'contact_desarchive', `Contact id ${contact.id}`);
   res.redirect('/clients/' + contact.client_id + '#contacts');
@@ -325,6 +339,7 @@ router.get('/:id', (req, res) => {
     WHERE cl.id = ? AND cl.cabinet_id = ?
   `).get(req.params.id, res.locals.cabinetId);
   if (!client) return res.status(404).render('erreur', { titre: 'Introuvable', message: 'Entreprise introuvable.' });
+  if (clientHorsPortefeuille(res.locals.cabinetId, req.utilisateur, client.id)) return reponseHorsPortefeuille(res);
   const consentements = lireConsentements(client.id);
   const documents = bd.prepare('SELECT * FROM documents WHERE client_id = ? AND archive = 0 ORDER BY televerse_le DESC').all(client.id);
   const documentsArchives = bd.prepare('SELECT * FROM documents WHERE client_id = ? AND archive = 1 ORDER BY televerse_le DESC').all(client.id);
@@ -375,6 +390,10 @@ router.get('/:id', (req, res) => {
 // --- Documents joints ------------------------------------------------------------------------------
 router.post('/:id/documents', televersement.single('document'), verifieCsrf, (req, res, next) => {
   const client = bd.prepare('SELECT * FROM clients WHERE id = ? AND cabinet_id = ?').get(req.params.id, res.locals.cabinetId);
+  if (client && clientHorsPortefeuille(res.locals.cabinetId, req.utilisateur, client.id)) {
+    if (req.file) fs.unlinkSync(req.file.path);
+    return reponseHorsPortefeuille(res);
+  }
   if (!client) {
     if (req.file) fs.unlinkSync(req.file.path);
     return res.status(404).render('erreur', { titre: 'Introuvable', message: 'Client introuvable.' });
@@ -399,6 +418,9 @@ router.get('/documents/:docId', (req, res) => {
   `).get(req.params.docId, res.locals.cabinetId);
   if (!doc || !fs.existsSync(doc.chemin)) {
     return res.status(404).render('erreur', { titre: 'Introuvable', message: 'Document introuvable.' });
+  }
+  if (doc.client_id && clientHorsPortefeuille(res.locals.cabinetId, req.utilisateur, doc.client_id)) {
+    return reponseHorsPortefeuille(res);
   }
   res.download(doc.chemin, doc.nom_origine);
 });

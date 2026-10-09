@@ -5,13 +5,10 @@ const express = require('express');
 const bcrypt = require('bcrypt');
 
 const bd = require('../lib/bd');
-const { exigeAuth, exigeMotDePasseChange, exigeRole, journal, estCourrielValide } = require('../lib/middleware');
+const { exigeAuth, exigeMotDePasseChange, exigeRole, journal, estCourrielValide, ROLES, NOMS_ROLES } = require('../lib/middleware');
 
 const router = express.Router();
 router.use(exigeAuth, exigeMotDePasseChange, exigeRole('admin'));
-
-const ROLES = ['admin', 'courtier', 'adjoint'];
-const NOMS_ROLES = { admin: 'Administrateur', courtier: 'Courtier', adjoint: 'Adjoint' };
 
 // --- Cabinets -----------------------------------------------------------------------
 router.get('/cabinets', (req, res) => {
