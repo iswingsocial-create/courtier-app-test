@@ -1,0 +1,70 @@
+<%- include('../partials/haut', { titre: 'Rédiger un courriel' }) %>
+<div class="entete-page">
+  <h1>✏️ Rédiger un courriel</h1>
+  <div><a class="btn btn-secondaire btn-petit" href="/courriels">← Boîte de réception</a></div>
+</div>
+<div class="carte">
+  <% if (erreurs.length) { %>
+    <div class="alerte alerte-erreur"><ul><% erreurs.forEach((e) => { %><li><%= e %></li><% }) %></ul></div>
+  <% } %>
+  <% if (!comptes.length) { %>
+    <div class="alerte alerte-erreur">Aucun compte actif. <a href="/courriels/comptes/nouveau">Ajoutez d’abord un compte courriel</a>.</div>
+  <% } %>
+  <form method="post" action="/courriels/envoyer" id="form-courriel">
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+    <div class="grille-2">
+      <div class="champ">
+        <label for="compte_id">Envoyer depuis *</label>
+        <select id="compte_id" name="compte_id" required>
+          <% comptes.forEach((c) => { %><option value="<%= c.id %>"><%= c.nom %> (<%= c.adresse %>)</option><% }) %>
+        </select>
+      </div>
+      <div class="champ">
+        <label for="a">Destinataire *</label>
+        <input id="a" name="a" type="email" required value="<%= prefill.a %>" placeholder="destinataire@entreprise.ca">
+      </div>
+    </div>
+    <div class="champ">
+      <label for="cc">Copie (Cc — séparés par des virgules)</label>
+      <input id="cc" name="cc" value="<%= prefill.cc %>" placeholder="optionnel">
+    </div>
+    <div class="champ">
+      <label for="sujet">Sujet *</label>
+      <input id="sujet" name="sujet" required value="<%= prefill.sujet %>">
+    </div>
+    <div class="champ">
+      <label for="texte">Message *</label>
+      <textarea id="texte" name="texte" rows="14" required><%= prefill.texte %></textarea>
+    </div>
+    <div class="actions-form">
+      <button class="btn" type="submit" <%= comptes.length ? '' : 'disabled' %>>📨 Envoyer</button>
+      <button class="btn btn-secondaire" type="button" id="btn-ia" data-ia-courriel>✨ Rédiger avec l’IA</button>
+    </div>
+  </form>
+  <div class="carte carte-interne" id="bloc-ia" hidden>
+    <h2>✨ Rédaction assistée par IA</h2>
+    <p class="petit">Décrivez le sujet du courriel — l’IA prépare un brouillon que vous pourrez modifier avant d’envoyer.</p>
+    <div class="champ">
+      <label for="ia-destinataire">Destinataire (nom)</label>
+      <input id="ia-destinataire" placeholder="Ex. : Marie Tremblay">
+    </div>
+    <div class="champ">
+      <label for="ia-contexte">Sujet à traiter *</label>
+      <textarea id="ia-contexte" rows="3" placeholder="Ex. : renouvellement de la police CGL, échéance le 1er décembre, prime en hausse de 5 %"></textarea>
+    </div>
+    <div class="champ">
+      <label for="ia-ton">Ton</label>
+      <select id="ia-ton">
+        <option value="pro">Professionnel</option>
+        <option value="formel">Formel</option>
+        <option value="amical">Amical</option>
+      </select>
+    </div>
+    <div class="actions-form">
+      <button class="btn btn-secondaire" type="button" id="btn-ia-generer">Générer le brouillon</button>
+    </div>
+    <p class="petit" id="ia-statut" role="status"></p>
+  </div>
+</div>
+<script src="/courriels.js" defer></script>
+<%- include('../partials/bas') %>

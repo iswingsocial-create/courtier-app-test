@@ -88,6 +88,29 @@ app.use('/reunions', require('./routes/reunions'));
 app.use('/import', require('./routes/import'));
 app.use('/echeances', require('./routes/echeances'));
 app.use('/brouillons', require('./routes/brouillons'));
+app.use('/courriels', require('./routes/courriels'));
+
+// --- Synchronisation IMAP automatique (toutes les 5 minutes) --------------------------
+// Ne fait rien s'il n'y a aucun compte actif. Les erreurs sont journalisées,
+// jamais propagées (le serveur ne doit pas planter à cause d'un compte).
+function lancerSynchroCourriels() {
+  try {
+    const { synchroniserTousLesComptes } = require('./lib/courriels');
+    synchroniserTousLesComptes(bd)
+      .then((r) => {
+        const n = r.reduce((s, x) => s + x.ajoutes, 0);
+        if (n > 0) console.log(`Synchro courriels : ${n} nouveau(x)`);
+        for (const x of r) {
+          if (x.erreur) console.error(`Synchro courriels (${x.compte}) : ${x.erreur}`);
+        }
+      })
+      .catch((e) => console.error('Synchro courriels :', e.message));
+  } catch (e) {
+    console.error('Synchro courriels :', e.message);
+  }
+}
+setTimeout(lancerSynchroCourriels, 30000);
+setInterval(lancerSynchroCourriels, 5 * 60 * 1000);
 
 // Accueil → tableau des échéances (ou connexion)
 app.get('/', (req, res) => {

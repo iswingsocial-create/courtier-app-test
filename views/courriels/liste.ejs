@@ -1,0 +1,53 @@
+<%- include('../partials/haut', { titre }) %>
+<div class="entete-page">
+  <h1>📧 <%= titre %></h1>
+  <div>
+    <a class="btn btn-petit" href="/courriels/rediger">✏️ Rédiger</a>
+    <% if (dossier === 'reception') { %><a class="btn btn-secondaire btn-petit" href="/courriels/envoyes">Envoyés</a><% } else { %><a class="btn btn-secondaire btn-petit" href="/courriels">Reçus</a><% } %>
+    <a class="btn btn-secondaire btn-petit" href="/courriels/comptes">Comptes</a>
+  </div>
+</div>
+<% if (typeof synchro !== 'undefined' && synchro) { %>
+  <div class="alerte <%= synchro === 'erreur' ? 'alerte-erreur' : 'alerte-ok' %>">
+    <%= synchro === 'erreur' ? 'La synchronisation a échoué — vérifiez le compte (bouton Tester).' : `Synchronisation terminée : ${synchro} nouveau(x) courriel(s).` %>
+  </div>
+<% } %>
+<div class="carte">
+  <% if (dossier === 'reception') { %>
+  <div class="filtres-ligne">
+    <form method="get" action="/courriels" class="filtres">
+      <input type="search" name="q" placeholder="Rechercher…" value="<%= q %>">
+      <label class="petit"><input type="checkbox" name="nonlus" value="1" <%= nonLus ? 'checked' : '' %>> Non lus seulement</label>
+      <button class="btn btn-petit btn-secondaire" type="submit">Filtrer</button>
+    </form>
+    <form method="post" action="/courriels/comptes/synchroniser-tous" class="inline"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button class="btn btn-petit btn-secondaire" type="submit">🔄 Synchroniser</button></form>
+    <% if (voirArchives) { %><a class="btn btn-secondaire btn-petit" href="/courriels">← Actifs</a><% } else { %><a class="btn btn-secondaire btn-petit" href="/courriels?archives=1">Archivés</a><% } %>
+  </div>
+  <% } %>
+  <div class="tableau-deroulant"><table>
+    <thead><tr>
+      <% if (dossier === 'reception') { %><th></th><th>De</th><% } else { %><th>À</th><% } %>
+      <th>Sujet</th><th>Entreprise liée</th><th>Date</th><th></th>
+    </tr></thead>
+    <tbody>
+    <% courriels.forEach((c) => { %>
+      <tr class="<%= !c.lu && dossier === 'reception' ? 'ligne-non-lue' : '' %>">
+        <% if (dossier === 'reception') { %><td><%= c.lu ? '📭' : '📬' %></td><% } %>
+        <td><%= dossier === 'reception' ? c.expediteur : c.destinataires %></td>
+        <td><a href="/courriels/<%= c.id %>"><%= c.sujet %></a></td>
+        <td><%= c.client_raison_sociale || '<span class="petit">—</span>' %></td>
+        <td class="petit"><%= (c.date_courriel || c.cree_le || '').slice(0, 16).replace('T', ' ') %></td>
+        <td><a class="btn btn-petit btn-secondaire" href="/courriels/<%= c.id %>">Ouvrir</a></td>
+      </tr>
+    <% }) %>
+    </tbody>
+  </table></div>
+  <% if (!courriels.length) { %>
+    <p class="petit">
+      <% if (dossier === 'reception') { %>
+        Aucun courriel pour l’instant. <%= comptes.length ? 'Cliquez sur « Synchroniser » pour récupérer vos messages.' : 'Ajoutez d’abord un <a href="/courriels/comptes/nouveau">compte courriel</a>.' %>
+      <% } else { %>Aucun courriel envoyé pour l’instant.<% } %>
+    </p>
+  <% } %>
+</div>
+<%- include('../partials/bas') %>

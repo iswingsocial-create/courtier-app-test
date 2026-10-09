@@ -1,0 +1,23 @@
+<%- include('../partials/haut', { titre: 'Test de connexion' }) %>
+<div class="entete-page">
+  <h1>📧 Test de connexion — <%= compte.nom %></h1>
+  <div><a class="btn btn-secondaire btn-petit" href="/courriels/comptes">← Comptes</a></div>
+</div>
+<div class="carte">
+  <% if (!erreurs.length) { %>
+    <div class="alerte alerte-ok">✅ Connexion réussie : réception (IMAP) et envoi (SMTP) fonctionnent.</div>
+  <% } else { %>
+    <div class="alerte alerte-erreur">
+      <strong>❌ La connexion a échoué :</strong>
+      <ul><% erreurs.forEach((e) => { %><li><%= e %></li><% }) %></ul>
+    </div>
+    <p class="petit">Vérifiez les serveurs, les ports et le mot de passe.
+    Pour Gmail, utilisez un <strong>mot de passe d’application</strong> (pas votre mot de passe habituel).
+    Pour Microsoft 365, l’authentification par mot de passe est souvent désactivée par l’administrateur.</p>
+  <% } %>
+  <div class="actions-form">
+    <a class="btn btn-secondaire" href="/courriels/comptes/<%= compte.id %>/modifier">Modifier le compte</a>
+    <a class="btn btn-secondaire" href="/courriels/comptes">Retour</a>
+  </div>
+</div>
+<%- include('../partials/bas') %>

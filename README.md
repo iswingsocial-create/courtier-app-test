@@ -85,6 +85,7 @@ courtier-app/
 │   ├── echeances.js     # Tableau J-90/J-60/J-30, fiche de révision, rappels, comptes en retard, réunions
 │   ├── import.js        # Import CSV en lot + modèle + rapport d'erreurs
 │   ├── brouillons.js    # Brouillons IA (jamais d'envoi auto)
+│   ├── courriels.js     # Messagerie intégrée : comptes IMAP/SMTP, réception, envoi, liaison entreprises
 │   ├── factures.js      # Facturation : CRUD, paiements, relances via brouillons IA
 │   ├── leads.js         # Leads : pipeline, suivis, conversion en entreprise, stats
 │   ├── capture.js       # Formulaire public de capture (/capture/<jeton>, sans auth)
@@ -97,6 +98,7 @@ courtier-app/
     ├── test-phase1.js       # Ancienne suite (schéma pré-commercial, obsolète)
     ├── test-ajustements.js  # Suite de référence : 47 tests bout en bout
     ├── test-nouveaux-modules.js # Nouveaux modules : 65 tests bout en bout
+    ├── test-courriels.js        # Module Courriels : 30 tests bout en bout + unitaires
     └── exemple-import.csv   # Modèle CSV (entreprises, produits commerciaux)
 ```
 
@@ -153,9 +155,19 @@ courtier-app/
   5. Définir `MS_CLIENT_ID`, `MS_CLIENT_SECRET`, `MS_TENANT` (ou `common`), `MS_REDIRECT_URI`
      sur le serveur, redémarrer, puis cliquer « Connecter Microsoft 365 ».
 
-> **SMTP à venir** : l'envoi réel des courriels (relances, campagnes) n'est pas encore
-> intégré — tout passe par des brouillons à valider manuellement. L'envoi SMTP sera ajouté
-> au déploiement.
+### 📧 Courriels (onglet « Courriels ») — messagerie intégrée
+- **Comptes** : ajoutez vos boîtes (Gmail, Outlook/Microsoft 365, autre) avec préconfigurations
+  IMAP/SMTP. Mots de passe **chiffrés (AES-256-GCM)** en base. Bouton « Tester » (IMAP + SMTP).
+  Pour Gmail : utilisez un *mot de passe d'application* (pas votre mot de passe habituel).
+- **Réception** : synchronisation IMAP automatique toutes les 5 minutes + bouton manuel
+  (30 derniers jours, 200 messages max/synchro). Recherche, filtre non lus, marquer lu/non lu.
+- **Rédaction** : nouveau message, répondre (avec citation), bouton « ✨ Rédiger avec l'IA »
+  (Cohere si `COHERE_API_KEY`, sinon modèle local). Envoi via SMTP, copie en « Envoyés ».
+- **Liaison entreprises** : chaque courriel est rattaché automatiquement à l'entreprise quand
+  l'adresse de l'expéditeur/destinataire correspond à `clients.courriel` ; liaison manuelle
+  possible depuis la fiche du courriel. Filtrable par entreprise.
+- Règle d'or respectée : comptes et courriels s'archivent, jamais supprimés.
+- Les pièces jointes ne sont pas conservées en v1.
 
 ### 🏷️ Terminologie et libellés d'interface
 Les libellés affichés ne sont **pas** dispersés au hasard : les statuts et constantes
@@ -248,6 +260,7 @@ Un **rapport ligne par ligne** indique les créations et les erreurs.
 PORT=3101 node scripts/test-ajustements.js
 PORT=3101 node scripts/test-nouveaux-modules.js
 PORT=3101 node scripts/test-principes.js
+PORT=3101 node scripts/test-courriels.js
 ```
 
 `test-ajustements.js` — 47 tests : login/CSRF, changement de mdp forcé, seed commercial, CRUD entreprise
@@ -274,6 +287,13 @@ statuts de réclamation Ouverte/Fermée (anciens statuts → 400) ; anciennes ro
 `…/supprimer` → 404 ; désactivation d'utilisateur (login refusé 401, session
 coupée, réactivation, auto-désactivation refusée) ; cloisonnement des archives
 et des versions entre cabinets.
+
+`test-courriels.js` — 31 tests : module Courriels. Comptes (création, validation,
+mot de passe jamais réaffiché en clair, test de connexion et synchro en échec gracieux
+vers un hôte fictif, activer/désactiver, cycle archiver/désarchiver) ; rédaction
+(page, validation, IA avec et sans contexte, envoi en échec SMTP gracieux) ;
+404 sur courriel inexistant ; parsing MIME (RFC 2047, quoted-printable, multipart),
+assainissement HTML, chiffrement roundtrip, liaison auto entreprise (connue/inconnue).
 
 > `test-phase1.js` correspond à l'ancien schéma (auto/habitation) et n'est plus
 > exécuté — la suite de référence est `test-ajustements.js`.

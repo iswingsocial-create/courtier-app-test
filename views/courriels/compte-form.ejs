@@ -1,0 +1,86 @@
+<%- include('../partials/haut', { titre: compte ? 'Modifier le compte' : 'Nouveau compte courriel' }) %>
+<div class="entete-page">
+  <h1>📧 <%= compte ? 'Modifier le compte' : 'Nouveau compte courriel' %></h1>
+  <div><a class="btn btn-secondaire btn-petit" href="/courriels/comptes">← Comptes</a></div>
+</div>
+<div class="carte">
+  <% if (erreurs.length) { %>
+    <div class="alerte alerte-erreur"><ul><% erreurs.forEach((e) => { %><li><%= e %></li><% }) %></ul></div>
+  <% } %>
+  <form method="post" action="<%= compte ? '/courriels/comptes/' + compte.id : '/courriels/comptes' %>">
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+    <div class="grille-2">
+      <div class="champ">
+        <label for="nom">Nom du compte *</label>
+        <input id="nom" name="nom" required value="<%= valeurs.nom || (compte ? compte.nom : '') %>" placeholder="Ex. : Courriel du cabinet">
+      </div>
+      <div class="champ">
+        <label for="adresse">Adresse courriel *</label>
+        <input id="adresse" name="adresse" type="email" required value="<%= valeurs.adresse || (compte ? compte.adresse : '') %>" placeholder="vous@cabinet.ca">
+      </div>
+    </div>
+    <div class="champ">
+      <label for="preconfig">Fournisseur</label>
+      <select id="preconfig" name="preconfig" data-preconfig-courriel data-preconfigs='<%- JSON.stringify(preconfigs).replace(/'/g, "&#39;") %>'>
+        <% Object.entries(preconfigs).forEach(([cle, p]) => { %>
+          <option value="<%= cle %>" <%= (valeurs.preconfig || 'gmail') === cle ? 'selected' : '' %>><%= p.etiquette %></option>
+        <% }) %>
+      </select>
+      <p class="petit" id="note-preconfig"></p>
+    </div>
+    <h2>Réception (IMAP)</h2>
+    <div class="grille-3">
+      <div class="champ">
+        <label for="imap_hote">Serveur IMAP *</label>
+        <input id="imap_hote" name="imap_hote" required data-champ="imap_hote" value="<%= valeurs.imap_hote || (compte ? compte.imap_hote : '') %>">
+      </div>
+      <div class="champ">
+        <label for="imap_port">Port</label>
+        <input id="imap_port" name="imap_port" type="number" data-champ="imap_port" value="<%= valeurs.imap_port || (compte ? compte.imap_port : 993) %>">
+      </div>
+      <div class="champ">
+        <label for="imap_tls">Sécurité</label>
+        <select id="imap_tls" name="imap_tls">
+          <option value="1" <%= String(valeurs.imap_tls ?? (compte ? compte.imap_tls : 1)) === '1' ? 'selected' : '' %>>TLS/SSL</option>
+          <option value="0" <%= String(valeurs.imap_tls ?? (compte ? compte.imap_tls : 1)) === '0' ? 'selected' : '' %>>Sans chiffrement</option>
+        </select>
+      </div>
+    </div>
+    <h2>Envoi (SMTP)</h2>
+    <div class="grille-3">
+      <div class="champ">
+        <label for="smtp_hote">Serveur SMTP *</label>
+        <input id="smtp_hote" name="smtp_hote" required data-champ="smtp_hote" value="<%= valeurs.smtp_hote || (compte ? compte.smtp_hote : '') %>">
+      </div>
+      <div class="champ">
+        <label for="smtp_port">Port</label>
+        <input id="smtp_port" name="smtp_port" type="number" data-champ="smtp_port" value="<%= valeurs.smtp_port || (compte ? compte.smtp_port : 587) %>">
+      </div>
+      <div class="champ">
+        <label for="smtp_tls">Sécurité</label>
+        <select id="smtp_tls" name="smtp_tls">
+          <option value="1" <%= String(valeurs.smtp_tls ?? (compte ? compte.smtp_tls : 1)) === '1' ? 'selected' : '' %>>STARTTLS/TLS</option>
+          <option value="0" <%= String(valeurs.smtp_tls ?? (compte ? compte.smtp_tls : 1)) === '0' ? 'selected' : '' %>>Sans chiffrement</option>
+        </select>
+      </div>
+    </div>
+    <h2>Authentification</h2>
+    <div class="grille-2">
+      <div class="champ">
+        <label for="utilisateur">Nom d’utilisateur *</label>
+        <input id="utilisateur" name="utilisateur" required value="<%= valeurs.utilisateur || (compte ? compte.utilisateur : '') %>" placeholder="Souvent l’adresse courriel complète">
+      </div>
+      <div class="champ">
+        <label for="mot_de_passe">Mot de passe <%= compte ? '(laisser vide pour conserver)' : '*' %></label>
+        <input id="mot_de_passe" name="mot_de_passe" type="password" <%= compte ? '' : 'required' %> autocomplete="new-password">
+        <p class="petit">Stocké chiffré (AES-256) en base.</p>
+      </div>
+    </div>
+    <div class="actions-form">
+      <button class="btn" type="submit"><%= compte ? 'Enregistrer' : 'Ajouter le compte' %></button>
+      <a class="btn btn-secondaire" href="/courriels/comptes">Annuler</a>
+    </div>
+  </form>
+</div>
+<script src="/courriels.js" defer></script>
+<%- include('../partials/bas') %>

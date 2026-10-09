@@ -1,0 +1,48 @@
+<%- include('../partials/haut', { titre: 'Comptes courriel' }) %>
+<div class="entete-page">
+  <h1>📧 Comptes courriel</h1>
+  <div>
+    <% if (voirArchives) { %><a class="btn btn-secondaire btn-petit" href="/courriels/comptes">← Actifs</a><% } else { %><a class="btn btn-secondaire btn-petit" href="/courriels/comptes?archives=1">Voir les archivés</a><% } %>
+    <a class="btn btn-petit" href="/courriels/comptes/nouveau">+ Ajouter un compte</a>
+  </div>
+</div>
+<div class="carte">
+  <p class="petit">Connectez vos boîtes (Gmail, Outlook/Microsoft 365 ou autre) en IMAP/SMTP.
+  Les mots de passe sont <strong>chiffrés</strong> en base. Un compte ne se supprime jamais — il s’archive.</p>
+  <div class="tableau-deroulant"><table>
+    <thead><tr><th>Nom</th><th>Adresse</th><th>Serveurs</th><th>Courriels</th><th>Dernière synchro</th><th>Statut</th><th></th></tr></thead>
+    <tbody>
+    <% comptes.forEach((c) => { %>
+      <tr>
+        <td><%= c.nom %></td>
+        <td><%= c.adresse %></td>
+        <td class="petit"><%= c.imap_hote %>:<%= c.imap_port %> / <%= c.smtp_hote %>:<%= c.smtp_port %></td>
+        <td><%= c.nb_courriels %></td>
+        <td class="petit"><%= c.derniere_synchro ? c.derniere_synchro.slice(0, 16).replace('T', ' ') : '—' %></td>
+        <td>
+          <% if (c.archive) { %><span class="badge badge-gris">Archivé</span>
+          <% } else if (!c.actif) { %><span class="badge badge-gris">Inactif</span>
+          <% } else { %><span class="badge badge-ok">Actif</span><% } %>
+        </td>
+        <td class="actions">
+          <% if (!c.archive) { %>
+            <a class="btn btn-petit btn-secondaire" href="/courriels/comptes/<%= c.id %>/modifier">Modifier</a>
+            <form method="post" action="/courriels/comptes/<%= c.id %>/tester" class="inline"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button class="btn btn-petit btn-secondaire" type="submit">Tester</button></form>
+            <form method="post" action="/courriels/comptes/<%= c.id %>/synchroniser" class="inline"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button class="btn btn-petit btn-secondaire" type="submit">Synchroniser</button></form>
+            <% if (c.actif) { %>
+              <form method="post" action="/courriels/comptes/<%= c.id %>/desactiver" class="inline"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button class="btn btn-petit btn-secondaire" type="submit">Désactiver</button></form>
+            <% } else { %>
+              <form method="post" action="/courriels/comptes/<%= c.id %>/activer" class="inline"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button class="btn btn-petit btn-secondaire" type="submit">Activer</button></form>
+            <% } %>
+            <form method="post" action="/courriels/comptes/<%= c.id %>/archiver" class="inline" data-confirm="Archiver ce compte ? Les courriels déjà reçus seront conservés."><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button class="btn btn-petit btn-secondaire" type="submit">Archiver</button></form>
+          <% } else { %>
+            <form method="post" action="/courriels/comptes/<%= c.id %>/desarchiver" class="inline"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button class="btn btn-petit btn-secondaire" type="submit">Désarchiver</button></form>
+          <% } %>
+        </td>
+      </tr>
+    <% }) %>
+    </tbody>
+  </table></div>
+  <% if (!comptes.length) { %><p class="petit">Aucun compte pour l’instant. Ajoutez votre premier compte pour recevoir vos courriels ici.</p><% } %>
+</div>
+<%- include('../partials/bas') %>

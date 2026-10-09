@@ -1,0 +1,53 @@
+<%- include('../partials/haut', { titre: courriel.sujet }) %>
+<div class="entete-page">
+  <h1>📧 <%= courriel.sujet %></h1>
+  <div>
+    <a class="btn btn-secondaire btn-petit" href="/courriels<%= courriel.dossier === 'envoyes' ? '/envoyes' : '' %>">← Retour</a>
+    <% if (courriel.dossier === 'reception') { %>
+      <a class="btn btn-petit" href="/courriels/rediger?reponse_id=<%= courriel.id %>">↩️ Répondre</a>
+    <% } %>
+  </div>
+</div>
+<div class="carte">
+  <dl class="fiche">
+    <dt>De</dt><dd><%= courriel.expediteur %></dd>
+    <dt>À</dt><dd><%= courriel.destinataires %></dd>
+    <% if (courriel.cc) { %><dt>Cc</dt><dd><%= courriel.cc %></dd><% } %>
+    <dt>Date</dt><dd><%= (courriel.date_courriel || courriel.cree_le || '').slice(0, 16).replace('T', ' ') %></dd>
+    <% if (courriel.compte_nom) { %><dt>Compte</dt><dd><%= courriel.compte_nom %></dd><% } %>
+    <dt>Entreprise liée</dt>
+    <dd>
+      <% if (courriel.client_raison_sociale) { %>
+        <a href="/clients/<%= courriel.client_id %>"><%= courriel.client_raison_sociale %></a>
+      <% } else { %>
+        <span class="petit">Aucune</span>
+      <% } %>
+      <form method="post" action="/courriels/<%= courriel.id %>/lier" class="inline">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+        <select name="client_id">
+          <option value="">— Choisir une entreprise —</option>
+          <% clients.forEach((cl) => { %>
+            <option value="<%= cl.id %>" <%= courriel.client_id === cl.id ? 'selected' : '' %>><%= cl.raison_sociale %><%= cl.courriel ? ' (' + cl.courriel + ')' : '' %></option>
+          <% }) %>
+        </select>
+        <button class="btn btn-petit btn-secondaire" type="submit">Lier</button>
+      </form>
+    </dd>
+  </dl>
+</div>
+<div class="carte">
+  <% if (corpsHtml) { %>
+    <div class="courriel-html"><%- corpsHtml %></div>
+  <% } else { %>
+    <pre class="courriel-texte"><%= courriel.corps_texte || '(message vide)' %></pre>
+  <% } %>
+</div>
+<div class="actions-form">
+  <% if (courriel.dossier === 'reception') { %>
+    <% if (courriel.lu) { %>
+      <form method="post" action="/courriels/<%= courriel.id %>/non-lu" class="inline"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button class="btn btn-secondaire btn-petit" type="submit">Marquer non lu</button></form>
+    <% } %>
+    <form method="post" action="/courriels/<%= courriel.id %>/archiver" class="inline" data-confirm="Archiver ce courriel ?"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button class="btn btn-secondaire btn-petit" type="submit">Archiver</button></form>
+  <% } %>
+</div>
+<%- include('../partials/bas') %>
