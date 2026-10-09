@@ -77,6 +77,7 @@ app.use('/connexion', limiteurConnexion);
 app.use('/', require('./routes/auth'));
 app.use('/admin', require('./routes/admin'));
 app.use('/clients', require('./routes/clients'));
+app.use('/assureurs', require('./routes/assureurs'));
 app.use('/polices', require('./routes/polices'));
 app.use('/reclamations', require('./routes/reclamations'));
 app.use('/taches', require('./routes/taches'));
@@ -89,6 +90,7 @@ app.use('/import', require('./routes/import'));
 app.use('/echeances', require('./routes/echeances'));
 app.use('/brouillons', require('./routes/brouillons'));
 app.use('/courriels', require('./routes/courriels'));
+app.use('/assistant', require('./routes/assistant'));
 
 // --- Synchronisation IMAP automatique (toutes les 5 minutes) --------------------------
 // Ne fait rien s'il n'y a aucun compte actif. Les erreurs sont journalisées,

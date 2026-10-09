@@ -114,7 +114,7 @@ function test(nom, condition, detail) {
   r = await req(jar, 'GET', '/clients/nouveau');
   const jetonC = csrf(r.texte);
   r = await req(jar, 'POST', '/clients', { form: {
-    _csrf: jetonC, prenom: 'Test', nom: 'Client', courriel: 'test.client@exemple.ca',
+    _csrf: jetonC, raison_sociale: 'Test Client inc.', prenom: 'Test', nom: 'Client', courriel: 'test.client@exemple.ca',
     telephone: '514-555-0000', adresse: '1 rue Test', ville: 'Laval', code_postal: 'H7N 1A1',
     langue: 'FR', notes: 'Client de test', consent_communications: 'on',
   }});
@@ -136,13 +136,18 @@ function test(nom, condition, detail) {
 
   // ---- 4. Police + protections ------------------------------------------------------------
   console.log('4. Polices');
+  // Fiche assureur (requise pour lier les polices)
+  r = await req(jar, 'GET', '/assureurs/nouveau');
+  r = await req(jar, 'POST', '/assureurs', { form: { _csrf: csrf(r.texte), nom: 'Assureur Test' } });
+  test('création assureur → 302', r.statut === 302, `${r.statut} ${r.location}`);
+  const idAssureur = (r.location || '').match(/\/assureurs\/(\d+)/)[1];
   r = await req(jar, 'GET', '/polices/nouvelle');
   const jetonP = csrf(r.texte);
   const auj = new Date(); const fmt = (d) => d.toISOString().slice(0, 10);
   const effet = new Date(auj); effet.setDate(effet.getDate() - 300);
   const ech = new Date(auj); ech.setDate(ech.getDate() + 25); // J-25
   r = await req(jar, 'POST', '/polices', { form: {
-    _csrf: jetonP, client_id: idClient, ligne: 'auto', assureur: 'Assureur Test',
+    _csrf: jetonP, client_id: idClient, ligne: 'auto', assureur_id: idAssureur,
     numero_police: 'AUT-TEST-001', date_effet: fmt(effet), date_echeance: fmt(ech),
     franchise: '500', statut: 'active', notes: '',
   }});

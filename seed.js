@@ -95,11 +95,21 @@ function semer() {
                            courriel, telephone, adresse, ville, code_postal, langue, notes, responsable_id)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `);
-    const insererPolice = bd.prepare(`
-      INSERT INTO polices (cabinet_id, client_id, ligne, assureur, numero_police, date_effet, date_echeance,
-                           franchise, statut, responsable_id)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'active', ?)
+    // Fiches assureurs de démonstration (reliées aux polices ci-dessous)
+    const insererAssureur = bd.prepare(`
+      INSERT OR IGNORE INTO assureurs (cabinet_id, nom, telephone_general, na_nom, mod_nom)
+      VALUES (?, ?, ?, ?, ?)
     `);
+    const idAssureur = (nom) => bd.prepare('SELECT id FROM assureurs WHERE cabinet_id = ? AND nom = ?').get(cab.lastInsertRowid, nom).id;
+    insererAssureur.run(cab.lastInsertRowid, 'Intact Assurance', '1-866-464-2424', 'Équipe nouvelles affaires', 'Service avenants');
+    insererAssureur.run(cab.lastInsertRowid, 'Beneva', '1-866-899-4845', 'Équipe nouvelles affaires', 'Service avenants');
+    insererAssureur.run(cab.lastInsertRowid, 'Desjardins Assurances', '1-866-838-7584', 'Équipe nouvelles affaires', 'Service avenants');
+    const insererPolice = bd.prepare(`
+      INSERT INTO polices (cabinet_id, client_id, ligne, assureur, assureur_id, numero_police, date_effet, date_echeance,
+                           franchise, statut, responsable_id)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'active', ?)
+    `);
+    const policeAssureur = (nom) => { const n = idAssureur(nom); return [nom, n]; };
     const insererProt = bd.prepare(`
       INSERT INTO police_protections (police_id, code, libelle, prime) VALUES (?, ?, ?, ?)
     `);
@@ -110,12 +120,12 @@ function semer() {
     const methot = insererEntreprise.run(cab.lastInsertRowid, 'Constructions Méthot inc.', '1161234567', 'Construction',
       'Sylvain', 'Méthot', 'Président', 'sylvain.methot@constructionsmethot.ca', '514-555-0123',
       '1200 boulevard Industriel', 'Laval', 'H7L 4B2', 'FR', 'Entrepreneur général, 25 employés.', adminId).lastInsertRowid;
-    const policeCgl = insererPolice.run(cab.lastInsertRowid, methot, 'cgl', 'Intact Assurance', 'CGL-2025-10001',
+    const policeCgl = insererPolice.run(cab.lastInsertRowid, methot, 'cgl', ...policeAssureur('Intact Assurance'), 'CGL-2025-10001',
       ajouterJours(-340), ajouterJours(25), 2500, adminId).lastInsertRowid;
     // Note : pas de PREJ → sera détectée comme protection manquante (non recommandée toutefois)
     insererProt.run(policeCgl, 'RC-GEN', libelleDe('cgl', 'RC-GEN'), 2850.00);
     insererProt.run(policeCgl, 'PROD', libelleDe('cgl', 'PROD'), 640.00);
-    const policeBiens = insererPolice.run(cab.lastInsertRowid, methot, 'biens', 'Beneva', 'BIEN-2024-20002',
+    const policeBiens = insererPolice.run(cab.lastInsertRowid, methot, 'biens', ...policeAssureur('Beneva'), 'BIEN-2024-20002',
       ajouterJours(-305), ajouterJours(60), 5000, adminId).lastInsertRowid;
     insererProt.run(policeBiens, 'BAT', libelleDe('biens', 'BAT'), 1200.00);
     insererProt.run(policeBiens, 'CONTENU', libelleDe('biens', 'CONTENU'), 840.00);
@@ -125,7 +135,7 @@ function semer() {
     const petitFour = insererEntreprise.run(cab.lastInsertRowid, 'Resto Le Petit Four inc.', '1172345678', 'Restauration',
       'Chantal', 'Dubois', 'Propriétaire', 'chantal.dubois@petitfour.ca', '418-555-0145',
       '88 rue Saint-Jean', 'Québec', 'G1R 1N4', 'FR', 'Restaurant, salle de 60 places.', adminId).lastInsertRowid;
-    const policeCglPf = insererPolice.run(cab.lastInsertRowid, petitFour, 'cgl', 'Desjardins Assurances', 'CGL-2024-30003',
+    const policeCglPf = insererPolice.run(cab.lastInsertRowid, petitFour, 'cgl', ...policeAssureur('Desjardins Assurances'), 'CGL-2024-30003',
       ajouterJours(-285), ajouterJours(80), 1000, adminId).lastInsertRowid;
     insererProt.run(policeCglPf, 'RC-GEN', libelleDe('cgl', 'RC-GEN'), 1980.00);
     insererProt.run(policeCglPf, 'PROD', libelleDe('cgl', 'PROD'), 420.00);
@@ -148,7 +158,7 @@ function semer() {
     const garage = insererEntreprise.run(cab.lastInsertRowid, 'Garage Saint-Michel inc.', '1143456789', 'Réparation automobile',
       'Karim', 'Haddad', 'Directeur', 'karim.haddad@garagesaintmichel.ca', '514-555-0177',
       '4500 boulevard Saint-Michel', 'Montréal', 'H1Z 1Z9', 'FR', 'Garage, 4 véhicules de courtoisie.', adminId).lastInsertRowid;
-    const policeFlotte = insererPolice.run(cab.lastInsertRowid, garage, 'flotte', 'Intact Assurance', 'FLT-2025-40004',
+    const policeFlotte = insererPolice.run(cab.lastInsertRowid, garage, 'flotte', ...policeAssureur('Intact Assurance'), 'FLT-2025-40004',
       ajouterJours(-245), ajouterJours(120), 1000, adminId).lastInsertRowid;
     insererProt.run(policeFlotte, 'FLT-RC', libelleDe('flotte', 'FLT-RC'), 2350.00);
     insererProt.run(policeFlotte, 'FLT-TR', libelleDe('flotte', 'FLT-TR'), 1890.00);

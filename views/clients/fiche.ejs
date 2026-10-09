@@ -16,9 +16,10 @@
   <dl class="dl">
     <dt>NEQ</dt><dd><%= client.neq || '—' %></dd>
     <dt>Secteur d’activité</dt><dd><%= client.secteur_activite || '—' %></dd>
-    <dt>Personne-contact</dt><dd><%= client.prenom %> <%= client.nom %><%= client.titre_contact ? ' (' + client.titre_contact + ')' : '' %></dd>
-    <dt>Courriel</dt><dd><%= client.courriel || '—' %></dd>
-    <dt>Téléphone</dt><dd><%= client.telephone || '—' %></dd>
+    <dt>Courriel de l’entreprise</dt><dd><%= client.courriel_entreprise || '—' %></dd>
+    <dt>Téléphone de l’entreprise</dt><dd><%= client.telephone_entreprise || '—' %></dd>
+    <dt>Chiffre d’affaires</dt><dd><%= client.chiffre_affaires != null ? Number(client.chiffre_affaires).toLocaleString('fr-CA') + ' $' : '—' %></dd>
+    <dt>Nombre d’employés</dt><dd><%= client.nb_employes != null ? client.nb_employes : '—' %></dd>
     <dt>Adresse</dt><dd><%= [client.adresse, client.ville, client.code_postal].filter(Boolean).join(', ') || '—' %></dd>
     <dt>Langue</dt><dd><%= client.langue === 'EN' ? 'Anglais' : 'Français' %></dd>
     <dt>Courtier responsable</dt><dd><%= client.responsable_nom || '—' %></dd>
@@ -33,17 +34,93 @@
   </ul>
 </div>
 
+<div class="carte" id="contacts">
+  <h3>👥 Contacts (<%= contacts.length %>)</h3>
+  <% contacts.forEach((ct) => { %>
+    <div class="ligne-contact">
+      <strong><%= ct.prenom %> <%= ct.nom %></strong>
+      <% if (ct.principal) { %><span class="badge">Principal</span><% } %>
+      <%= ct.titre ? ' — ' + ct.titre : '' %><br>
+      <span class="petit"><%= ct.courriel || '' %><%= ct.courriel && ct.telephone ? ' · ' : '' %><%= ct.telephone || '' %></span>
+      <div class="actions-ligne">
+        <details class="details-inline">
+          <summary class="btn btn-secondaire btn-petit">Modifier</summary>
+          <form method="post" action="/clients/contacts/<%= ct.id %>">
+            <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+            <div class="grille-form">
+              <div><label>Prénom *</label><input type="text" name="prenom" required value="<%= ct.prenom %>"></div>
+              <div><label>Nom *</label><input type="text" name="nom" required value="<%= ct.nom %>"></div>
+              <div><label>Titre / fonction</label><input type="text" name="titre" value="<%= ct.titre || '' %>"></div>
+              <div><label>Courriel</label><input type="email" name="courriel" value="<%= ct.courriel || '' %>"></div>
+              <div><label>Téléphone</label><input type="tel" name="telephone" value="<%= ct.telephone || '' %>"></div>
+            </div>
+            <button class="btn btn-petit" type="submit">Enregistrer</button>
+          </form>
+        </details>
+        <% if (!ct.principal) { %>
+          <form method="post" action="/clients/contacts/<%= ct.id %>/principal" style="display:inline">
+            <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+            <button class="btn btn-secondaire btn-petit" type="submit">Définir principal</button>
+          </form>
+          <form method="post" action="/clients/contacts/<%= ct.id %>/archiver" style="display:inline" data-confirm="Archiver ce contact ?">
+            <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+            <button class="btn btn-secondaire btn-petit" type="submit">Archiver</button>
+          </form>
+        <% } %>
+      </div>
+    </div>
+  <% }) %>
+  <% if (!contacts.length) { %><p class="petit">Aucun contact pour l’instant.</p><% } %>
+
+  <details>
+    <summary class="btn btn-petit">+ Ajouter un contact</summary>
+    <form method="post" action="/clients/<%= client.id %>/contacts">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+      <div class="grille-form">
+        <div><label>Prénom *</label><input type="text" name="prenom" required></div>
+        <div><label>Nom *</label><input type="text" name="nom" required></div>
+        <div><label>Titre / fonction</label><input type="text" name="titre" placeholder="ex. : contrôleur"></div>
+        <div><label>Courriel</label><input type="email" name="courriel"></div>
+        <div><label>Téléphone</label><input type="tel" name="telephone"></div>
+      </div>
+      <button class="btn btn-petit" type="submit">Ajouter</button>
+    </form>
+  </details>
+  <% if (contactsArchives.length) { %>
+    <details>
+      <summary class="petit">Contacts archivés (<%= contactsArchives.length %>)</summary>
+      <ul>
+      <% contactsArchives.forEach((ct) => { %>
+        <li><%= ct.prenom %> <%= ct.nom %>
+          <form method="post" action="/clients/contacts/<%= ct.id %>/desarchiver" style="display:inline">
+            <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+            <button class="btn btn-secondaire btn-petit" type="submit">Désarchiver</button>
+          </form>
+        </li>
+      <% }) %>
+      </ul>
+    </details>
+  <% } %>
+</div>
+
 <div class="carte">
-  <h3>📄 Polices (<%= polices.length %>)</h3>
+  <h3>📄 Polices par assureur (<%= polices.length %>)</h3>
   <% if (!polices.length) { %><p class="petit">Aucune police. <a href="/polices/nouvelle?client=<%= client.id %>">Créez-en une</a>.</p><% } else { %>
-  <div class="tableau-deroulant"><table>
-    <thead><tr><th>Numéro</th><th>Produit</th><th>Assureur</th><th>Échéance</th><th>Prime</th><th>Statut</th><th></th></tr></thead>
-    <tbody><% polices.forEach((p) => { %>
-      <tr><td><%= p.numero_police %></td><td><%= p.ligne %></td><td><%= p.assureur %></td>
-      <td><%= p.date_echeance %></td><td><%= Number(p.prime_totale).toFixed(2) %> $</td><td><%= p.statut %></td>
-      <td><a class="btn btn-petit btn-secondaire" href="/echeances/police/<%= p.id %>">Réviser</a></td></tr>
-    <% }) %></tbody>
-  </table></div><% } %>
+  <% policesParAssureur.forEach((g) => { %>
+    <h4>🏦 <%= g.nom %></h4>
+    <p class="petit">
+      📝 Nouvelle affaire : <%= g.na.nom || '—' %><%= g.na.telephone ? ' · ' + g.na.telephone : '' %><%= g.na.courriel ? ' · ' + g.na.courriel : '' %><br>
+      🔧 Modifications : <%= g.mod.nom || '—' %><%= g.mod.telephone ? ' · ' + g.mod.telephone : '' %><%= g.mod.courriel ? ' · ' + g.mod.courriel : '' %>
+    </p>
+    <div class="tableau-deroulant"><table>
+      <thead><tr><th>Numéro</th><th>Produit</th><th>Échéance</th><th>Prime</th><th>Statut</th><th></th></tr></thead>
+      <tbody><% g.polices.forEach((p) => { %>
+        <tr><td><%= p.numero_police %></td><td><%= p.ligne %></td>
+        <td><%= p.date_echeance %></td><td><%= Number(p.prime_totale).toFixed(2) %> $</td><td><%= p.statut %></td>
+        <td><a class="btn btn-petit btn-secondaire" href="/echeances/police/<%= p.id %>">Réviser</a></td></tr>
+      <% }) %></tbody>
+    </table></div>
+  <% }) %><% } %>
 </div>
 
 <div class="carte">

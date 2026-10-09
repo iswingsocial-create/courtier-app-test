@@ -35,25 +35,28 @@
         <% }) %>
       </select></div>
     <div><label for="police_id">Police liée</label>
-      <select id="police_id" name="police_id">
+      <select id="police_id" name="police_id" data-filtre-client>
         <option value="">— Aucune —</option>
         <% polices.forEach((p) => { %>
-          <option value="<%= p.id %>" <%= String(tache.police_id) === String(p.id) ? 'selected' : '' %>><%= p.numero_police %> (<%= p.raison_sociale %>)</option>
+          <option value="<%= p.id %>" data-client-id="<%= p.client_id %>" <%= String(tache.police_id) === String(p.id) ? 'selected' : '' %>><%= p.numero_police %> (<%= p.raison_sociale %>)</option>
         <% }) %>
-      </select></div>
+      </select>
+      <p class="petit">Seules les polices de l’entreprise choisie sont proposées.</p></div>
     <div><label for="reclamation_id">Réclamation liée</label>
-      <select id="reclamation_id" name="reclamation_id">
+      <select id="reclamation_id" name="reclamation_id" data-filtre-client>
         <option value="">— Aucune —</option>
         <% reclamations.forEach((r) => { %>
-          <option value="<%= r.id %>" <%= String(tache.reclamation_id) === String(r.id) ? 'selected' : '' %>>#<%= r.id %> — <%= r.raison_sociale %> (<%= r.date_sinistre %>)</option>
+          <option value="<%= r.id %>" data-client-id="<%= r.client_id %>" <%= String(tache.reclamation_id) === String(r.id) ? 'selected' : '' %>>#<%= r.id %> — <%= r.raison_sociale %> (<%= r.date_sinistre %>)</option>
         <% }) %>
-      </select></div>
+      </select>
+      <p class="petit">Seules les réclamations de l’entreprise choisie sont proposées.</p></div>
   </div>
   <label for="notes">Notes</label>
   <textarea id="notes" name="notes"><%= tache.notes || '' %></textarea>
   <div class="actions"><button class="btn" type="submit">Enregistrer</button></div>
 </form>
 </div>
+<script src="/taches.js" defer></script>
 
 <% if (tache.id) { %>
 <div class="carte">

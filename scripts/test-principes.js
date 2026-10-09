@@ -107,9 +107,14 @@ async function testerCycleArchivage(jar, nom, { liste, fiche, marque, archiver, 
   test('création entreprise → 302', r.statut === 302, r.statut);
   const idEnt = (r.location || '').match(/\/clients\/(\d+)/)[1];
 
+  // Fiche assureur (requise pour lier les polices)
+  r = await req(jar, 'GET', '/assureurs/nouveau');
+  r = await req(jar, 'POST', '/assureurs', { form: { _csrf: csrf(r.texte), nom: 'Assureur Test' } });
+  test('création assureur → 302', r.statut === 302, `${r.statut} ${r.location}`);
+  const idAssureur = (r.location || '').match(/\/assureurs\/(\d+)/)[1];
   r = await req(jar, 'GET', '/polices/nouvelle?client=' + idEnt);
   r = await req(jar, 'POST', '/polices', { form: {
-    _csrf: csrf(r.texte), client_id: idEnt, ligne: 'cgl', assureur: 'Assureur Test',
+    _csrf: csrf(r.texte), client_id: idEnt, ligne: 'cgl', assureur_id: idAssureur,
     numero_police: 'POL-ARCH-1', date_effet: dansJours(-300), date_echeance: dansJours(60),
     franchise: '5000', statut: 'active', notes: 'Police de test', responsable_id: '1',
   }});
@@ -138,7 +143,7 @@ async function testerCycleArchivage(jar, nom, { liste, fiche, marque, archiver, 
   // Modification → v2
   r = await req(jar, 'GET', `/polices/${idPolice}/modifier`);
   r = await req(jar, 'POST', `/polices/${idPolice}`, { form: {
-    _csrf: csrf(r.texte), client_id: idEnt, ligne: 'cgl', assureur: 'Assureur Test',
+    _csrf: csrf(r.texte), client_id: idEnt, ligne: 'cgl', assureur_id: idAssureur,
     numero_police: 'POL-ARCH-1', date_effet: dansJours(-300), date_echeance: dansJours(60),
     franchise: '7500', statut: 'active', notes: 'Police de test — avenant', responsable_id: '1',
   }});

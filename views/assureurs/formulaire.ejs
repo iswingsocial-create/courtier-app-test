@@ -1,0 +1,51 @@
+<%- include('../partials/haut', { titre: assureur && assureur.id ? 'Modifier l’assureur' : 'Nouvel assureur' }) %>
+<div class="entete-page">
+  <h1><%= assureur && assureur.id ? '✏️ Modifier l’assureur' : '➕ Nouvel assureur' %></h1>
+  <a class="btn btn-secondaire btn-petit" href="<%= assureur && assureur.id ? '/assureurs/' + assureur.id : '/assureurs' %>">← Retour</a>
+</div>
+
+<% if (erreur) { %><div class="alerte alerte-erreur"><%= erreur %></div><% } %>
+
+<div class="carte">
+<form method="post" action="<%= assureur && assureur.id ? '/assureurs/' + assureur.id : '/assureurs' %>">
+  <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+  <h3>Assureur</h3>
+  <div class="grille-form">
+    <div><label for="nom">Nom *</label><input type="text" id="nom" name="nom" required value="<%= assureur ? (assureur.nom || '') : '' %>"></div>
+    <div><label for="site_web">Site web</label><input type="url" id="site_web" name="site_web" placeholder="https://" value="<%= assureur && assureur.site_web ? assureur.site_web : '' %>"></div>
+    <div><label for="telephone_general">Téléphone général</label><input type="tel" id="telephone_general" name="telephone_general" value="<%= assureur && assureur.telephone_general ? assureur.telephone_general : '' %>"></div>
+    <div><label for="courriel_general">Courriel général</label><input type="email" id="courriel_general" name="courriel_general" value="<%= assureur && assureur.courriel_general ? assureur.courriel_general : '' %>"></div>
+  </div>
+
+  <h3>📝 Nouvelle affaire</h3>
+  <div class="grille-form">
+    <div><label for="na_nom">Nom du contact</label><input type="text" id="na_nom" name="na_nom" value="<%= assureur && assureur.na_nom ? assureur.na_nom : '' %>"></div>
+    <div><label for="na_telephone">Téléphone</label><input type="tel" id="na_telephone" name="na_telephone" value="<%= assureur && assureur.na_telephone ? assureur.na_telephone : '' %>"></div>
+    <div><label for="na_courriel">Courriel</label><input type="email" id="na_courriel" name="na_courriel" value="<%= assureur && assureur.na_courriel ? assureur.na_courriel : '' %>"></div>
+  </div>
+
+  <h3>🔧 Modifications / avenants</h3>
+  <div class="grille-form">
+    <div><label for="mod_nom">Nom du contact</label><input type="text" id="mod_nom" name="mod_nom" value="<%= assureur && assureur.mod_nom ? assureur.mod_nom : '' %>"></div>
+    <div><label for="mod_telephone">Téléphone</label><input type="tel" id="mod_telephone" name="mod_telephone" value="<%= assureur && assureur.mod_telephone ? assureur.mod_telephone : '' %>"></div>
+    <div><label for="mod_courriel">Courriel</label><input type="email" id="mod_courriel" name="mod_courriel" value="<%= assureur && assureur.mod_courriel ? assureur.mod_courriel : '' %>"></div>
+  </div>
+
+  <label for="notes">Notes</label>
+  <textarea id="notes" name="notes"><%= assureur && assureur.notes ? assureur.notes : '' %></textarea>
+
+  <div class="actions"><button class="btn" type="submit">Enregistrer</button></div>
+</form>
+</div>
+
+<% if (assureur && assureur.id) { %>
+<div class="carte">
+  <h3>Archiver</h3>
+  <p class="petit">Archiver cet assureur le retire des listes actives sans l’effacer. Impossible s’il reste des polices actives reliées.</p>
+  <form method="post" action="/assureurs/<%= assureur.id %>/<%= assureur.archive ? 'desarchiver' : 'archiver' %>" data-confirm="<%= assureur.archive ? 'Désarchiver cet assureur ?' : 'Archiver cet assureur ?' %>">
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+    <button class="btn btn-secondaire btn-petit" type="submit"><%= assureur.archive ? 'Désarchiver' : 'Archiver' %></button>
+  </form>
+</div>
+<% } %>
+<%- include('../partials/bas') %>

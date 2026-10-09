@@ -23,7 +23,14 @@
           <option value="<%= l %>" <%= police.ligne === l ? 'selected' : '' %>><%= NOMS_LIGNES[l] %></option>
         <% }) %>
       </select></div>
-    <div><label for="assureur">Assureur *</label><input type="text" id="assureur" name="assureur" required value="<%= police.assureur || '' %>"></div>
+    <div><label for="assureur_id">Assureur *</label>
+      <select id="assureur_id" name="assureur_id" required>
+        <option value="">— Choisir —</option>
+        <% assureurs.forEach((a) => { %>
+          <option value="<%= a.id %>" <%= String(police.assureur_id) === String(a.id) ? 'selected' : '' %>><%= a.nom %></option>
+        <% }) %>
+      </select>
+      <p class="petit">La fiche assureur se crée dans <a href="/assureurs/nouveau">Assureurs</a>.</p></div>
     <div><label for="numero_police">Numéro de police *</label><input type="text" id="numero_police" name="numero_police" required value="<%= police.numero_police || '' %>"></div>
     <div><label for="date_effet">Date d’effet *</label><input type="date" id="date_effet" name="date_effet" required value="<%= police.date_effet || '' %>"></div>
     <div><label for="date_echeance">Date d’échéance *</label><input type="date" id="date_echeance" name="date_echeance" required value="<%= police.date_echeance || '' %>"></div>

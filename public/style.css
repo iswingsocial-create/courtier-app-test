@@ -105,3 +105,20 @@ footer { text-align: center; color: var(--texte-doux); font-size: .85rem; paddin
 .marge-haut { margin-top: 8px; }
 .nombre-vert { color: var(--succes); }
 .nombre-rouge { color: var(--danger); }
+
+/* Contacts multiples (2026-10-09) */
+.ligne-contact { padding: 10px 0; border-bottom: 1px solid var(--bordure); }
+.ligne-contact:last-of-type { border-bottom: none; }
+.actions-ligne { margin-top: 6px; display: flex; gap: 8px; flex-wrap: wrap; align-items: flex-start; }
+.details-inline summary { cursor: pointer; list-style: none; }
+.details-inline[open] { width: 100%; }
+
+/* Assistant IA — chat (2026-10-09) */
+.chat-carte { max-width: 760px; }
+.chat-messages { display: flex; flex-direction: column; gap: 10px; max-height: 55vh; overflow-y: auto; padding: 6px 2px; }
+.chat-bulle { max-width: 85%; padding: 10px 14px; border-radius: 14px; }
+.chat-utilisateur { align-self: flex-end; background: var(--primaire); color: #fff; }
+.chat-assistant { align-self: flex-start; background: var(--fond); border: 1px solid var(--bordure); }
+.pre-ligne { white-space: pre-line; }
+.chat-form { display: flex; gap: 8px; margin-top: 12px; }
+.chat-form input[type="text"] { flex: 1; }

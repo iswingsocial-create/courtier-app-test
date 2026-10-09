@@ -14,6 +14,10 @@
     <div><label for="raison_sociale">Raison sociale *</label><input type="text" id="raison_sociale" name="raison_sociale" required value="<%= client ? (client.raison_sociale || '') : '' %>"></div>
     <div><label for="neq">NEQ (10 chiffres)</label><input type="text" id="neq" name="neq" maxlength="10" value="<%= client && client.neq ? client.neq : '' %>"></div>
     <div><label for="secteur_activite">Secteur d’activité</label><input type="text" id="secteur_activite" name="secteur_activite" value="<%= client && client.secteur_activite ? client.secteur_activite : '' %>"></div>
+    <div><label for="courriel_entreprise">Courriel de l’entreprise</label><input type="email" id="courriel_entreprise" name="courriel_entreprise" value="<%= client && client.courriel_entreprise ? client.courriel_entreprise : '' %>"></div>
+    <div><label for="telephone_entreprise">Téléphone de l’entreprise</label><input type="tel" id="telephone_entreprise" name="telephone_entreprise" value="<%= client && client.telephone_entreprise ? client.telephone_entreprise : '' %>"></div>
+    <div><label for="chiffre_affaires">Chiffre d’affaires ($)</label><input type="number" id="chiffre_affaires" name="chiffre_affaires" min="0" step="0.01" value="<%= client && client.chiffre_affaires != null ? client.chiffre_affaires : '' %>"></div>
+    <div><label for="nb_employes">Nombre d’employés</label><input type="number" id="nb_employes" name="nb_employes" min="0" step="1" value="<%= client && client.nb_employes != null ? client.nb_employes : '' %>"></div>
     <div><label for="responsable_id">Courtier responsable</label>
       <select id="responsable_id" name="responsable_id">
         <option value="">— Aucun —</option>
@@ -23,13 +27,14 @@
       </select></div>
   </div>
 
-  <h3>Personne-contact</h3>
+  <h3>Contact principal</h3>
+  <p class="petit">Les autres contacts se gèrent dans la fiche de l’entreprise, section « Contacts ».</p>
   <div class="grille-form">
     <div><label for="prenom">Prénom *</label><input type="text" id="prenom" name="prenom" required value="<%= client ? client.prenom : '' %>"></div>
     <div><label for="nom">Nom *</label><input type="text" id="nom" name="nom" required value="<%= client ? client.nom : '' %>"></div>
     <div><label for="titre_contact">Titre / fonction</label><input type="text" id="titre_contact" name="titre_contact" placeholder="ex. : président, contrôleur" value="<%= client && client.titre_contact ? client.titre_contact : '' %>"></div>
-    <div><label for="courriel">Courriel</label><input type="email" id="courriel" name="courriel" value="<%= client && client.courriel ? client.courriel : '' %>"></div>
-    <div><label for="telephone">Téléphone</label><input type="tel" id="telephone" name="telephone" value="<%= client && client.telephone ? client.telephone : '' %>"></div>
+    <div><label for="courriel">Courriel du contact</label><input type="email" id="courriel" name="courriel" value="<%= client && client.courriel ? client.courriel : '' %>"></div>
+    <div><label for="telephone">Téléphone du contact</label><input type="tel" id="telephone" name="telephone" value="<%= client && client.telephone ? client.telephone : '' %>"></div>
     <div><label for="adresse">Adresse</label><input type="text" id="adresse" name="adresse" value="<%= client && client.adresse ? client.adresse : '' %>"></div>
     <div><label for="ville">Ville</label><input type="text" id="ville" name="ville" value="<%= client && client.ville ? client.ville : '' %>"></div>
     <div><label for="code_postal">Code postal</label><input type="text" id="code_postal" name="code_postal" value="<%= client && client.code_postal ? client.code_postal : '' %>"></div>

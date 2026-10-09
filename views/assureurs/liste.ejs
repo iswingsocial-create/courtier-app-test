@@ -1,0 +1,33 @@
+<%- include('../partials/haut', { titre: 'Assureurs' }) %>
+<div class="entete-page">
+  <h1>🏦 Assureurs</h1>
+  <div class="actions" style="margin-top:0">
+    <a class="btn btn-petit" href="/assureurs/nouveau">+ Assureur</a>
+    <% if (voirArchives) { %><a class="btn btn-secondaire btn-petit" href="/assureurs">Voir actifs</a><% } else { %><a class="btn btn-secondaire btn-petit" href="/assureurs?archives=1">Voir archivés</a><% } %>
+  </div>
+</div>
+
+<div class="carte">
+  <% if (!assureurs.length) { %><p class="petit">Aucun assureur pour l’instant.</p><% } else { %>
+  <div class="tableau-deroulant"><table>
+    <thead><tr><th>Nom</th><th>Nouvelle affaire</th><th>Modifications / avenants</th><th>Polices actives</th><th></th></tr></thead>
+    <tbody><% assureurs.forEach((a) => { %>
+      <tr>
+        <td><strong><%= a.nom %></strong><% if (a.site_web) { %><br><span class="petit"><%= a.site_web %></span><% } %></td>
+        <td class="petit">
+          <%= a.na_nom || '—' %>
+          <% if (a.na_telephone) { %><br><%= a.na_telephone %><% } %>
+          <% if (a.na_courriel) { %><br><%= a.na_courriel %><% } %>
+        </td>
+        <td class="petit">
+          <%= a.mod_nom || '—' %>
+          <% if (a.mod_telephone) { %><br><%= a.mod_telephone %><% } %>
+          <% if (a.mod_courriel) { %><br><%= a.mod_courriel %><% } %>
+        </td>
+        <td><%= a.nb_polices %></td>
+        <td><a class="btn btn-petit btn-secondaire" href="/assureurs/<%= a.id %>">Fiche</a></td>
+      </tr>
+    <% }) %></tbody>
+  </table></div><% } %>
+</div>
+<%- include('../partials/bas') %>

@@ -31,8 +31,8 @@ function listesCabinet(cabinetId) {
   return {
     utilisateurs: bd.prepare('SELECT id, nom FROM users WHERE cabinet_id = ? ORDER BY nom').all(cabinetId),
     entreprises: bd.prepare('SELECT id, raison_sociale FROM clients WHERE cabinet_id = ? AND archive = 0 ORDER BY raison_sociale').all(cabinetId),
-    polices: bd.prepare('SELECT p.id, p.numero_police, c.raison_sociale FROM polices p JOIN clients c ON c.id = p.client_id WHERE p.cabinet_id = ? ORDER BY p.numero_police').all(cabinetId),
-    reclamations: bd.prepare(`SELECT r.id, c.raison_sociale, r.date_sinistre FROM reclamations r JOIN clients c ON c.id = r.client_id WHERE r.cabinet_id = ? AND r.archive = 0 AND r.statut = 'ouverte' ORDER BY r.date_sinistre DESC`).all(cabinetId),
+    polices: bd.prepare('SELECT p.id, p.numero_police, p.client_id, c.raison_sociale FROM polices p JOIN clients c ON c.id = p.client_id WHERE p.cabinet_id = ? ORDER BY p.numero_police').all(cabinetId),
+    reclamations: bd.prepare(`SELECT r.id, r.client_id, c.raison_sociale, r.date_sinistre FROM reclamations r JOIN clients c ON c.id = r.client_id WHERE r.cabinet_id = ? AND r.archive = 0 AND r.statut = 'ouverte' ORDER BY r.date_sinistre DESC`).all(cabinetId),
   };
 }
 
@@ -48,6 +48,16 @@ function lienValide(table, id, cabinetId) {
   if (!id) return null;
   const ligne = bd.prepare(`SELECT id FROM ${table} WHERE id = ? AND cabinet_id = ?`).get(Number(id), cabinetId);
   return ligne ? ligne.id : 'invalide';
+}
+
+// Vérifie qu'une police / réclamation appartient bien à l'entreprise choisie.
+// Les infos d'un assuré restent dans son dossier : pas de liens croisés.
+function appartientEntreprise(table, id, entrepriseId, cabinetId) {
+  if (!id || !entrepriseId) return true;
+  const sql = table === 'polices'
+    ? 'SELECT 1 FROM polices WHERE id = ? AND client_id = ? AND cabinet_id = ?'
+    : 'SELECT 1 FROM reclamations WHERE id = ? AND client_id = ? AND cabinet_id = ?';
+  return !!bd.prepare(sql).get(Number(id), Number(entrepriseId), cabinetId);
 }
 
 // --- Liste ----------------------------------------------------------------------------------
@@ -90,6 +100,14 @@ router.post('/', (req, res) => {
   if (policeId === 'invalide') erreurs.push('Police invalide.');
   const reclamationId = lienValide('reclamations', req.body.reclamation_id, res.locals.cabinetId);
   if (reclamationId === 'invalide') erreurs.push('Réclamation invalide.');
+  if (policeId && policeId !== 'invalide' && entrepriseId && entrepriseId !== 'invalide'
+      && !appartientEntreprise('polices', policeId, entrepriseId, res.locals.cabinetId)) {
+    erreurs.push('La police choisie n’appartient pas à l’entreprise sélectionnée.');
+  }
+  if (reclamationId && reclamationId !== 'invalide' && entrepriseId && entrepriseId !== 'invalide'
+      && !appartientEntreprise('reclamations', reclamationId, entrepriseId, res.locals.cabinetId)) {
+    erreurs.push('La réclamation choisie n’appartient pas à l’entreprise sélectionnée.');
+  }
   if (erreurs.length) {
     return res.status(400).render('taches/formulaire', {
       erreur: erreurs.join(' '), tache: req.body, ...listesCabinet(res.locals.cabinetId), STATUTS, NOMS_TACHE,
@@ -124,6 +142,14 @@ router.post('/:id', (req, res) => {
   if (policeId === 'invalide') erreurs.push('Police invalide.');
   const reclamationId = lienValide('reclamations', req.body.reclamation_id, res.locals.cabinetId);
   if (reclamationId === 'invalide') erreurs.push('Réclamation invalide.');
+  if (policeId && policeId !== 'invalide' && entrepriseId && entrepriseId !== 'invalide'
+      && !appartientEntreprise('polices', policeId, entrepriseId, res.locals.cabinetId)) {
+    erreurs.push('La police choisie n’appartient pas à l’entreprise sélectionnée.');
+  }
+  if (reclamationId && reclamationId !== 'invalide' && entrepriseId && entrepriseId !== 'invalide'
+      && !appartientEntreprise('reclamations', reclamationId, entrepriseId, res.locals.cabinetId)) {
+    erreurs.push('La réclamation choisie n’appartient pas à l’entreprise sélectionnée.');
+  }
   if (erreurs.length) {
     return res.status(400).render('taches/formulaire', {
       erreur: erreurs.join(' '), tache: { ...tache, ...req.body }, ...listesCabinet(res.locals.cabinetId), STATUTS, NOMS_TACHE,

@@ -117,11 +117,16 @@ function dansJours(n) { const d = new Date(); d.setDate(d.getDate() + n); return
 
   // ---- 3. Police produit commercial -----------------------------------------------
   console.log('3. Polices commerciales');
+  // Fiche assureur (requise pour lier les polices)
+  r = await req(jar, 'GET', '/assureurs/nouveau');
+  r = await req(jar, 'POST', '/assureurs', { form: { _csrf: csrf(r.texte), nom: 'Assureur Test' } });
+  test('création assureur → 302', r.statut === 302, `${r.statut} ${r.location}`);
+  const idAssureur = (r.location || '').match(/\/assureurs\/(\d+)/)[1];
   r = await req(jar, 'GET', '/polices/nouvelle');
   jeton = csrf(r.texte);
   test('formulaire propose les produits commerciaux', /Responsabilité civile \(CGL\)/.test(r.texte) && /Cyberrisques/.test(r.texte) && /Cautionnement/.test(r.texte));
   r = await req(jar, 'POST', '/polices', { form: {
-    _csrf: jeton, client_id: idEnt, ligne: 'cgl', assureur: 'Assureur Test',
+    _csrf: jeton, client_id: idEnt, ligne: 'cgl', assureur_id: idAssureur,
     numero_police: 'CGL-TEST-001', date_effet: dansJours(-300), date_echeance: dansJours(25),
     franchise: '2500', statut: 'active', notes: '', responsable_id: '1',
   }});
@@ -140,7 +145,7 @@ function dansJours(n) { const d = new Date(); d.setDate(d.getDate() + n); return
   // Produit invalide (ancien 'auto') refusé
   r = await req(jar, 'GET', '/polices/nouvelle');
   r = await req(jar, 'POST', '/polices', { form: {
-    _csrf: csrf(r.texte), client_id: idEnt, ligne: 'auto', assureur: 'X',
+    _csrf: csrf(r.texte), client_id: idEnt, ligne: 'auto', assureur_id: idAssureur,
     numero_police: 'AUTO-X', date_effet: dansJours(-10), date_echeance: dansJours(300),
     franchise: '0', statut: 'active',
   }});

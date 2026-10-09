@@ -1,0 +1,45 @@
+<%- include('../partials/haut', { titre: assureur.nom }) %>
+<div class="entete-page">
+  <h1>🏦 <%= assureur.nom %></h1>
+  <div class="actions" style="margin-top:0">
+    <a class="btn btn-secondaire btn-petit" href="/assureurs/<%= assureur.id %>/modifier">Modifier</a>
+    <a class="btn btn-secondaire btn-petit" href="/assureurs">← Assureurs</a>
+  </div>
+</div>
+
+<div class="carte">
+  <dl class="dl">
+    <% if (assureur.site_web) { %><dt>Site web</dt><dd><a href="<%= assureur.site_web %>" target="_blank" rel="noopener"><%= assureur.site_web %></a></dd><% } %>
+    <dt>Téléphone général</dt><dd><%= assureur.telephone_general || '—' %></dd>
+    <dt>Courriel général</dt><dd><%= assureur.courriel_general || '—' %></dd>
+    <% if (assureur.notes) { %><dt>Notes</dt><dd><%= assureur.notes %></dd><% } %>
+  </dl>
+</div>
+
+<div class="carte">
+  <h3>📝 Nouvelle affaire</h3>
+  <dl class="dl">
+    <dt>Contact</dt><dd><%= assureur.na_nom || '—' %></dd>
+    <dt>Téléphone</dt><dd><%= assureur.na_telephone || '—' %></dd>
+    <dt>Courriel</dt><dd><%= assureur.na_courriel || '—' %></dd>
+  </dl>
+  <h3>🔧 Modifications / avenants</h3>
+  <dl class="dl">
+    <dt>Contact</dt><dd><%= assureur.mod_nom || '—' %></dd>
+    <dt>Téléphone</dt><dd><%= assureur.mod_telephone || '—' %></dd>
+    <dt>Courriel</dt><dd><%= assureur.mod_courriel || '—' %></dd>
+  </dl>
+</div>
+
+<div class="carte">
+  <h3>📄 Polices actives reliées (<%= polices.length %>)</h3>
+  <% if (!polices.length) { %><p class="petit">Aucune police active reliée à cet assureur.</p><% } else { %>
+  <div class="tableau-deroulant"><table>
+    <thead><tr><th>Numéro</th><th>Entreprise</th><th>Échéance</th><th></th></tr></thead>
+    <tbody><% polices.forEach((p) => { %>
+      <tr><td><%= p.numero_police %></td><td><%= p.raison_sociale %></td><td><%= p.date_echeance %></td>
+      <td><a class="btn btn-petit btn-secondaire" href="/echeances/police/<%= p.id %>">Réviser</a></td></tr>
+    <% }) %></tbody>
+  </table></div><% } %>
+</div>
+<%- include('../partials/bas') %>

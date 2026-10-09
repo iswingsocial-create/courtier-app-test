@@ -46,9 +46,30 @@ function validerClient(corps) {
   if (!corps.prenom || corps.prenom.trim().length < 1) erreurs.push('Le prénom de la personne-contact est requis.');
   if (!corps.nom || corps.nom.trim().length < 1) erreurs.push('Le nom de la personne-contact est requis.');
   if (!estCourrielValide(corps.courriel)) erreurs.push('Courriel invalide.');
+  if (!estCourrielValide(corps.courriel_entreprise)) erreurs.push('Courriel de l’entreprise invalide.');
   if (!['FR', 'EN'].includes(corps.langue)) erreurs.push('Langue invalide.');
   if (corps.neq && !/^\d{10}$/.test(corps.neq.replace(/\s/g, ''))) erreurs.push('NEQ invalide (10 chiffres attendus).');
+  if (corps.chiffre_affaires && isNaN(Number(corps.chiffre_affaires))) erreurs.push('Chiffre d’affaires invalide.');
+  if (corps.nb_employes && (!/^\d+$/.test(corps.nb_employes) || Number(corps.nb_employes) < 0)) erreurs.push('Nombre d’employés invalide.');
   return erreurs;
+}
+
+// Synchronise la fiche du contact principal avec les champs du formulaire.
+function synchroniserContactPrincipal(cabinetId, clientId, c) {
+  const existant = bd.prepare(
+    'SELECT id FROM contacts WHERE client_id = ? AND principal = 1 AND archive = 0'
+  ).get(clientId);
+  if (existant) {
+    bd.prepare(`
+      UPDATE contacts SET prenom = ?, nom = ?, titre = ?, courriel = ?, telephone = ?
+      WHERE id = ?
+    `).run(c.prenom, c.nom, c.titre_contact, c.courriel, c.telephone, existant.id);
+  } else {
+    bd.prepare(`
+      INSERT INTO contacts (cabinet_id, client_id, prenom, nom, titre, courriel, telephone, principal)
+      VALUES (?, ?, ?, ?, ?, ?, ?, 1)
+    `).run(cabinetId, clientId, c.prenom, c.nom, c.titre_contact, c.courriel, c.telephone);
+  }
 }
 
 function utilisateursCabinet(cabinetId) {
@@ -89,20 +110,25 @@ router.get('/nouveau', (req, res) => {
 });
 
 function corpsClient(corps) {
+  const v = (x) => (x == null ? '' : String(x)).trim();
   return {
-    raison_sociale: corps.raison_sociale.trim(),
-    neq: (corps.neq || '').replace(/\s/g, '') || null,
-    secteur_activite: corps.secteur_activite.trim() || null,
-    prenom: corps.prenom.trim(),
-    nom: corps.nom.trim(),
-    titre_contact: corps.titre_contact.trim() || null,
-    courriel: corps.courriel.trim() || null,
-    telephone: corps.telephone.trim() || null,
-    adresse: corps.adresse.trim() || null,
-    ville: corps.ville.trim() || null,
-    code_postal: corps.code_postal.trim() || null,
+    raison_sociale: v(corps.raison_sociale),
+    neq: v(corps.neq).replace(/\s/g, '') || null,
+    secteur_activite: v(corps.secteur_activite) || null,
+    courriel_entreprise: v(corps.courriel_entreprise) || null,
+    telephone_entreprise: v(corps.telephone_entreprise) || null,
+    chiffre_affaires: v(corps.chiffre_affaires) ? Number(corps.chiffre_affaires) : null,
+    nb_employes: v(corps.nb_employes) ? Number(corps.nb_employes) : null,
+    prenom: v(corps.prenom),
+    nom: v(corps.nom),
+    titre_contact: v(corps.titre_contact) || null,
+    courriel: v(corps.courriel) || null,
+    telephone: v(corps.telephone) || null,
+    adresse: v(corps.adresse) || null,
+    ville: v(corps.ville) || null,
+    code_postal: v(corps.code_postal) || null,
     langue: corps.langue,
-    notes: corps.notes.trim() || null,
+    notes: v(corps.notes) || null,
   };
 }
 
@@ -115,11 +141,16 @@ router.post('/', (req, res) => {
   }
   const c = corpsClient(req.body);
   const r = bd.prepare(`
-    INSERT INTO clients (cabinet_id, raison_sociale, neq, secteur_activite, prenom, nom, titre_contact,
+    INSERT INTO clients (cabinet_id, raison_sociale, neq, secteur_activite,
+                         courriel_entreprise, telephone_entreprise, chiffre_affaires, nb_employes,
+                         prenom, nom, titre_contact,
                          courriel, telephone, adresse, ville, code_postal, langue, notes, responsable_id)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-  `).run(res.locals.cabinetId, c.raison_sociale, c.neq, c.secteur_activite, c.prenom, c.nom, c.titre_contact,
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `).run(res.locals.cabinetId, c.raison_sociale, c.neq, c.secteur_activite,
+    c.courriel_entreprise, c.telephone_entreprise, c.chiffre_affaires, c.nb_employes,
+    c.prenom, c.nom, c.titre_contact,
     c.courriel, c.telephone, c.adresse, c.ville, c.code_postal, c.langue, c.notes, resp);
+  synchroniserContactPrincipal(res.locals.cabinetId, r.lastInsertRowid, c);
   enregistrerConsentements(r.lastInsertRowid, req.body);
   journal(res.locals.cabinetId, req.utilisateur.id, 'entreprise_creee', `Entreprise ${c.raison_sociale} (id ${r.lastInsertRowid})`);
   res.redirect('/clients/' + r.lastInsertRowid);
@@ -143,13 +174,19 @@ router.post('/:id', (req, res) => {
   }
   const c = corpsClient(req.body);
   bd.prepare(`
-    UPDATE clients SET raison_sociale = ?, neq = ?, secteur_activite = ?, prenom = ?, nom = ?, titre_contact = ?,
+    UPDATE clients SET raison_sociale = ?, neq = ?, secteur_activite = ?,
+                       courriel_entreprise = ?, telephone_entreprise = ?,
+                       chiffre_affaires = ?, nb_employes = ?,
+                       prenom = ?, nom = ?, titre_contact = ?,
                        courriel = ?, telephone = ?, adresse = ?, ville = ?, code_postal = ?, langue = ?, notes = ?,
                        responsable_id = ?
     WHERE id = ? AND cabinet_id = ?
-  `).run(c.raison_sociale, c.neq, c.secteur_activite, c.prenom, c.nom, c.titre_contact,
+  `).run(c.raison_sociale, c.neq, c.secteur_activite,
+    c.courriel_entreprise, c.telephone_entreprise, c.chiffre_affaires, c.nb_employes,
+    c.prenom, c.nom, c.titre_contact,
     c.courriel, c.telephone, c.adresse, c.ville, c.code_postal, c.langue, c.notes, resp,
     client.id, res.locals.cabinetId);
+  synchroniserContactPrincipal(res.locals.cabinetId, client.id, c);
   enregistrerConsentements(client.id, req.body);
   journal(res.locals.cabinetId, req.utilisateur.id, 'entreprise_modifiee', `Entreprise id ${client.id}`);
   res.redirect('/clients/' + client.id);
@@ -169,6 +206,95 @@ router.post('/:id/desarchiver', (req, res) => {
   bd.prepare('UPDATE clients SET archive = 0 WHERE id = ? AND cabinet_id = ?').run(client.id, res.locals.cabinetId);
   journal(res.locals.cabinetId, req.utilisateur.id, 'entreprise_desarchivee', `Entreprise ${client.raison_sociale} (id ${client.id})`);
   res.redirect('/clients/' + client.id);
+});
+
+// --- Contacts multiples ----------------------------------------------------------------------------
+function clientDuCabinet(id, cabinetId) {
+  return bd.prepare('SELECT * FROM clients WHERE id = ? AND cabinet_id = ?').get(id, cabinetId);
+}
+
+function contactDuCabinet(id, cabinetId) {
+  return bd.prepare('SELECT * FROM contacts WHERE id = ? AND cabinet_id = ?').get(id, cabinetId);
+}
+
+function validerContact(corps) {
+  const erreurs = [];
+  if (!corps.prenom || corps.prenom.trim().length < 1) erreurs.push('Le prénom du contact est requis.');
+  if (!corps.nom || corps.nom.trim().length < 1) erreurs.push('Le nom du contact est requis.');
+  if (!estCourrielValide(corps.courriel)) erreurs.push('Courriel du contact invalide.');
+  return erreurs;
+}
+
+router.post('/:id/contacts', (req, res) => {
+  const client = clientDuCabinet(req.params.id, res.locals.cabinetId);
+  if (!client) return res.status(404).render('erreur', { titre: 'Introuvable', message: 'Entreprise introuvable.' });
+  const erreurs = validerContact(req.body);
+  if (erreurs.length) {
+    return res.status(400).render('erreur', { titre: 'Contact invalide', message: erreurs.join(' ') });
+  }
+  const r = bd.prepare(`
+    INSERT INTO contacts (cabinet_id, client_id, prenom, nom, titre, courriel, telephone)
+    VALUES (?, ?, ?, ?, ?, ?, ?)
+  `).run(res.locals.cabinetId, client.id,
+    req.body.prenom.trim(), req.body.nom.trim(),
+    (req.body.titre || '').trim() || null,
+    (req.body.courriel || '').trim() || null,
+    (req.body.telephone || '').trim() || null);
+  journal(res.locals.cabinetId, req.utilisateur.id, 'contact_ajoute',
+    `Contact ${req.body.prenom.trim()} ${req.body.nom.trim()} ajouté à ${client.raison_sociale}`);
+  res.redirect('/clients/' + client.id + '#contacts');
+});
+
+router.post('/contacts/:contactId', (req, res) => {
+  const contact = contactDuCabinet(req.params.contactId, res.locals.cabinetId);
+  if (!contact) return res.status(404).render('erreur', { titre: 'Introuvable', message: 'Contact introuvable.' });
+  const erreurs = validerContact(req.body);
+  if (erreurs.length) {
+    return res.status(400).render('erreur', { titre: 'Contact invalide', message: erreurs.join(' ') });
+  }
+  bd.prepare(`
+    UPDATE contacts SET prenom = ?, nom = ?, titre = ?, courriel = ?, telephone = ?
+    WHERE id = ?
+  `).run(req.body.prenom.trim(), req.body.nom.trim(),
+    (req.body.titre || '').trim() || null,
+    (req.body.courriel || '').trim() || null,
+    (req.body.telephone || '').trim() || null,
+    contact.id);
+  journal(res.locals.cabinetId, req.utilisateur.id, 'contact_modifie', `Contact id ${contact.id}`);
+  res.redirect('/clients/' + contact.client_id + '#contacts');
+});
+
+router.post('/contacts/:contactId/principal', (req, res) => {
+  const contact = contactDuCabinet(req.params.contactId, res.locals.cabinetId);
+  if (!contact) return res.status(404).render('erreur', { titre: 'Introuvable', message: 'Contact introuvable.' });
+  const changer = bd.transaction(() => {
+    bd.prepare('UPDATE contacts SET principal = 0 WHERE client_id = ?').run(contact.client_id);
+    bd.prepare('UPDATE contacts SET principal = 1 WHERE id = ?').run(contact.id);
+    bd.prepare('UPDATE clients SET prenom = ?, nom = ?, titre_contact = ?, courriel = ?, telephone = ? WHERE id = ?')
+      .run(contact.prenom, contact.nom, contact.titre, contact.courriel, contact.telephone, contact.client_id);
+  });
+  changer();
+  journal(res.locals.cabinetId, req.utilisateur.id, 'contact_principal', `Contact id ${contact.id} défini comme principal`);
+  res.redirect('/clients/' + contact.client_id + '#contacts');
+});
+
+router.post('/contacts/:contactId/archiver', (req, res) => {
+  const contact = contactDuCabinet(req.params.contactId, res.locals.cabinetId);
+  if (!contact) return res.status(404).render('erreur', { titre: 'Introuvable', message: 'Contact introuvable.' });
+  if (contact.principal) {
+    return res.status(400).render('erreur', { titre: 'Action refusée', message: 'Le contact principal ne peut pas être archivé. Désignez d’abord un autre contact principal.' });
+  }
+  bd.prepare('UPDATE contacts SET archive = 1 WHERE id = ?').run(contact.id);
+  journal(res.locals.cabinetId, req.utilisateur.id, 'contact_archive', `Contact id ${contact.id}`);
+  res.redirect('/clients/' + contact.client_id + '#contacts');
+});
+
+router.post('/contacts/:contactId/desarchiver', (req, res) => {
+  const contact = contactDuCabinet(req.params.contactId, res.locals.cabinetId);
+  if (!contact) return res.status(404).render('erreur', { titre: 'Introuvable', message: 'Contact introuvable.' });
+  bd.prepare('UPDATE contacts SET archive = 0 WHERE id = ?').run(contact.id);
+  journal(res.locals.cabinetId, req.utilisateur.id, 'contact_desarchive', `Contact id ${contact.id}`);
+  res.redirect('/clients/' + contact.client_id + '#contacts');
 });
 
 // --- Fiche client ------------------------------------------------------------------------------
@@ -203,9 +329,29 @@ router.get('/:id', (req, res) => {
   const documents = bd.prepare('SELECT * FROM documents WHERE client_id = ? AND archive = 0 ORDER BY televerse_le DESC').all(client.id);
   const documentsArchives = bd.prepare('SELECT * FROM documents WHERE client_id = ? AND archive = 1 ORDER BY televerse_le DESC').all(client.id);
   const polices = bd.prepare(`
-    SELECT p.*, (SELECT COALESCE(SUM(prime), 0) FROM police_protections pp WHERE pp.police_id = p.id) AS prime_totale
-    FROM polices p WHERE p.client_id = ? ORDER BY p.date_echeance
+    SELECT p.*, a.nom AS assureur_nom,
+           a.na_nom, a.na_telephone, a.na_courriel,
+           a.mod_nom, a.mod_telephone, a.mod_courriel,
+           (SELECT COALESCE(SUM(prime), 0) FROM police_protections pp WHERE pp.police_id = p.id) AS prime_totale
+    FROM polices p LEFT JOIN assureurs a ON a.id = p.assureur_id
+    WHERE p.client_id = ? ORDER BY COALESCE(a.nom, p.assureur, ''), p.date_echeance
   `).all(client.id);
+  // Grouper les polices par assureur pour afficher les bons contacts
+  const policesParAssureur = [];
+  const groupes = new Map();
+  for (const p of polices) {
+    const cle = p.assureur_nom || p.assureur || 'Assureur non précisé';
+    if (!groupes.has(cle)) {
+      groupes.set(cle, {
+        nom: cle,
+        na: { nom: p.na_nom, telephone: p.na_telephone, courriel: p.na_courriel },
+        mod: { nom: p.mod_nom, telephone: p.mod_telephone, courriel: p.mod_courriel },
+        polices: [],
+      });
+      policesParAssureur.push(groupes.get(cle));
+    }
+    groupes.get(cle).polices.push(p);
+  }
   const reclamations = bd.prepare(`
     SELECT r.*, p.numero_police FROM reclamations r
     LEFT JOIN polices p ON p.id = r.police_id
@@ -216,8 +362,14 @@ router.get('/:id', (req, res) => {
     LEFT JOIN users u ON u.id = t.assigne_a
     WHERE t.entreprise_id = ? AND t.statut != 'terminee' ORDER BY t.date_echeance
   `).all(client.id);
+  const contacts = bd.prepare(`
+    SELECT * FROM contacts WHERE client_id = ? AND archive = 0 ORDER BY principal DESC, nom, prenom
+  `).all(client.id);
+  const contactsArchives = bd.prepare(`
+    SELECT * FROM contacts WHERE client_id = ? AND archive = 1 ORDER BY nom, prenom
+  `).all(client.id);
   const { NOMS_RECLAMATION } = require('./reclamations');
-  res.render('clients/fiche', { client, consentements, TYPES_CONSENTEMENT, documents, documentsArchives, polices, reclamations, taches, NOMS_RECLAMATION, mAJout: req.query.doc === 'ok' });
+  res.render('clients/fiche', { client, consentements, TYPES_CONSENTEMENT, documents, documentsArchives, polices, policesParAssureur, reclamations, taches, contacts, contactsArchives, NOMS_RECLAMATION, mAJout: req.query.doc === 'ok' });
 });
 
 // --- Documents joints ------------------------------------------------------------------------------

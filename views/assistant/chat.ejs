@@ -1,0 +1,26 @@
+<%- include('../partials/haut', { titre: 'Assistant IA' }) %>
+<div class="entete-page">
+  <h1>🤖 Assistant IA</h1>
+  <span class="petit">Moteur : <%= moteur === 'cohere' ? 'Cohere (Canada)' : 'local (tests)' %></span>
+</div>
+
+<div class="carte chat-carte">
+  <div id="chat-messages" class="chat-messages" aria-live="polite">
+    <% if (!messages.length) { %>
+      <div class="chat-bulle chat-assistant pre-ligne"><%= aide %></div>
+    <% } %>
+    <% messages.forEach((m) => { %>
+      <div class="chat-bulle pre-ligne <%= m.role === 'utilisateur' ? 'chat-utilisateur' : 'chat-assistant' %>"><%= m.contenu %></div>
+    <% }) %>
+  </div>
+  <form id="chat-form" class="chat-form">
+    <input type="hidden" id="csrf" value="<%= csrfToken %>">
+    <button type="button" id="btn-micro" class="btn btn-secondaire" title="Dicter (voix)">🎤</button>
+    <input type="text" id="chat-input" placeholder="Écrivez ou dictez votre demande…" autocomplete="off" maxlength="2000">
+    <button type="submit" class="btn">Envoyer</button>
+  </form>
+  <p class="petit" id="micro-etat"></p>
+</div>
+
+<script src="/assistant.js" defer></script>
+<%- include('../partials/bas') %>

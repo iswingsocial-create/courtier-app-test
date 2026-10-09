@@ -31,7 +31,7 @@ const NOMS_STATUTS = { active: 'Active', a_renouveler: 'À renouveler', resiliee
 function validerPolice(corps) {
   const erreurs = [];
   if (!LIGNES.includes(corps.ligne)) erreurs.push('Produit invalide.');
-  if (!corps.assureur || corps.assureur.trim().length < 2) erreurs.push('L’assureur est requis.');
+  if (!corps.assureur_id || !assureurDuCabinetValide(corps.assureur_id)) erreurs.push('L’assureur est requis (choisissez une fiche assureur).');
   if (!corps.numero_police || corps.numero_police.trim().length < 2) erreurs.push('Le numéro de police est requis.');
   if (!estDateValide(corps.date_effet)) erreurs.push('Date d’effet invalide (AAAA-MM-JJ).');
   if (!estDateValide(corps.date_echeance)) erreurs.push('Date d’échéance invalide (AAAA-MM-JJ).');
@@ -55,6 +55,22 @@ function policeDuCabinet(id, cabinetId) {
 
 function utilisateursCabinet(cabinetId) {
   return bd.prepare("SELECT id, nom, role FROM users WHERE cabinet_id = ? ORDER BY nom").all(cabinetId);
+}
+
+function assureursCabinet(cabinetId) {
+  return bd.prepare('SELECT id, nom FROM assureurs WHERE cabinet_id = ? AND archive = 0 ORDER BY nom').all(cabinetId);
+}
+
+// Contexte de validation (le cabinetId de la requête en cours).
+let _cabinetValidation = null;
+function assureurDuCabinetValide(id) {
+  if (!id || !_cabinetValidation) return false;
+  return !!bd.prepare('SELECT id FROM assureurs WHERE id = ? AND cabinet_id = ? AND archive = 0')
+    .get(Number(id), _cabinetValidation);
+}
+function nomAssureur(id, cabinetId) {
+  const a = bd.prepare('SELECT nom FROM assureurs WHERE id = ? AND cabinet_id = ?').get(Number(id), cabinetId);
+  return a ? a.nom : null;
 }
 
 // --- Versioning (règle d'or) ---------------------------------------------------------------------------
@@ -107,11 +123,14 @@ router.get('/nouvelle', (req, res) => {
   const clients = bd.prepare('SELECT id, raison_sociale, prenom, nom FROM clients WHERE cabinet_id = ? AND archive = 0 ORDER BY raison_sociale').all(res.locals.cabinetId);
   const preselection = req.query.client ? Number(req.query.client) : null;
   const utilisateurs = utilisateursCabinet(res.locals.cabinetId);
-  res.render('polices/formulaire', { erreur: null, police: { client_id: preselection }, clients, utilisateurs, NOMS_LIGNES, NOMS_STATUTS, LIGNES });
+  res.render('polices/formulaire', { erreur: null, police: { client_id: preselection }, clients, utilisateurs, assureurs: assureursCabinet(res.locals.cabinetId), NOMS_LIGNES, NOMS_STATUTS, LIGNES });
 });
 
 router.post('/', (req, res) => {
+  _cabinetValidation = res.locals.cabinetId;
   const erreurs = validerPolice(req.body);
+  const nomAss = nomAssureur(req.body.assureur_id, res.locals.cabinetId);
+  if (req.body.assureur_id && !nomAss) erreurs.push('Assureur invalide.');
   const client = bd.prepare('SELECT id FROM clients WHERE id = ? AND cabinet_id = ?').get(Number(req.body.client_id), res.locals.cabinetId);
   if (!client) erreurs.push('Entreprise invalide.');
   const responsableId = req.body.responsable_id ? Number(req.body.responsable_id) : null;
@@ -121,13 +140,13 @@ router.post('/', (req, res) => {
   if (erreurs.length) {
     const clients = bd.prepare('SELECT id, raison_sociale, prenom, nom FROM clients WHERE cabinet_id = ? AND archive = 0 ORDER BY raison_sociale').all(res.locals.cabinetId);
     const utilisateurs = utilisateursCabinet(res.locals.cabinetId);
-    return res.status(400).render('polices/formulaire', { erreur: erreurs.join(' '), police: req.body, clients, utilisateurs, NOMS_LIGNES, NOMS_STATUTS, LIGNES });
+    return res.status(400).render('polices/formulaire', { erreur: erreurs.join(' '), police: req.body, clients, utilisateurs, assureurs: assureursCabinet(res.locals.cabinetId), NOMS_LIGNES, NOMS_STATUTS, LIGNES });
   }
   try {
     const r = bd.prepare(`
-      INSERT INTO polices (cabinet_id, client_id, ligne, assureur, numero_police, date_effet, date_echeance, franchise, statut, notes, responsable_id)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `).run(res.locals.cabinetId, client.id, req.body.ligne, req.body.assureur.trim(),
+      INSERT INTO polices (cabinet_id, client_id, ligne, assureur, assureur_id, numero_police, date_effet, date_echeance, franchise, statut, notes, responsable_id)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `).run(res.locals.cabinetId, client.id, req.body.ligne, nomAss, Number(req.body.assureur_id),
       req.body.numero_police.trim(), req.body.date_effet, req.body.date_echeance,
       Number(req.body.franchise || 0), req.body.statut, (req.body.notes || '').trim() || null, responsableId);
     creerVersionPolice(r.lastInsertRowid, req.utilisateur.id); // v1
@@ -137,7 +156,7 @@ router.post('/', (req, res) => {
     const clients = bd.prepare('SELECT id, raison_sociale, prenom, nom FROM clients WHERE cabinet_id = ? AND archive = 0 ORDER BY raison_sociale').all(res.locals.cabinetId);
     const utilisateurs = utilisateursCabinet(res.locals.cabinetId);
     const msg = e.message.includes('UNIQUE') ? 'Ce numéro de police existe déjà dans votre cabinet.' : 'Erreur d’enregistrement.';
-    res.status(400).render('polices/formulaire', { erreur: msg, police: req.body, clients, utilisateurs, NOMS_LIGNES, NOMS_STATUTS, LIGNES });
+    res.status(400).render('polices/formulaire', { erreur: msg, police: req.body, clients, utilisateurs, assureurs: assureursCabinet(res.locals.cabinetId), NOMS_LIGNES, NOMS_STATUTS, LIGNES });
   }
 });
 
@@ -147,13 +166,16 @@ router.get('/:id/modifier', (req, res) => {
   if (!police) return res.status(404).render('erreur', { titre: 'Introuvable', message: 'Police introuvable.' });
   const clients = bd.prepare('SELECT id, raison_sociale, prenom, nom FROM clients WHERE cabinet_id = ? AND archive = 0 ORDER BY raison_sociale').all(res.locals.cabinetId);
   const utilisateurs = utilisateursCabinet(res.locals.cabinetId);
-  res.render('polices/formulaire', { erreur: null, police, clients, utilisateurs, NOMS_LIGNES, NOMS_STATUTS, LIGNES });
+  res.render('polices/formulaire', { erreur: null, police, clients, utilisateurs, assureurs: assureursCabinet(res.locals.cabinetId), NOMS_LIGNES, NOMS_STATUTS, LIGNES });
 });
 
 router.post('/:id', (req, res) => {
   const police = policeDuCabinet(req.params.id, res.locals.cabinetId);
   if (!police) return res.status(404).render('erreur', { titre: 'Introuvable', message: 'Police introuvable.' });
+  _cabinetValidation = res.locals.cabinetId;
   const erreurs = validerPolice(req.body);
+  const nomAss = nomAssureur(req.body.assureur_id, res.locals.cabinetId);
+  if (req.body.assureur_id && !nomAss) erreurs.push('Assureur invalide.');
   const responsableId = req.body.responsable_id ? Number(req.body.responsable_id) : null;
   if (responsableId && !bd.prepare('SELECT id FROM users WHERE id = ? AND cabinet_id = ?').get(responsableId, res.locals.cabinetId)) {
     erreurs.push('Courtier responsable invalide.');
@@ -161,13 +183,13 @@ router.post('/:id', (req, res) => {
   if (erreurs.length) {
     const clients = bd.prepare('SELECT id, raison_sociale, prenom, nom FROM clients WHERE cabinet_id = ? AND archive = 0 ORDER BY raison_sociale').all(res.locals.cabinetId);
     const utilisateurs = utilisateursCabinet(res.locals.cabinetId);
-    return res.status(400).render('polices/formulaire', { erreur: erreurs.join(' '), police: { ...police, ...req.body }, clients, utilisateurs, NOMS_LIGNES, NOMS_STATUTS, LIGNES });
+    return res.status(400).render('polices/formulaire', { erreur: erreurs.join(' '), police: { ...police, ...req.body }, clients, utilisateurs, assureurs: assureursCabinet(res.locals.cabinetId), NOMS_LIGNES, NOMS_STATUTS, LIGNES });
   }
   bd.prepare(`
-    UPDATE polices SET ligne = ?, assureur = ?, numero_police = ?, date_effet = ?, date_echeance = ?,
+    UPDATE polices SET ligne = ?, assureur = ?, assureur_id = ?, numero_police = ?, date_effet = ?, date_echeance = ?,
                        franchise = ?, statut = ?, notes = ?, responsable_id = ?
     WHERE id = ? AND cabinet_id = ?
-  `).run(req.body.ligne, req.body.assureur.trim(), req.body.numero_police.trim(),
+  `).run(req.body.ligne, nomAss, Number(req.body.assureur_id), req.body.numero_police.trim(),
     req.body.date_effet, req.body.date_echeance, Number(req.body.franchise || 0),
     req.body.statut, (req.body.notes || '').trim() || null, responsableId, police.id, res.locals.cabinetId);
   creerVersionPolice(police.id, req.utilisateur.id); // nouvelle version (avenant)
