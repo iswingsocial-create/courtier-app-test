@@ -1,0 +1,41 @@
+<%- include('../partials/haut', { titre: 'Réclamations' }) %>
+<div class="entete-page">
+  <h1>🧾 Réclamations</h1>
+  <div>
+    <% if (voirArchives) { %><a class="btn btn-secondaire btn-petit" href="/reclamations">← Actifs</a><% } else { %><a class="btn btn-secondaire btn-petit" href="/reclamations?archives=1">Voir les archivés</a><% } %>
+    <a class="btn btn-petit" href="/reclamations/nouvelle">+ Nouvelle réclamation</a>
+  </div>
+</div>
+
+<div class="carte">
+  <form method="get" action="/reclamations" class="grille-form">
+    <div><label for="statut">Statut</label>
+      <select id="statut" name="statut" data-autosubmit>
+        <option value="">Tous</option>
+        <% STATUTS.forEach((s) => { %>
+          <option value="<%= s %>" <%= statut === s ? 'selected' : '' %>><%= NOMS_RECLAMATION[s] %></option>
+        <% }) %>
+      </select></div>
+  </form>
+</div>
+
+<div class="carte"><div class="tableau-deroulant"><table>
+  <thead><tr><th>Sinistre</th><th>Entreprise</th><th>Police</th><th>N° réclamation</th><th>Statut</th><th>Montant réclamé</th><th>Responsable</th><th></th></tr></thead>
+  <tbody>
+  <% reclamations.forEach((r) => { %>
+    <tr>
+      <td><%= r.date_sinistre %></td>
+      <td><a href="/clients/<%= r.client_id %>"><%= r.entreprise %></a></td>
+      <td><%= r.numero_police || '—' %></td>
+      <td><%= r.numero_reclamation || '—' %></td>
+      <td><span class="badge badge-gris"><%= NOMS_RECLAMATION[r.statut] %></span></td>
+      <td><%= r.montant_reclame != null ? Number(r.montant_reclame).toFixed(2) + ' $' : '—' %></td>
+      <td><%= r.responsable_nom || '—' %></td>
+      <td><a class="btn btn-petit btn-secondaire" href="/reclamations/<%= r.id %>">Ouvrir</a></td>
+    </tr>
+  <% }) %>
+  </tbody>
+</table></div>
+<% if (!reclamations.length) { %><p class="petit">Aucune réclamation.</p><% } %>
+</div>
+<%- include('../partials/bas') %>

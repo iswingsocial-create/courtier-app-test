@@ -1,0 +1,109 @@
+<%- include('../partials/haut', { titre: client.raison_sociale }) %>
+<div class="entete-page">
+  <h1>🏢 <%= client.raison_sociale %></h1>
+  <div class="actions" style="margin-top:0">
+    <a class="btn btn-secondaire btn-petit" href="/clients/<%= client.id %>/modifier">Modifier</a>
+    <a class="btn btn-secondaire btn-petit" href="/polices/nouvelle?client=<%= client.id %>">+ Police</a>
+    <a class="btn btn-secondaire btn-petit" href="/reclamations/nouvelle?client=<%= client.id %>">+ Réclamation</a>
+    <a class="btn btn-secondaire btn-petit" href="/taches/nouvelle?entreprise=<%= client.id %>">+ Tâche</a>
+    <a class="btn btn-secondaire btn-petit" href="/clients">← Entreprises</a>
+  </div>
+</div>
+
+<% if (mAJout) { %><div class="alerte alerte-succes">Document téléversé.</div><% } %>
+
+<div class="carte">
+  <dl class="dl">
+    <dt>NEQ</dt><dd><%= client.neq || '—' %></dd>
+    <dt>Secteur d’activité</dt><dd><%= client.secteur_activite || '—' %></dd>
+    <dt>Personne-contact</dt><dd><%= client.prenom %> <%= client.nom %><%= client.titre_contact ? ' (' + client.titre_contact + ')' : '' %></dd>
+    <dt>Courriel</dt><dd><%= client.courriel || '—' %></dd>
+    <dt>Téléphone</dt><dd><%= client.telephone || '—' %></dd>
+    <dt>Adresse</dt><dd><%= [client.adresse, client.ville, client.code_postal].filter(Boolean).join(', ') || '—' %></dd>
+    <dt>Langue</dt><dd><%= client.langue === 'EN' ? 'Anglais' : 'Français' %></dd>
+    <dt>Courtier responsable</dt><dd><%= client.responsable_nom || '—' %></dd>
+    <% if (client.notes) { %><dt>Notes</dt><dd><%= client.notes %></dd><% } %>
+  </dl>
+  <h3>Consentements — Loi 25</h3>
+  <ul>
+  <% TYPES_CONSENTEMENT.forEach((t) => { const c = consentements[t.type]; %>
+    <li><%= c && c.accepte ? '✅' : '❌' %> <%= t.libelle %>
+      <% if (c && c.accepte && c.date_consentement) { %><span class="petit">(le <%= c.date_consentement %>)</span><% } %></li>
+  <% }) %>
+  </ul>
+</div>
+
+<div class="carte">
+  <h3>📄 Polices (<%= polices.length %>)</h3>
+  <% if (!polices.length) { %><p class="petit">Aucune police. <a href="/polices/nouvelle?client=<%= client.id %>">Créez-en une</a>.</p><% } else { %>
+  <div class="tableau-deroulant"><table>
+    <thead><tr><th>Numéro</th><th>Produit</th><th>Assureur</th><th>Échéance</th><th>Prime</th><th>Statut</th><th></th></tr></thead>
+    <tbody><% polices.forEach((p) => { %>
+      <tr><td><%= p.numero_police %></td><td><%= p.ligne %></td><td><%= p.assureur %></td>
+      <td><%= p.date_echeance %></td><td><%= Number(p.prime_totale).toFixed(2) %> $</td><td><%= p.statut %></td>
+      <td><a class="btn btn-petit btn-secondaire" href="/echeances/police/<%= p.id %>">Réviser</a></td></tr>
+    <% }) %></tbody>
+  </table></div><% } %>
+</div>
+
+<div class="carte">
+  <h3>🧾 Réclamations (<%= reclamations.length %>)</h3>
+  <% if (!reclamations.length) { %><p class="petit">Aucune réclamation.</p><% } else { %>
+  <div class="tableau-deroulant"><table>
+    <thead><tr><th>Sinistre</th><th>Police</th><th>Statut</th><th>Montant réclamé</th><th></th></tr></thead>
+    <tbody><% reclamations.forEach((r) => { %>
+      <tr><td><%= r.date_sinistre %></td><td><%= r.numero_police || '—' %></td>
+      <td><span class="badge badge-gris"><%= NOMS_RECLAMATION[r.statut] %></span></td>
+      <td><%= r.montant_reclame != null ? Number(r.montant_reclame).toFixed(2) + ' $' : '—' %></td>
+      <td><a class="btn btn-petit btn-secondaire" href="/reclamations/<%= r.id %>">Ouvrir</a></td></tr>
+    <% }) %></tbody>
+  </table></div><% } %>
+</div>
+
+<div class="carte">
+  <h3>📌 Tâches en cours (<%= taches.length %>)</h3>
+  <% if (!taches.length) { %><p class="petit">Aucune tâche en cours.</p><% } else { %>
+  <ul><% taches.forEach((t) => { %>
+    <li><strong><%= t.titre %></strong>
+      <span class="petit">(<%= t.date_echeance || 'sans échéance' %><%= t.assigne_nom ? ' · ' + t.assigne_nom : '' %>)</span></li>
+  <% }) %></ul><% } %>
+</div>
+
+<div class="carte">
+  <h3>📎 Documents</h3>
+  <form method="post" action="/clients/<%= client.id %>/documents" enctype="multipart/form-data">
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+    <label for="doc">Ajouter un document (PDF, image, Word, Excel — max 10 Mo)</label>
+    <input type="file" id="doc" name="document" required>
+    <div class="actions"><button class="btn btn-petit" type="submit">Téléverser</button></div>
+  </form>
+  <% if (documents.length) { %>
+  <ul><% documents.forEach((d) => { %>
+    <li><a href="/clients/documents/<%= d.id %>"><%= d.nom_origine %></a>
+      <span class="petit">(<%= Math.round(d.taille / 1024) %> Ko)</span>
+      <form method="post" action="/clients/documents/<%= d.id %>/archiver" class="inline" data-confirm="Archiver ce document ?">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+        <button class="lien" type="submit">archiver</button>
+      </form></li>
+  <% }) %></ul>
+  <% } %>
+  <% if (documentsArchives.length) { %>
+  <h4 class="petit">Documents archivés</h4>
+  <ul><% documentsArchives.forEach((d) => { %>
+    <li><span class="petit"><%= d.nom_origine %></span>
+      <form method="post" action="/clients/documents/<%= d.id %>/desarchiver" class="inline" data-confirm="Désarchiver ce document ?">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+        <button class="lien" type="submit">désarchiver</button>
+      </form></li>
+  <% }) %></ul>
+  <% } %>
+</div>
+
+<div class="carte">
+  <h3>Archiver</h3>
+  <p class="petit">Archiver cette entreprise la retire des listes actives sans effacer son historique (polices, réclamations, documents). Vous pouvez la désarchiver en tout temps.</p>
+  <form method="post" action="/clients/<%= client.id %>/<%= client.archive ? 'desarchiver' : 'archiver' %>" data-confirm="<%= client.archive ? 'Désarchiver cette entreprise ?' : 'Archiver cette entreprise ?' %>">    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+    <button class="btn btn-secondaire btn-petit" type="submit"><%= client.archive ? 'Désarchiver l’entreprise' : 'Archiver l’entreprise' %></button>
+  </form>
+</div>
+<%- include('../partials/bas') %>

@@ -1,0 +1,44 @@
+<%- include('../partials/haut', { titre: 'Nouveau lead' }) %>
+<div class="entete-page">
+  <h1>🎯 Nouveau lead</h1>
+  <a class="btn btn-secondaire btn-petit" href="/leads">← Leads</a>
+</div>
+
+<% if (erreur) { %><div class="alerte alerte-erreur"><%= erreur %></div><% } %>
+
+<div class="carte">
+  <form method="post" action="/leads" class="grille-form">
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+    <div><label for="nom">Nom du contact *</label>
+      <input type="text" id="nom" name="nom" required maxlength="120" value="<%= lead.nom || '' %>"></div>
+    <div><label for="entreprise">Entreprise</label>
+      <input type="text" id="entreprise" name="entreprise" maxlength="160" value="<%= lead.entreprise || '' %>"></div>
+    <div><label for="courriel">Courriel</label>
+      <input type="email" id="courriel" name="courriel" maxlength="160" value="<%= lead.courriel || '' %>"></div>
+    <div><label for="telephone">Téléphone</label>
+      <input type="tel" id="telephone" name="telephone" maxlength="40" value="<%= lead.telephone || '' %>"></div>
+    <div><label for="source">Source</label>
+      <select id="source" name="source">
+        <% SOURCES.forEach((s) => { %><option value="<%= s %>" <%= (lead.source || 'autre') === s ? 'selected' : '' %>><%= NOMS_SOURCES[s] %></option><% }) %>
+      </select></div>
+    <div><label for="campagne">Campagne</label>
+      <input type="text" id="campagne" name="campagne" maxlength="120" value="<%= lead.campagne || '' %>" placeholder="Ex. : promo-printemps-2026"></div>
+    <div><label for="statut">Statut</label>
+      <select id="statut" name="statut">
+        <% STATUTS.forEach((s) => { %><option value="<%= s %>" <%= (lead.statut || 'nouveau') === s ? 'selected' : '' %>><%= NOMS_STATUTS_LEAD[s] %></option><% }) %>
+      </select></div>
+    <div><label for="responsable_id">Responsable</label>
+      <select id="responsable_id" name="responsable_id">
+        <option value="">— Aucun —</option>
+        <% utilisateurs.forEach((u) => { %><option value="<%= u.id %>" <%= String(lead.responsable_id || '') === String(u.id) ? 'selected' : '' %>><%= u.nom %></option><% }) %>
+      </select></div>
+    <div><label for="date_rappel">Rappel le</label>
+      <input type="date" id="date_rappel" name="date_rappel" value="<%= lead.date_rappel || '' %>"></div>
+    <div><label for="besoin">Besoin exprimé</label>
+      <textarea id="besoin" name="besoin" rows="2"><%= lead.besoin || '' %></textarea></div>
+    <div><label for="notes">Notes</label>
+      <textarea id="notes" name="notes" rows="2"><%= lead.notes || '' %></textarea></div>
+    <div class="actions"><button class="btn" type="submit">Créer le lead</button></div>
+  </form>
+</div>
+<%- include('../partials/bas') %>

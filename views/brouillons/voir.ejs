@@ -1,0 +1,37 @@
+<%- include('../partials/haut', { titre: 'Brouillon' }) %>
+<div class="entete-page">
+  <h1>✉️ Brouillon</h1>
+  <a class="btn btn-secondaire btn-petit" href="/brouillons">← Brouillons</a>
+</div>
+
+<div class="carte">
+  <dl class="dl">
+    <dt>Type</dt><dd><%= brouillon.type === 'relance' ? 'Relance de facture' : 'Renouvellement' %></dd>
+    <dt>Entreprise</dt><dd><%= brouillon.client_raison_sociale || '—' %></dd>
+    <% if (brouillon.numero_police) { %><dt>Police</dt><dd><%= brouillon.numero_police %> (<%= brouillon.ligne %>)</dd><% } %>
+    <% if (brouillon.numero_facture) { %><dt>Facture</dt><dd><%= brouillon.numero_facture %></dd><% } %>
+    <dt>Statut</dt><dd><span class="badge <%= brouillon.statut === 'valide' ? 'badge-ok' : 'badge-gris' %>"><%= brouillon.statut %></span></dd>
+  </dl>
+  <h3>Sujet</h3>
+  <p><strong><%= brouillon.sujet %></strong></p>
+  <h3>Contenu</h3>
+  <div class="brouillon-contenu"><%= brouillon.contenu %></div>
+  <% if (brouillon.statut === 'brouillon') { %>
+    <form method="post" action="/brouillons/<%= brouillon.id %>/valider">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+      <div class="actions"><button class="btn" type="submit">✅ Valider ce brouillon</button></div>
+    </form>
+  <% } else { %>
+    <div class="alerte alerte-succes">Ce brouillon a été validé. Copiez-le dans votre courriel pour l’envoyer à l’assuré.</div>
+  <% } %>
+</div>
+
+<div class="carte">
+  <h3>Archiver</h3>
+  <p class="petit">Archiver ce brouillon le retire de la liste active sans l’effacer. Vous pouvez le désarchiver en tout temps.</p>
+  <form method="post" action="/brouillons/<%= brouillon.id %>/<%= brouillon.archive ? 'desarchiver' : 'archiver' %>" data-confirm="<%= brouillon.archive ? 'Désarchiver ce brouillon ?' : 'Archiver ce brouillon ?' %>">
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+    <button class="btn btn-secondaire btn-petit" type="submit"><%= brouillon.archive ? 'Désarchiver' : 'Archiver' %></button>
+  </form>
+</div>
+<%- include('../partials/bas') %>

@@ -1,0 +1,61 @@
+<%- include('../partials/haut', { titre: 'Campagne : ' + campagne.nom }) %>
+<div class="entete-page">
+  <h1>📣 <%= campagne.nom %></h1>
+  <div>
+    <span class="badge badge-gris"><%= NOMS_STATUTS_CAMPAGNE[campagne.statut] %></span>
+    <a class="btn btn-secondaire btn-petit" href="/campagnes">← Campagnes</a>
+  </div>
+</div>
+
+<div class="grille-stats">
+  <div class="stat"><div class="nombre"><%= consentis.length + exclus.length %></div><div class="etiquette">Entreprises ciblées (secteur)</div></div>
+  <div class="stat"><div class="nombre nombre-vert"><%= consentis.length %></div><div class="etiquette">Consentis (destinataires)</div></div>
+  <div class="stat"><div class="nombre nombre-rouge"><%= exclus.length %></div><div class="etiquette">Exclus (sans consentement)</div></div>
+</div>
+
+<div class="carte">
+  <h3>Secteurs ciblés</h3>
+  <p><%= campagne.secteurs.join(', ') %></p>
+  <h3>Objet</h3>
+  <p><strong><%= campagne.objet %></strong></p>
+  <h3>Contenu (avec mention de désinscription LCAP)</h3>
+  <div class="brouillon-contenu"><%= contenuFinal %></div>
+  <div class="actions">
+    <% if (campagne.statut === 'brouillon') { %>
+    <form method="post" action="/campagnes/<%= campagne.id %>/prete" class="inline">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+      <button class="btn btn-petit" type="submit">Marquer comme prête</button>
+    </form>
+    <% } %>
+    <a class="btn btn-petit btn-secondaire" href="/campagnes/<%= campagne.id %>/export">⬇ Exporter la liste (CSV)</a>
+    <form method="post" action="/campagnes/<%= campagne.id %>/<%= campagne.archive ? 'desarchiver' : 'archiver' %>" class="inline" data-confirm="<%= campagne.archive ? 'Désarchiver cette campagne ?' : 'Archiver cette campagne ?' %>">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+      <button class="btn btn-petit btn-secondaire" type="submit"><%= campagne.archive ? 'Désarchiver' : 'Archiver' %></button>
+    </form>
+  </div>
+  <p class="petit">Aucun envoi automatique : exportez la liste et envoyez depuis votre outil de courriel. L'envoi intégré (SMTP) viendra au déploiement.</p>
+</div>
+
+<div class="carte">
+  <h3>Destinataires consentis (<%= consentis.length %>)</h3>
+  <div class="tableau-deroulant"><table>
+    <thead><tr><th>Entreprise</th><th>Secteur</th><th>Courriel</th><th>Téléphone</th></tr></thead>
+    <tbody>
+    <% consentis.forEach((d) => { %>
+      <tr><td><a href="/clients/<%= d.id %>"><%= d.raison_sociale %></a></td><td><%= d.secteur_activite %></td><td><%= d.courriel || '—' %></td><td><%= d.telephone || '—' %></td></tr>
+    <% }) %>
+    </tbody>
+  </table></div>
+  <% if (!consentis.length) { %><p class="petit">Aucun destinataire consenti pour ces secteurs.</p><% } %>
+</div>
+
+<% if (exclus.length) { %>
+<div class="carte">
+  <h3>Exclus — sans consentement marketing (<%= exclus.length %>)</h3>
+  <p class="petit">Ces entreprises correspondent aux secteurs mais n'ont pas consenti au marketing : elles sont exclues automatiquement (LCAP).</p>
+  <ul class="petit">
+  <% exclus.forEach((d) => { %><li><%= d.raison_sociale %> (<%= d.secteur_activite %>)</li><% }) %>
+  </ul>
+</div>
+<% } %>
+<%- include('../partials/bas') %>

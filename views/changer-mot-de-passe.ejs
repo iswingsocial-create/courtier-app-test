@@ -1,0 +1,20 @@
+<%- include('partials/haut', { titre: 'Changer le mot de passe', etroit: true }) %>
+<div class="carte">
+  <h2>🔑 Changer le mot de passe</h2>
+  <% if (premier) { %>
+    <div class="alerte alerte-avert">⚠️ Pour votre sécurité, vous devez changer ce mot de passe temporaire avant de continuer.</div>
+  <% } %>
+  <% if (erreur) { %><div class="alerte alerte-erreur"><%= erreur %></div><% } %>
+  <form method="post" action="/mot-de-passe">
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+    <label for="actuel">Mot de passe actuel</label>
+    <input type="password" id="actuel" name="actuel" required autocomplete="current-password">
+    <label for="nouveau">Nouveau mot de passe</label>
+    <input type="password" id="nouveau" name="nouveau" required autocomplete="new-password">
+    <p class="petit">Au moins 10 caractères, avec une majuscule, une minuscule et un chiffre.</p>
+    <label for="confirmation">Confirmer le nouveau mot de passe</label>
+    <input type="password" id="confirmation" name="confirmation" required autocomplete="new-password">
+    <div class="actions"><button class="btn" type="submit">Changer</button></div>
+  </form>
+</div>
+<%- include('partials/bas') %>

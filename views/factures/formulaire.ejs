@@ -1,0 +1,38 @@
+<%- include('../partials/haut', { titre: 'Nouvelle facture' }) %>
+<div class="entete-page">
+  <h1>💰 Nouvelle facture</h1>
+  <a class="btn btn-secondaire btn-petit" href="/factures">← Factures</a>
+</div>
+
+<% if (erreur) { %><div class="alerte alerte-erreur"><%= erreur %></div><% } %>
+
+<div class="carte">
+  <form method="post" action="/factures" class="grille-form">
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+    <div><label for="client_id">Entreprise *</label>
+      <select id="client_id" name="client_id" required data-polices-pour="/factures/polices-entreprise/" data-polices-cible="police_id">
+        <option value="">— Choisir —</option>
+        <% entreprises.forEach((e) => { %>
+          <option value="<%= e.id %>" <%= String(facture.client_id) === String(e.id) ? 'selected' : '' %>><%= e.raison_sociale %></option>
+        <% }) %>
+      </select></div>
+    <div><label for="police_id">Police liée (optionnel)</label>
+      <select id="police_id" name="police_id"><option value="">— Aucune —</option></select>
+      <p class="petit">Choisissez d'abord l'entreprise pour voir ses polices.</p></div>
+    <div><label for="numero_facture">N° de facture</label>
+      <input type="text" id="numero_facture" value="<%= facture.numero_facture || '' %>" disabled>
+      <p class="petit">Numérotée automatiquement (FAC-AAAA-0001…).</p></div>
+    <div><label for="description">Description *</label>
+      <input type="text" id="description" name="description" required maxlength="200" value="<%= facture.description || '' %>" placeholder="Ex. : Prime assurance CGL 2026"></div>
+    <div><label for="montant">Montant ($) *</label>
+      <input type="number" id="montant" name="montant" required min="0.01" step="0.01" value="<%= facture.montant || '' %>"></div>
+    <div><label for="date_emission">Date d'émission *</label>
+      <input type="date" id="date_emission" name="date_emission" required value="<%= facture.date_emission || '' %>"></div>
+    <div><label for="date_echeance">Date d'échéance *</label>
+      <input type="date" id="date_echeance" name="date_echeance" required value="<%= facture.date_echeance || '' %>"></div>
+    <div><label for="notes">Notes</label>
+      <textarea id="notes" name="notes" rows="2"><%= facture.notes || '' %></textarea></div>
+    <div class="actions"><button class="btn" type="submit">Créer la facture</button></div>
+  </form>
+</div>
+<%- include('../partials/bas') %>

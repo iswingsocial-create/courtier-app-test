@@ -1,0 +1,30 @@
+<%- include('../partials/haut', { titre: 'Brouillons' }) %>
+<div class="entete-page">
+  <h1>✉️ Brouillons IA</h1>
+  <div>
+    <% if (voirArchives) { %><a class="btn btn-secondaire btn-petit" href="/brouillons">← Actifs</a><% } else { %><a class="btn btn-secondaire btn-petit" href="/brouillons?archives=1">Voir les archivés</a><% } %>
+  </div>
+</div>
+<div class="carte">
+  <p class="petit">Les brouillons sont générés depuis la <a href="/echeances">fiche de révision</a> d’une police
+  ou depuis une <a href="/factures">facture</a> (relance).
+  Ils restent <strong>brouillons à valider</strong> — rien ne s’envoie automatiquement.</p>
+  <div class="tableau-deroulant"><table>
+    <thead><tr><th>Créé le</th><th>Type</th><th>Entreprise</th><th>Police / Facture</th><th>Sujet</th><th>Statut</th><th></th></tr></thead>
+    <tbody>
+    <% brouillons.forEach((b) => { %>
+      <tr>
+        <td><%= b.cree_le.slice(0, 16).replace('T', ' ') %></td>
+        <td><span class="badge badge-gris"><%= b.type === 'relance' ? 'Relance' : 'Renouvellement' %></span></td>
+        <td><%= b.client_raison_sociale || '—' %></td>
+        <td><%= b.numero_police || b.numero_facture || '—' %></td>
+        <td><%= b.sujet %></td>
+        <td><span class="badge <%= b.statut === 'valide' ? 'badge-ok' : 'badge-gris' %>"><%= b.statut %></span></td>
+        <td><a class="btn btn-petit btn-secondaire" href="/brouillons/<%= b.id %>">Ouvrir</a></td>
+      </tr>
+    <% }) %>
+    </tbody>
+  </table></div>
+  <% if (!brouillons.length) { %><p class="petit">Aucun brouillon pour l’instant.</p><% } %>
+</div>
+<%- include('../partials/bas') %>

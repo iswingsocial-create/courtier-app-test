@@ -1,0 +1,33 @@
+<%- include('../partials/haut', { titre: 'Contact — ' + cabinetNom, etroit: true }) %>
+<div class="entete-page">
+  <h1>📩 Contactez-nous</h1>
+</div>
+<p class="petit"><%= cabinetNom %> — Laissez-nous vos coordonnées et on vous rappelle rapidement.</p>
+
+<% if (erreur) { %><div class="alerte alerte-erreur"><%= erreur %></div><% } %>
+
+<div class="carte">
+  <form method="post" action="/capture/<%= token %>" class="grille-form">
+    <div><label for="nom">Votre nom *</label>
+      <input type="text" id="nom" name="nom" required maxlength="120" value="<%= lead.nom || '' %>" autocomplete="name"></div>
+    <div><label for="entreprise">Entreprise</label>
+      <input type="text" id="entreprise" name="entreprise" maxlength="160" value="<%= lead.entreprise || '' %>" autocomplete="organization"></div>
+    <div><label for="courriel">Courriel</label>
+      <input type="email" id="courriel" name="courriel" maxlength="160" value="<%= lead.courriel || '' %>" autocomplete="email"></div>
+    <div><label for="telephone">Téléphone</label>
+      <input type="tel" id="telephone" name="telephone" maxlength="40" value="<%= lead.telephone || '' %>" autocomplete="tel"></div>
+    <div><label for="besoin">Votre besoin</label>
+      <textarea id="besoin" name="besoin" rows="3" maxlength="2000" placeholder="Ex. : assurance pour ma flotte de 5 camions"><%= lead.besoin || '' %></textarea></div>
+    <!-- Honeypot anti-spam : laissez ce champ vide -->
+    <div class="champ-leurre" aria-hidden="true">
+      <label for="site_web">Site web</label>
+      <input type="text" id="site_web" name="site_web" tabindex="-1" autocomplete="off">
+    </div>
+    <input type="hidden" name="utm_source" value="<%= lead.utm_source || '' %>">
+    <input type="hidden" name="utm_medium" value="<%= lead.utm_medium || '' %>">
+    <input type="hidden" name="utm_campaign" value="<%= lead.utm_campaign || '' %>">
+    <div class="actions"><button class="btn" type="submit">Envoyer ma demande</button></div>
+  </form>
+  <p class="petit">En envoyant ce formulaire, vous acceptez d'être recontacté par <%= cabinetNom %> au sujet de votre demande.</p>
+</div>
+<%- include('../partials/bas') %>

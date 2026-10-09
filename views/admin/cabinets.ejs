@@ -1,0 +1,41 @@
+<%- include('../partials/haut', { titre: 'Cabinets' }) %>
+<div class="entete-page">
+  <h1>🏢 Cabinets</h1>
+  <div>
+    <a class="btn btn-secondaire btn-petit" href="/admin/microsoft">Microsoft 365 / Teams →</a>
+    <a class="btn btn-secondaire btn-petit" href="/admin/utilisateurs">Utilisateurs →</a>
+  </div>
+</div>
+
+<div class="carte">
+  <h3>Créer un cabinet</h3>
+  <form method="post" action="/admin/cabinets" class="grille-form">
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+    <div><label for="nom">Nom du cabinet</label><input type="text" id="nom" name="nom" required maxlength="120"></div>
+    <div class="actions" style="margin-top:0; align-self:end"><button class="btn btn-petit" type="submit">Créer</button></div>
+  </form>
+</div>
+
+<div class="carte"><div class="tableau-deroulant"><table>
+  <thead><tr><th>Nom</th><th>Utilisateurs</th><th>Clients</th><th>Lien de capture leads</th><th>Créé le</th></tr></thead>
+  <tbody>
+  <% cabinets.forEach((c) => { %>
+    <tr>
+      <td><%= c.nom %></td>
+      <td><%= c.nb_users %></td>
+      <td><%= c.nb_clients %></td>
+      <td>
+        <span class="bloc-code petit">/capture/<%= c.token_capture %></span>
+        <form method="post" action="/admin/cabinets/<%= c.id %>/token-capture" class="inline" data-confirm="Régénérer le lien ? L'ancien lien cessera de fonctionner.">
+          <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+          <button class="btn btn-petit btn-secondaire" type="submit" title="Régénérer">↻</button>
+        </form>
+      </td>
+      <td><%= c.cree_le.slice(0, 10) %></td>
+    </tr>
+  <% }) %>
+  </tbody>
+</table></div>
+<p class="petit">Le lien de capture est le formulaire public à mettre dans vos publicités. Préfixez-le de l'adresse du serveur (ex. : https://votre-serveur/capture/…). Seul l'admin de ce panneau peut le voir et le régénérer.</p>
+</div>
+<%- include('../partials/bas') %>

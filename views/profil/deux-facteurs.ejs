@@ -1,0 +1,42 @@
+<%- include('../partials/haut', { titre: 'Double authentification' }) %>
+<div class="entete-page"><h1>🔐 Double authentification (2FA)</h1></div>
+
+<% if (erreur) { %><div class="alerte alerte-erreur"><%= erreur %></div><% } %>
+
+<% if (actif) { %>
+  <div class="carte">
+    <div class="alerte alerte-succes">La double authentification est <strong>activée</strong> sur votre compte.</div>
+    <h3>La désactiver</h3>
+    <form method="post" action="/profil/deux-facteurs/desactiver">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+      <label for="mdp">Confirmez avec votre mot de passe</label>
+      <input type="password" id="mdp" name="mot_de_passe" required autocomplete="current-password">
+      <div class="actions"><button class="btn btn-danger" type="submit">Désactiver la 2FA</button></div>
+    </form>
+  </div>
+<% } else if (secret) { %>
+  <div class="carte">
+    <h3>Étape 2 : scannez ou saisissez, puis validez</h3>
+    <ol>
+      <li>Ouvrez votre application d’authentification (Google Authenticator, 1Password, etc.).</li>
+      <li>Ajoutez un compte avec ce secret : <pre class="bloc-code"><%= secret %></pre></li>
+      <li>Ou utilisez ce lien : <pre class="bloc-code"><%= otpauth %></pre></li>
+      <li>Saisissez le code affiché ci-dessous.</li>
+    </ol>
+    <form method="post" action="/profil/deux-facteurs/confirmer">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+      <label for="code">Code à 6 chiffres</label>
+      <input type="text" id="code" name="code" inputmode="numeric" required maxlength="10">
+      <div class="actions"><button class="btn" type="submit">Activer</button></div>
+    </form>
+  </div>
+<% } else { %>
+  <div class="carte">
+    <p>La double authentification ajoute un code temporaire à votre connexion. Fortement recommandé pour un outil qui contient des données de clients.</p>
+    <form method="post" action="/profil/deux-facteurs/activer">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+      <div class="actions"><button class="btn" type="submit">Commencer l’activation</button></div>
+    </form>
+  </div>
+<% } %>
+<%- include('../partials/bas') %>

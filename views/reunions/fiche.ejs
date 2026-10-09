@@ -1,0 +1,48 @@
+<%- include('../partials/haut', { titre: 'Réunion : ' + reunion.titre }) %>
+<div class="entete-page">
+  <h1>📅 <%= reunion.titre %></h1>
+  <div>
+    <span class="badge badge-gris"><%= NOMS_STATUTS_REUNION[reunion.statut] %></span>
+    <a class="btn btn-secondaire btn-petit" href="/reunions">← Réunions</a>
+  </div>
+</div>
+
+<% if (avertissement) { %><div class="alerte alerte-avert"><%= avertissement %></div><% } %>
+
+<div class="carte">
+  <dl class="dl">
+    <dt>Date et heure</dt><dd><%= reunion.date_heure.replace('T', ' ') %></dd>
+    <dt>Entreprise</dt><dd><%= reunion.entreprise ? reunion.entreprise : '—' %></dd>
+    <dt>Lead</dt><dd><%= reunion.lead_nom ? reunion.lead_nom + (reunion.lead_entreprise ? ' (' + reunion.lead_entreprise + ')' : '') : '—' %></dd>
+    <dt>Lien Teams</dt>
+    <dd>
+      <% if (reunion.lien_teams) { %><a href="<%= reunion.lien_teams %>" target="_blank" rel="noopener">Rejoindre la réunion →</a><% } else { %><span class="petit">Aucun lien — collez-le ci-dessous.</span><% } %>
+      <form method="post" action="/reunions/<%= reunion.id %>/lien" class="grille-form marge-haut">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+        <div><label for="lien_teams">Lien Teams (manuel)</label>
+          <input type="url" id="lien_teams" name="lien_teams" maxlength="500" value="<%= reunion.lien_teams || '' %>" placeholder="https://teams.microsoft.com/…"></div>
+        <div class="actions aligne-fin"><button class="btn btn-petit btn-secondaire" type="submit">Enregistrer le lien</button></div>
+      </form>
+    </dd>
+    <dt>Notes</dt><dd><%= reunion.notes || '—' %></dd>
+  </dl>
+  <div class="actions">
+    <% if (reunion.statut === 'planifiee') { %>
+    <form method="post" action="/reunions/<%= reunion.id %>/statut" class="inline">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+      <input type="hidden" name="statut" value="terminee">
+      <button class="btn btn-petit" type="submit">Marquer terminée</button>
+    </form>
+    <form method="post" action="/reunions/<%= reunion.id %>/statut" class="inline">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+      <input type="hidden" name="statut" value="annulee">
+      <button class="btn btn-petit btn-secondaire" type="submit">Annuler</button>
+    </form>
+    <% } %>
+    <form method="post" action="/reunions/<%= reunion.id %>/<%= reunion.archive ? 'desarchiver' : 'archiver' %>" class="inline" data-confirm="<%= reunion.archive ? 'Désarchiver cette réunion ?' : 'Archiver cette réunion ?' %>">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+      <button class="btn btn-petit btn-secondaire" type="submit"><%= reunion.archive ? 'Désarchiver' : 'Archiver' %></button>
+    </form>
+  </div>
+</div>
+<%- include('../partials/bas') %>

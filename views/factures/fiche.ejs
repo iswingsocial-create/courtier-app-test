@@ -1,0 +1,72 @@
+<%- include('../partials/haut', { titre: 'Facture ' + facture.numero_facture }) %>
+<div class="entete-page">
+  <h1>💰 <%= facture.numero_facture %></h1>
+  <div>
+    <span class="badge <%= facture.statut === 'en_retard' ? 'badge-echu' : 'badge-gris' %>"><%= NOMS_STATUTS_FACTURE[facture.statut] %></span>
+    <a class="btn btn-secondaire btn-petit" href="/factures">← Factures</a>
+  </div>
+</div>
+
+<% if (mPaiement) { %><div class="alerte alerte-succes">Paiement enregistré.</div><% } %>
+
+<div class="carte">
+  <h3>Détails</h3>
+  <p><strong>Entreprise :</strong> <a href="/clients/<%= facture.client_id %>"><%= facture.entreprise %></a></p>
+  <p><strong>Contact :</strong> <%= facture.client_prenom %> <%= facture.client_nom %></p>
+  <% if (facture.numero_police) { %><p><strong>Police :</strong> <%= facture.numero_police %> (<%= facture.ligne %>)</p><% } %>
+  <p><strong>Description :</strong> <%= facture.description %></p>
+  <p><strong>Montant :</strong> <%= Number(facture.montant).toFixed(2) %> $</p>
+  <p><strong>Payé :</strong> <%= Number(facture.montant_paye).toFixed(2) %> $</p>
+  <p><strong>Solde dû :</strong> <strong><%= solde.toFixed(2) %> $</strong></p>
+  <p><strong>Émise le :</strong> <%= facture.date_emission %> — <strong>échéance :</strong> <%= facture.date_echeance %>
+  <% if (joursRetard) { %><span class="badge badge-echu"><%= joursRetard %> jour<%= joursRetard > 1 ? 's' : '' %> de retard</span><% } %></p>
+  <% if (facture.notes) { %><p><strong>Notes :</strong> <%= facture.notes %></p><% } %>
+  <div class="actions">
+    <% if (solde > 0.005 && facture.statut !== 'annulee') { %>
+    <form method="post" action="/factures/<%= facture.id %>/relance" class="inline">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+      <button class="btn btn-petit" type="submit">✉️ Générer une relance (IA)</button>
+    </form>
+    <% } %>
+    <% if (facture.statut !== 'payee' && facture.statut !== 'annulee') { %>
+    <form method="post" action="/factures/<%= facture.id %>/annuler" class="inline" data-confirm="Annuler cette facture ?">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+      <button class="btn btn-petit btn-secondaire" type="submit">Annuler la facture</button>
+    </form>
+    <% } %>
+  </div>
+</div>
+
+<div class="carte">
+  <h3>Enregistrer un paiement</h3>
+  <% if (facture.statut === 'annulee') { %><p class="petit">Facture annulée — aucun paiement possible.</p><% } else { %>
+  <form method="post" action="/factures/<%= facture.id %>/paiements" class="grille-form">
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+    <div><label for="montant">Montant ($) *</label>
+      <input type="number" id="montant" name="montant" required min="0.01" step="0.01" value="<%= solde > 0 ? solde.toFixed(2) : '' %>"></div>
+    <div><label for="date_paiement">Date *</label>
+      <input type="date" id="date_paiement" name="date_paiement" required value="<%= new Date().toISOString().slice(0,10) %>"></div>
+    <div><label for="mode">Mode</label>
+      <select id="mode" name="mode">
+        <% MODES.forEach((m) => { %><option value="<%= m %>"><%= NOMS_MODES[m] %></option><% }) %>
+      </select></div>
+    <div><label for="notes_p">Notes</label><input type="text" id="notes_p" name="notes" maxlength="200"></div>
+    <div class="actions"><button class="btn btn-petit" type="submit">Enregistrer</button></div>
+  </form>
+  <% } %>
+</div>
+</div>
+
+<div class="carte">
+  <h3>Historique des paiements (<%= paiements.length %>)</h3>
+  <div class="tableau-deroulant"><table>
+    <thead><tr><th>Date</th><th>Montant</th><th>Mode</th><th>Notes</th></tr></thead>
+    <tbody>
+    <% paiements.forEach((p) => { %>
+      <tr><td><%= p.date_paiement %></td><td><%= Number(p.montant).toFixed(2) %> $</td><td><%= NOMS_MODES[p.mode] %></td><td><%= p.notes || '—' %></td></tr>
+    <% }) %>
+    </tbody>
+  </table></div>
+  <% if (!paiements.length) { %><p class="petit">Aucun paiement enregistré.</p><% } %>
+</div>
+<%- include('../partials/bas') %>

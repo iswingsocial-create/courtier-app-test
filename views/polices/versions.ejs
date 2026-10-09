@@ -1,0 +1,26 @@
+<%- include('../partials/haut', { titre: 'Historique des versions — ' + police.numero_police }) %>
+<div class="entete-page">
+  <h1>🕘 Historique des versions</h1>
+  <div class="actions" style="margin-top:0">
+    <a class="btn btn-secondaire btn-petit" href="/echeances/police/<%= police.id %>">← Fiche de révision</a>
+  </div>
+</div>
+
+<div class="carte">
+  <h3>Police <%= police.numero_police %> — <%= NOMS_LIGNES[police.ligne] %> (<%= police.assureur %>)</h3>
+  <p class="petit">Chaque version est un instantané figé : rien n’est jamais modifié ni effacé ici. Chaque enregistrement de la fiche ou ajout/retrait de protection crée une nouvelle version.</p>
+  <div class="tableau-deroulant"><table>
+    <thead><tr><th>Version</th><th>Effet</th><th>Échéance</th><th>Franchise</th><th>Notes</th><th>Créée le</th><th>Par</th><th></th></tr></thead>
+    <tbody>
+    <% versions.forEach((v) => { %>
+      <tr><td><span class="badge badge-gris">v<%= v.version %></span></td>
+      <td><%= v.date_effet %></td><td><%= v.date_echeance %></td>
+      <td><%= Number(v.franchise || 0).toFixed(2) %> $</td>
+      <td><%= v.notes ? (v.notes.length > 60 ? v.notes.slice(0, 60) + '…' : v.notes) : '—' %></td>
+      <td><%= v.cree_le.slice(0, 16).replace('T', ' ') %></td><td><%= v.auteur || '—' %></td>
+      <td><a class="btn btn-petit btn-secondaire" href="/polices/<%= police.id %>/versions/<%= v.version %>">Voir</a></td></tr>
+    <% }) %>
+    </tbody>
+  </table></div>
+</div>
+<%- include('../partials/bas') %>

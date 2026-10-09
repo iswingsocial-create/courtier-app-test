@@ -1,0 +1,58 @@
+<%- include('../partials/haut', { titre: police.id ? 'Modifier la police' : 'Nouvelle police' }) %>
+<div class="entete-page">
+  <h1><%= police.id ? '✏️ Modifier la police' : '➕ Nouvelle police' %></h1>
+  <a class="btn btn-secondaire btn-petit" href="/polices">← Polices</a>
+</div>
+
+<% if (erreur) { %><div class="alerte alerte-erreur"><%= erreur %></div><% } %>
+
+<div class="carte">
+<form method="post" action="<%= police.id ? '/polices/' + police.id : '/polices' %>">
+  <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+  <div class="grille-form">
+    <div><label for="client_id">Entreprise *</label>
+      <select id="client_id" name="client_id" required>
+        <option value="">— Choisir —</option>
+        <% clients.forEach((c) => { %>
+          <option value="<%= c.id %>" <%= String(police.client_id) === String(c.id) ? 'selected' : '' %>><%= c.raison_sociale %></option>
+        <% }) %>
+      </select></div>
+    <div><label for="ligne">Produit *</label>
+      <select id="ligne" name="ligne" required>
+        <% LIGNES.forEach((l) => { %>
+          <option value="<%= l %>" <%= police.ligne === l ? 'selected' : '' %>><%= NOMS_LIGNES[l] %></option>
+        <% }) %>
+      </select></div>
+    <div><label for="assureur">Assureur *</label><input type="text" id="assureur" name="assureur" required value="<%= police.assureur || '' %>"></div>
+    <div><label for="numero_police">Numéro de police *</label><input type="text" id="numero_police" name="numero_police" required value="<%= police.numero_police || '' %>"></div>
+    <div><label for="date_effet">Date d’effet *</label><input type="date" id="date_effet" name="date_effet" required value="<%= police.date_effet || '' %>"></div>
+    <div><label for="date_echeance">Date d’échéance *</label><input type="date" id="date_echeance" name="date_echeance" required value="<%= police.date_echeance || '' %>"></div>
+    <div><label for="franchise">Franchise ($)</label><input type="number" id="franchise" name="franchise" step="0.01" min="0" value="<%= police.franchise != null ? police.franchise : 0 %>"></div>
+    <div><label for="statut">Statut</label>
+      <select id="statut" name="statut">
+        <% Object.keys(NOMS_STATUTS).forEach((s) => { %>
+          <option value="<%= s %>" <%= police.statut === s ? 'selected' : '' %>><%= NOMS_STATUTS[s] %></option>
+        <% }) %>
+      </select></div>
+    <div><label for="responsable_id">Courtier responsable</label>
+      <select id="responsable_id" name="responsable_id">
+        <option value="">— Aucun —</option>
+        <% utilisateurs.forEach((u) => { %>
+          <option value="<%= u.id %>" <%= String(police.responsable_id) === String(u.id) ? 'selected' : '' %>><%= u.nom %> (<%= u.role %>)</option>
+        <% }) %>
+      </select></div>
+  </div>
+  <label for="notes">Notes</label>
+  <textarea id="notes" name="notes"><%= police.notes || '' %></textarea>
+  <div class="actions"><button class="btn" type="submit">Enregistrer</button></div>
+</form>
+</div>
+
+<% if (police.id) { %>
+<div class="carte">
+  <h3>Versions</h3>
+  <p class="petit">Chaque enregistrement de ce formulaire crée automatiquement une <strong>nouvelle version</strong> (avenant) de la police. L’état précédent reste consultable dans l’historique des versions — rien n’est jamais effacé.</p>
+  <div class="actions"><a class="btn btn-secondaire btn-petit" href="/polices/<%= police.id %>/versions">Voir l’historique des versions</a></div>
+</div>
+<% } %>
+<%- include('../partials/bas') %>

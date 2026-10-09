@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title><%= typeof titre !== 'undefined' ? titre + ' — ' : '' %>Courtier</title>
+<link rel="stylesheet" href="/style.css">
+</head>
+<body>
+<% if (typeof utilisateur !== 'undefined' && utilisateur) { %>
+<header class="barre-haut">
+  <a class="logo" href="/echeances">🛡️ Courtier</a>
+  <nav>
+    <a href="/echeances">Échéances</a>
+    <a href="/clients">Entreprises</a>
+    <a href="/polices">Polices</a>
+    <a href="/reclamations">Réclamations</a>
+    <a href="/taches">Tâches</a>
+    <a href="/factures">Facturation</a>
+    <a href="/leads">Leads</a>
+    <a href="/campagnes">Campagnes</a>
+    <a href="/reunions">Réunions</a>
+    <a href="/brouillons">Brouillons</a>
+    <a href="/import">Import</a>
+    <% if (utilisateur.role === 'admin') { %><a href="/admin/utilisateurs">Admin</a><a href="/admin/journal">Journal</a><% } %>
+  </nav>
+  <div class="utilisateur">
+    <span><%= utilisateur.cabinet_nom %></span>
+    <a href="/profil/deux-facteurs"><%= utilisateur.nom %></a>
+    <form method="post" action="/deconnexion" class="inline"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button class="lien" type="submit">Déconnexion</button></form>
+  </div>
+</header>
+<% } %>
+<main class="<%= typeof etroit !== 'undefined' && etroit ? 'conteneur-etroit' : 'conteneur' %>">

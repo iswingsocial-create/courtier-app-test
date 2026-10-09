@@ -1,0 +1,46 @@
+<%- include('../partials/haut', { titre: 'Tâches' }) %>
+<div class="entete-page">
+  <h1>📌 Tâches</h1>
+  <div>
+    <% if (voirArchives) { %><a class="btn btn-secondaire btn-petit" href="/taches">← Actifs</a><% } else { %><a class="btn btn-secondaire btn-petit" href="/taches?archives=1">Voir les archivés</a><% } %>
+    <a class="btn btn-petit" href="/taches/nouvelle">+ Nouvelle tâche</a>
+  </div>
+</div>
+
+<div class="carte">
+  <form method="get" action="/taches" class="grille-form">
+    <% if (voirArchives) { %><input type="hidden" name="archives" value="1"><% } %>
+    <div><label for="statut">Statut</label>
+      <select id="statut" name="statut" data-autosubmit>
+        <option value="">Toutes (non terminées d’abord)</option>
+        <% STATUTS.forEach((s) => { %>
+          <option value="<%= s %>" <%= statut === s ? 'selected' : '' %>><%= NOMS_TACHE[s] %></option>
+        <% }) %>
+      </select></div>
+  </form>
+</div>
+
+<div class="carte"><div class="tableau-deroulant"><table>
+  <thead><tr><th>Titre</th><th>Échéance</th><th>Assignée à</th><th>Liée à</th><th>Statut</th><th></th></tr></thead>
+  <tbody>
+  <% taches.forEach((t) => { const enRetard = t.statut !== 'terminee' && t.date_echeance && t.date_echeance < auj; %>
+    <tr>
+      <td><strong><%= t.titre %></strong><% if (t.notes) { %><br><span class="petit"><%= t.notes %></span><% } %></td>
+      <td><% if (t.date_echeance) { %><span class="badge <%= enRetard ? 'badge-echu' : 'badge-gris' %>"><%= t.date_echeance %></span><% } else { %>—<% } %></td>
+      <td><%= t.assigne_nom || '—' %></td>
+      <td><%= t.entreprise || t.numero_police || '—' %></td>
+      <td><span class="badge <%= t.statut === 'terminee' ? 'badge-ok' : 'badge-gris' %>"><%= NOMS_TACHE[t.statut] %></span></td>
+      <td style="white-space:nowrap">
+        <form method="post" action="/taches/<%= t.id %>/terminer" class="inline">
+          <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+          <button class="btn btn-petit btn-secondaire" type="submit"><%= t.statut === 'terminee' ? 'Rouvrir' : 'Terminer' %></button>
+        </form>
+        <a class="btn btn-petit btn-secondaire" href="/taches/<%= t.id %>/modifier">Modifier</a>
+      </td>
+    </tr>
+  <% }) %>
+  </tbody>
+</table></div>
+<% if (!taches.length) { %><p class="petit">Aucune tâche.</p><% } %>
+</div>
+<%- include('../partials/bas') %>

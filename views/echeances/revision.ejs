@@ -1,0 +1,146 @@
+<%- include('../partials/haut', { titre: 'Fiche de révision — ' + police.numero_police }) %>
+<div class="entete-page">
+  <h1>📋 Fiche de révision</h1>
+  <div class="actions" style="margin-top:0">
+    <a class="btn btn-petit" href="/polices/<%= police.id %>/modifier">✏️ Nouvelle version (avenant)</a>
+    <a class="btn btn-secondaire btn-petit" href="/echeances">← Échéances</a>
+  </div>
+</div>
+
+<div class="carte">
+  <h3><%= police.client_raison_sociale %> — police <%= police.numero_police %></h3>
+  <dl class="dl">
+    <dt>Entreprise</dt><dd><a href="/clients/<%= police.client_id %>"><%= police.client_raison_sociale %></a>
+      (<%= police.client_prenom %> <%= police.client_nom %><%= police.client_courriel ? ' · ' + police.client_courriel : '' %><%= police.client_telephone ? ' · ' + police.client_telephone : '' %>)</dd>
+    <dt>Produit</dt><dd><%= NOMS_LIGNES[police.ligne] %></dd>
+    <dt>Assureur</dt><dd><%= police.assureur %></dd>
+    <dt>Effet / Échéance</dt><dd><%= police.date_effet %> → <strong><%= police.date_echeance %></strong>
+      (<%= jours < 0 ? 'échue depuis ' + (-jours) + ' j' : 'dans ' + jours + ' j' %>)</dd>
+    <dt>Statut</dt><dd><span class="badge badge-gris"><%= NOMS_STATUTS[police.statut] %></span></dd>
+    <dt>Franchise</dt><dd><%= Number(police.franchise).toFixed(2) %> $</dd>
+    <dt>Courtier responsable</dt><dd><%= police.responsable_nom || '—' %></dd>
+    <% if (police.notes) { %><dt>Notes</dt><dd><%= police.notes %></dd><% } %>
+  </dl>
+</div>
+
+  <h3>Historique des versions</h3>
+  <div class="tableau-deroulant"><table>
+    <thead><tr><th>Version</th><th>Effet</th><th>Échéance</th><th>Franchise</th><th>Créée le</th><th>Par</th><th></th></tr></thead>
+    <tbody>
+    <% versions.forEach((v) => { %>
+      <tr><td><span class="badge badge-gris">v<%= v.version %></span></td>
+      <td><%= v.date_effet %></td><td><%= v.date_echeance %></td>
+      <td><%= Number(v.franchise || 0).toFixed(2) %> $</td>
+      <td><%= v.cree_le.slice(0, 16).replace('T', ' ') %></td><td><%= v.auteur || '—' %></td>
+      <td><a class="btn btn-petit btn-secondaire" href="/polices/<%= police.id %>/versions/<%= v.version %>">Voir</a></td></tr>
+    <% }) %>
+    </tbody>
+  </table></div>
+  <p class="petit"><a href="/polices/<%= police.id %>/versions">Voir tout l’historique détaillé</a>. Chaque enregistrement de la fiche ou ajout/retrait de protection crée une nouvelle version ; l’état précédent reste consultable ici.</p>
+</div>
+
+<div class="carte">
+  <h3>Protections — prime totale : <%= primeTotale.toFixed(2) %> $</h3>
+  <p class="petit">Ajouter ou retirer une protection crée automatiquement une nouvelle version (avenant) de la police.</p>
+  <div class="tableau-deroulant"><table>
+    <thead><tr><th>Code</th><th>Protection</th><th>Prime</th><th></th></tr></thead>
+    <tbody>
+    <% protections.forEach((p) => { %>
+      <tr><td><span class="badge badge-gris"><%= p.code %></span></td><td><%= p.libelle %></td>
+      <td><%= Number(p.prime).toFixed(2) %> $</td>
+      <td><form method="post" action="/polices/<%= police.id %>/protections/<%= p.id %>/retirer" class="inline" data-confirm="Retirer cette protection ? Une nouvelle version sera créée.">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+        <button class="lien" type="submit">retirer</button></form></td></tr>
+    <% }) %>
+    </tbody>
+  </table></div>
+
+  <h3>Ajouter une protection</h3>
+  <form method="post" action="/polices/<%= police.id %>/protections" class="grille-form">
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+    <div>
+      <label for="code">Code</label>
+      <select id="code" name="code">
+        <% catalogue.forEach((c) => { %>
+          <option value="<%= c.code %>"><%= c.code %> — <%= c.libelle %></option>
+        <% }) %>
+      </select>
+    </div>
+    <div>
+      <label for="prime">Prime ($)</label>
+      <input type="number" id="prime" name="prime" step="0.01" min="0" required>
+    </div>
+    <div class="actions"><button class="btn btn-petit" type="submit">Ajouter</button></div>
+  </form>
+</div>
+
+<% if (manquantes.length) { %>
+<div class="carte">
+  <h3>⚠️ Protections recommandées manquantes</h3>
+  <div class="alerte alerte-avert">Ces protections sont recommandées pour une police <strong><%= NOMS_LIGNES[police.ligne].toLowerCase() %></strong> mais ne figurent pas sur cette police :</div>
+  <ul><% manquantes.forEach((m) => { %><li><strong><%= m.code %></strong> — <%= m.libelle %></li><% }) %></ul>
+</div>
+<% } %>
+
+<% if (reclamations.length) { %>
+<div class="carte">
+  <h3>🧾 Réclamations sur cette police (<%= reclamations.length %>)</h3>
+  <div class="tableau-deroulant"><table>
+    <thead><tr><th>Sinistre</th><th>N° réclamation</th><th>Statut</th><th>Montant réclamé</th><th></th></tr></thead>
+    <tbody><% reclamations.forEach((r) => { %>
+      <tr><td><%= r.date_sinistre %></td><td><%= r.numero_reclamation || '—' %></td>
+      <td><span class="badge badge-gris"><%= NOMS_RECLAMATION[r.statut] %></span></td>
+      <td><%= r.montant_reclame != null ? Number(r.montant_reclame).toFixed(2) + ' $' : '—' %></td>
+      <td><a class="btn btn-petit btn-secondaire" href="/reclamations/<%= r.id %>">Ouvrir</a></td></tr>
+    <% }) %></tbody>
+  </table></div>
+</div>
+<% } %>
+
+<div class="carte">
+  <h3>📎 Documents de la police</h3>
+  <form method="post" action="/polices/<%= police.id %>/documents" enctype="multipart/form-data">
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+    <label for="docp">Ajouter un document (PDF, image, Word, Excel — max 10 Mo)</label>
+    <input type="file" id="docp" name="document" required>
+    <div class="actions"><button class="btn btn-petit" type="submit">Téléverser</button></div>
+  </form>
+  <% if (documents.length) { %>
+  <ul><% documents.forEach((d) => { %>
+    <li><a href="/clients/documents/<%= d.id %>"><%= d.nom_origine %></a>
+      <span class="petit">(<%= Math.round(d.taille / 1024) %> Ko)</span>
+      <form method="post" action="/polices/<%= police.id %>/documents/<%= d.id %>/archiver" class="inline" data-confirm="Archiver ce document ?">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+        <button class="lien" type="submit">archiver</button>
+      </form></li>
+  <% }) %></ul>
+  <% } %>
+  <% if (documentsArchives.length) { %>
+  <h4 class="petit">Documents archivés</h4>
+  <ul><% documentsArchives.forEach((d) => { %>
+    <li><span class="petit"><%= d.nom_origine %></span>
+      <form method="post" action="/polices/<%= police.id %>/documents/<%= d.id %>/desarchiver" class="inline" data-confirm="Désarchiver ce document ?">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+        <button class="lien" type="submit">désarchiver</button>
+      </form></li>
+  <% }) %></ul>
+  <% } %>
+</div>
+
+<div class="carte">
+  <h3>✉️ Brouillon de renouvellement (IA)</h3>
+  <p class="petit">Génère un message à l’assuré à partir de cette fiche. Il restera un <strong>brouillon à valider</strong> — rien ne s’envoie automatiquement.</p>
+  <form method="post" action="/brouillons/generer/<%= police.id %>">
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+    <div class="actions"><button class="btn" type="submit">Générer le brouillon</button></div>
+  </form>
+  <% if (brouillons.length) { %>
+    <h3>Brouillons existants</h3>
+    <ul><% brouillons.forEach((b) => { %>
+      <li><a href="/brouillons/<%= b.id %>"><%= b.sujet %></a>
+        <span class="badge <%= b.statut === 'valide' ? 'badge-ok' : 'badge-gris' %>"><%= b.statut %></span>
+        <span class="petit"><%= b.cree_le.slice(0, 16).replace('T', ' ') %></span></li>
+    <% }) %></ul>
+  <% } %>
+</div>
+<%- include('../partials/bas') %>

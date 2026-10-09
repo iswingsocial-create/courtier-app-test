@@ -1,0 +1,78 @@
+<%- include('../partials/haut', { titre: reclamation.id ? 'Modifier la réclamation' : 'Nouvelle réclamation' }) %>
+<div class="entete-page">
+  <h1><%= reclamation.id ? '✏️ Modifier la réclamation' : '➕ Nouvelle réclamation' %></h1>
+  <a class="btn btn-secondaire btn-petit" href="<%= reclamation.id ? '/reclamations/' + reclamation.id : '/reclamations' %>">← Retour</a>
+</div>
+
+<% if (erreur) { %><div class="alerte alerte-erreur"><%= erreur %></div><% } %>
+
+<div class="carte">
+<form method="post" action="<%= reclamation.id ? '/reclamations/' + reclamation.id : '/reclamations' %>">
+  <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+  <div class="grille-form">
+    <div><label for="client_id">Entreprise *</label>
+      <select id="client_id" name="client_id" required <%= reclamation.id ? 'disabled' : '' %>>
+        <option value="">— Choisir —</option>
+        <% entreprises.forEach((e) => { %>
+          <option value="<%= e.id %>" <%= String(reclamation.client_id) === String(e.id) ? 'selected' : '' %>><%= e.raison_sociale %></option>
+        <% }) %>
+      </select>
+      <% if (reclamation.id) { %><input type="hidden" name="client_id" value="<%= reclamation.client_id %>"><% } %></div>
+    <div><label for="police_id">Police concernée</label>
+      <select id="police_id" name="police_id">
+        <option value="">— Aucune —</option>
+        <% polices.forEach((p) => { %>
+          <option value="<%= p.id %>" <%= String(reclamation.police_id) === String(p.id) ? 'selected' : '' %>><%= p.numero_police %> (<%= p.raison_sociale %>)</option>
+        <% }) %>
+      </select></div>
+    <div><label for="numero_reclamation">N° de réclamation (assureur)</label>
+      <input type="text" id="numero_reclamation" name="numero_reclamation" value="<%= reclamation.numero_reclamation || '' %>"></div>
+    <div><label for="statut">Statut *</label>
+      <select id="statut" name="statut" required>
+        <% STATUTS.forEach((s) => { %>
+          <option value="<%= s %>" <%= reclamation.statut === s ? 'selected' : '' %>><%= NOMS_RECLAMATION[s] %></option>
+        <% }) %>
+      </select></div>
+    <div><label for="date_sinistre">Date du sinistre *</label>
+      <input type="date" id="date_sinistre" name="date_sinistre" required value="<%= reclamation.date_sinistre || '' %>"></div>
+    <div><label for="date_declaration">Date de déclaration</label>
+      <input type="date" id="date_declaration" name="date_declaration" value="<%= reclamation.date_declaration || '' %>"></div>
+    <div><label for="montant_reclame">Montant réclamé ($)</label>
+      <input type="number" id="montant_reclame" name="montant_reclame" step="0.01" min="0" value="<%= reclamation.montant_reclame != null ? reclamation.montant_reclame : '' %>"></div>
+    <div><label for="montant_regle">Montant réglé ($)</label>
+      <input type="number" id="montant_regle" name="montant_regle" step="0.01" min="0" value="<%= reclamation.montant_regle != null ? reclamation.montant_regle : '' %>"></div>
+    <div><label for="franchise_appliquee">Franchise appliquée ($)</label>
+      <input type="number" id="franchise_appliquee" name="franchise_appliquee" step="0.01" min="0" value="<%= reclamation.franchise_appliquee != null ? reclamation.franchise_appliquee : '' %>"></div>
+    <div><label for="expert_nom">Expert en sinistre</label>
+      <input type="text" id="expert_nom" name="expert_nom" value="<%= reclamation.expert_nom || '' %>"></div>
+    <div><label for="expert_contact">Contact de l’expert</label>
+      <input type="text" id="expert_contact" name="expert_contact" value="<%= reclamation.expert_contact || '' %>"></div>
+    <div><label for="responsable_id">Courtier responsable</label>
+      <select id="responsable_id" name="responsable_id">
+        <option value="">— Aucun —</option>
+        <% utilisateurs.forEach((u) => { %>
+          <option value="<%= u.id %>" <%= String(reclamation.responsable_id) === String(u.id) ? 'selected' : '' %>><%= u.nom %> (<%= u.role %>)</option>
+        <% }) %>
+      </select></div>
+    <div><label for="date_rappel">Date de rappel</label>
+      <input type="date" id="date_rappel" name="date_rappel" value="<%= reclamation.date_rappel || '' %>"></div>
+  </div>
+  <label for="description">Description du sinistre *</label>
+  <textarea id="description" name="description" required><%= reclamation.description || '' %></textarea>
+  <label for="notes">Notes internes</label>
+  <textarea id="notes" name="notes"><%= reclamation.notes || '' %></textarea>
+  <div class="actions"><button class="btn" type="submit">Enregistrer</button></div>
+</form>
+</div>
+
+<% if (reclamation.id) { %>
+<div class="carte">
+  <h3>Archiver</h3>
+  <p class="petit">Archiver cette réclamation la retire des listes actives sans effacer son historique. Vous pouvez la désarchiver en tout temps.</p>
+  <form method="post" action="/reclamations/<%= reclamation.id %>/<%= reclamation.archive ? 'desarchiver' : 'archiver' %>" data-confirm="<%= reclamation.archive ? 'Désarchiver cette réclamation ?' : 'Archiver cette réclamation ?' %>">
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+    <button class="btn btn-secondaire btn-petit" type="submit"><%= reclamation.archive ? 'Désarchiver la réclamation' : 'Archiver la réclamation' %></button>
+  </form>
+</div>
+<% } %>
+<%- include('../partials/bas') %>

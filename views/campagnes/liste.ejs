@@ -1,0 +1,29 @@
+<%- include('../partials/haut', { titre: 'Campagnes' }) %>
+<div class="entete-page">
+  <h1>📣 Campagnes de sollicitation</h1>
+  <div>
+    <% if (voirArchives) { %><a class="btn btn-secondaire btn-petit" href="/campagnes">← Actifs</a><% } else { %><a class="btn btn-secondaire btn-petit" href="/campagnes?archives=1">Voir les archivés</a><% } %>
+    <a class="btn btn-petit" href="/campagnes/nouvelle">+ Nouvelle campagne</a>
+  </div>
+</div>
+
+<div class="carte">
+  <p class="petit">Sollicitation par classe d'affaires (secteur d'activité). Seules les entreprises ayant <strong>consenti au marketing</strong> sont ciblées (Loi 25 + LCAP). Aucun envoi automatique : la campagne produit la liste et le brouillon, à exporter pour l'envoi.</p>
+  <div class="tableau-deroulant"><table>
+    <thead><tr><th>Nom</th><th>Secteurs ciblés</th><th>Destinataires consentis</th><th>Statut</th><th>Créée le</th><th></th></tr></thead>
+    <tbody>
+    <% campagnes.forEach((c) => { %>
+      <tr>
+        <td><strong><%= c.nom %></strong></td>
+        <td><%= c.secteurs.join(', ') %></td>
+        <td><%= c.nb %></td>
+        <td><span class="badge badge-gris"><%= NOMS_STATUTS_CAMPAGNE[c.statut] %></span></td>
+        <td><%= c.cree_le.slice(0, 10) %></td>
+        <td><a class="btn btn-petit btn-secondaire" href="/campagnes/<%= c.id %>">Ouvrir</a></td>
+      </tr>
+    <% }) %>
+    </tbody>
+  </table></div>
+  <% if (!campagnes.length) { %><p class="petit">Aucune campagne pour l'instant.</p><% } %>
+</div>
+<%- include('../partials/bas') %>

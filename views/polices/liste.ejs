@@ -1,0 +1,39 @@
+<%- include('../partials/haut', { titre: 'Polices' }) %>
+<div class="entete-page">
+  <h1>📄 Polices</h1>
+  <a class="btn btn-petit" href="/polices/nouvelle">+ Nouvelle police</a>
+</div>
+
+<div class="carte">
+  <form method="get" action="/polices" class="grille-form">
+    <div><label for="ligne">Produit</label>
+      <select id="ligne" name="ligne" data-autosubmit>
+        <option value="">Tous</option>
+        <% Object.keys(NOMS_LIGNES).forEach((l) => { %>
+          <option value="<%= l %>" <%= ligne === l ? 'selected' : '' %>><%= NOMS_LIGNES[l] %></option>
+        <% }) %>
+      </select></div>
+  </form>
+</div>
+
+<div class="carte"><div class="tableau-deroulant"><table>
+  <thead><tr><th>Numéro</th><th>Entreprise</th><th>Produit</th><th>Assureur</th><th>Échéance</th><th>Prime</th><th>Statut</th><th>Responsable</th><th></th></tr></thead>
+  <tbody>
+  <% polices.forEach((p) => { %>
+    <tr>
+      <td><%= p.numero_police %></td>
+      <td><a href="/clients/<%= p.client_id %>"><%= p.client_raison_sociale %></a></td>
+      <td><%= NOMS_LIGNES[p.ligne] %></td>
+      <td><%= p.assureur %></td>
+      <td><%= p.date_echeance %></td>
+      <td><%= Number(p.prime_totale).toFixed(2) %> $</td>
+      <td><span class="badge badge-gris"><%= NOMS_STATUTS[p.statut] %></span></td>
+      <td><%= p.responsable_nom || '—' %></td>
+      <td><a class="btn btn-petit btn-secondaire" href="/echeances/police/<%= p.id %>">Réviser</a></td>
+    </tr>
+  <% }) %>
+  </tbody>
+</table></div>
+<% if (!polices.length) { %><p class="petit">Aucune police.</p><% } %>
+</div>
+<%- include('../partials/bas') %>

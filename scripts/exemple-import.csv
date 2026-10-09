@@ -1,0 +1,11 @@
+type;raison_sociale;neq;secteur_activite;prenom;nom;titre_contact;courriel;telephone;adresse;ville;code_postal;langue;produit;assureur;numero_police;date_effet;date_echeance;franchise;statut;protection_code;protection_libelle;prime
+entreprise;Boulangerie Au Fournil inc.;1181111111;Alimentation;Nathalie;Roy;Propriétaire;nathalie.roy@fournil.ca;819-555-0111;12 rue Principale;Drummondville;J2B 1A1;FR;;;;;;;;;;
+entreprise;Transport Express Nord inc.;1192222222;Transport;Éric;Lafleur;Directeur;eric.lafleur@expressnord.ca;450-555-0222;300 boul. Industriel;Saint-Jérôme;J7Z 5B9;FR;;;;;;;;;;
+police;Boulangerie Au Fournil inc.;;;;;;;;;;;;cgl;Beneva;CGL-IMP-001;2025-06-01;2026-06-01;1000;active;;;
+police;Transport Express Nord inc.;;;;;;;;;;;;flotte;Intact Assurance;FLT-IMP-002;2025-07-15;2026-07-15;1500;active;;;
+protection;;;;;;;;;;;;;;;CGL-IMP-001;;;;;RC-GEN;;1750.00
+protection;;;;;;;;;;;;;;;CGL-IMP-001;;;;;PROD;;380.00
+protection;;;;;;;;;;;;;;;FLT-IMP-002;;;;;FLT-RC;;2900.00
+police;Entreprise Inconnue inc.;;;;;;;;;;;;cgl;Intact;CGL-IMP-999;2025-01-01;2026-01-01;500;active;;;
+protection;;;;;;;;;;;;;;;CGL-IMP-001;;;;;RC-GEN;;100.00
+entreprise;Test Mauvais Courriel inc.;;;Test;SansNom;;mauvais-courriel;;;;;;;;;;;;;;;

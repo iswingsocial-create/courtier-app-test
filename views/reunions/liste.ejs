@@ -1,0 +1,47 @@
+<%- include('../partials/haut', { titre: 'Réunions' }) %>
+<div class="entete-page">
+  <h1>📅 Réunions</h1>
+  <div>
+    <% if (voirArchives) { %><a class="btn btn-secondaire btn-petit" href="/reunions">← Actifs</a><% } else { %><a class="btn btn-secondaire btn-petit" href="/reunions?archives=1">Voir les archivés</a><% } %>
+    <a class="btn btn-petit" href="/reunions/nouvelle">+ Planifier une réunion</a>
+  </div>
+</div>
+
+<div class="carte">
+  <h3>À venir (<%= aVenir.length %>)</h3>
+  <div class="tableau-deroulant"><table>
+    <thead><tr><th>Date</th><th>Titre</th><th>Avec</th><th>Lien Teams</th><th></th></tr></thead>
+    <tbody>
+    <% aVenir.forEach((r) => { %>
+      <tr>
+        <td><%= r.date_heure.replace('T', ' ') %></td>
+        <td><strong><%= r.titre %></strong></td>
+        <td><%= r.entreprise || (r.lead_nom ? 'Lead : ' + r.lead_nom : '—') %></td>
+        <td><% if (r.lien_teams) { %><a href="<%= r.lien_teams %>" target="_blank" rel="noopener">Rejoindre →</a><% } else { %><span class="petit">à coller</span><% } %></td>
+        <td><a class="btn btn-petit btn-secondaire" href="/reunions/<%= r.id %>">Ouvrir</a></td>
+      </tr>
+    <% }) %>
+    </tbody>
+  </table></div>
+  <% if (!aVenir.length) { %><p class="petit">Aucune réunion à venir.</p><% } %>
+</div>
+
+<div class="carte">
+  <h3>Passées / annulées (<%= passees.length %>)</h3>
+  <div class="tableau-deroulant"><table>
+    <thead><tr><th>Date</th><th>Titre</th><th>Avec</th><th>Statut</th><th></th></tr></thead>
+    <tbody>
+    <% passees.forEach((r) => { %>
+      <tr>
+        <td><%= r.date_heure.replace('T', ' ') %></td>
+        <td><%= r.titre %></td>
+        <td><%= r.entreprise || (r.lead_nom ? 'Lead : ' + r.lead_nom : '—') %></td>
+        <td><span class="badge badge-gris"><%= NOMS_STATUTS_REUNION[r.statut] %></span></td>
+        <td><a class="btn btn-petit btn-secondaire" href="/reunions/<%= r.id %>">Ouvrir</a></td>
+      </tr>
+    <% }) %>
+    </tbody>
+  </table></div>
+  <% if (!passees.length) { %><p class="petit">Aucune.</p><% } %>
+</div>
+<%- include('../partials/bas') %>

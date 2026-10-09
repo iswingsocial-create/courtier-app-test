@@ -1,0 +1,68 @@
+<%- include('../partials/haut', { titre: tache.id ? 'Modifier la tâche' : 'Nouvelle tâche' }) %>
+<div class="entete-page">
+  <h1><%= tache.id ? '✏️ Modifier la tâche' : '➕ Nouvelle tâche' %></h1>
+  <a class="btn btn-secondaire btn-petit" href="/taches">← Retour</a>
+</div>
+
+<% if (erreur) { %><div class="alerte alerte-erreur"><%= erreur %></div><% } %>
+
+<div class="carte">
+<form method="post" action="<%= tache.id ? '/taches/' + tache.id : '/taches' %>">
+  <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+  <div class="grille-form">
+    <div><label for="titre">Titre *</label>
+      <input type="text" id="titre" name="titre" required value="<%= tache.titre || '' %>"></div>
+    <div><label for="date_echeance">Échéance</label>
+      <input type="date" id="date_echeance" name="date_echeance" value="<%= tache.date_echeance || '' %>"></div>
+    <div><label for="statut">Statut</label>
+      <select id="statut" name="statut">
+        <% STATUTS.forEach((s) => { %>
+          <option value="<%= s %>" <%= tache.statut === s ? 'selected' : '' %>><%= NOMS_TACHE[s] %></option>
+        <% }) %>
+      </select></div>
+    <div><label for="assigne_a">Assignée à</label>
+      <select id="assigne_a" name="assigne_a">
+        <option value="">— Personne —</option>
+        <% utilisateurs.forEach((u) => { %>
+          <option value="<%= u.id %>" <%= String(tache.assigne_a) === String(u.id) ? 'selected' : '' %>><%= u.nom %></option>
+        <% }) %>
+      </select></div>
+    <div><label for="entreprise_id">Entreprise liée</label>
+      <select id="entreprise_id" name="entreprise_id">
+        <option value="">— Aucune —</option>
+        <% entreprises.forEach((e) => { %>
+          <option value="<%= e.id %>" <%= String(tache.entreprise_id) === String(e.id) ? 'selected' : '' %>><%= e.raison_sociale %></option>
+        <% }) %>
+      </select></div>
+    <div><label for="police_id">Police liée</label>
+      <select id="police_id" name="police_id">
+        <option value="">— Aucune —</option>
+        <% polices.forEach((p) => { %>
+          <option value="<%= p.id %>" <%= String(tache.police_id) === String(p.id) ? 'selected' : '' %>><%= p.numero_police %> (<%= p.raison_sociale %>)</option>
+        <% }) %>
+      </select></div>
+    <div><label for="reclamation_id">Réclamation liée</label>
+      <select id="reclamation_id" name="reclamation_id">
+        <option value="">— Aucune —</option>
+        <% reclamations.forEach((r) => { %>
+          <option value="<%= r.id %>" <%= String(tache.reclamation_id) === String(r.id) ? 'selected' : '' %>>#<%= r.id %> — <%= r.raison_sociale %> (<%= r.date_sinistre %>)</option>
+        <% }) %>
+      </select></div>
+  </div>
+  <label for="notes">Notes</label>
+  <textarea id="notes" name="notes"><%= tache.notes || '' %></textarea>
+  <div class="actions"><button class="btn" type="submit">Enregistrer</button></div>
+</form>
+</div>
+
+<% if (tache.id) { %>
+<div class="carte">
+  <h3>Archiver</h3>
+  <p class="petit">Archiver cette tâche la retire des listes actives sans l’effacer. Vous pouvez la désarchiver en tout temps.</p>
+  <form method="post" action="/taches/<%= tache.id %>/<%= tache.archive ? 'desarchiver' : 'archiver' %>" data-confirm="<%= tache.archive ? 'Désarchiver cette tâche ?' : 'Archiver cette tâche ?' %>">
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+    <button class="btn btn-secondaire btn-petit" type="submit"><%= tache.archive ? 'Désarchiver la tâche' : 'Archiver la tâche' %></button>
+  </form>
+</div>
+<% } %>
+<%- include('../partials/bas') %>

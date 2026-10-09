@@ -1,0 +1,39 @@
+<%- include('../partials/haut', { titre: 'Microsoft 365 / Teams' }) %>
+<div class="entete-page">
+  <h1>📅 Microsoft 365 / Teams</h1>
+  <a class="btn btn-secondaire btn-petit" href="/admin/cabinets">← Cabinets</a>
+</div>
+
+<% if (erreur) { %><div class="alerte alerte-erreur"><%= erreur %></div><% } %>
+<% if (ok) { %><div class="alerte alerte-succes">Microsoft 365 connecté avec succès.</div><% } %>
+
+<div class="carte">
+  <h3>État de la connexion</h3>
+  <% if (!configure) { %>
+    <div class="alerte alerte-avert">Microsoft 365 n'est pas configuré sur ce serveur (variables MS_CLIENT_ID / MS_CLIENT_SECRET / MS_REDIRECT_URI manquantes). En attendant, collez vos liens Teams manuellement dans les réunions.</div>
+  <% } else if (statut.connecte) { %>
+    <p><span class="badge badge-ok">Connecté</span>
+    <% if (statut.expire) { %><span class="petit">Jeton expiré — il sera rafraîchi automatiquement à la prochaine utilisation.</span><% } %></p>
+    <form method="post" action="/admin/microsoft/deconnecter" class="inline" data-confirm="Déconnecter Microsoft 365 pour ce cabinet ?">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+      <button class="btn btn-petit btn-secondaire" type="submit">Déconnecter</button>
+    </form>
+  <% } else { %>
+    <p><span class="badge badge-gris">Non connecté</span></p>
+    <a class="btn btn-petit" href="/admin/microsoft/connecter">Connecter Microsoft 365</a>
+  <% } %>
+</div>
+
+<div class="carte">
+  <h3>Marche à suivre (une seule fois)</h3>
+  <ol class="petit">
+    <li>Dans le <strong>portail Azure</strong> (portal.azure.com), créez une <strong>inscription d'application</strong> :<br>
+      → URI de redirection (Web) : <span class="bloc-code"><%= typeof redirectUri !== 'undefined' ? redirectUri : '(définir MS_REDIRECT_URI)' %></span><br>
+      → Autorisations déléguées Microsoft Graph : <span class="bloc-code">OnlineMeetings.ReadWrite</span>, <span class="bloc-code">offline_access</span>, <span class="bloc-code">openid</span> (consentement admin si requis).</li>
+    <li>Créez un <strong>secret client</strong> et notez l'<strong>ID d'application (client)</strong>.</li>
+    <li>Sur le serveur, définissez : <span class="bloc-code">MS_CLIENT_ID</span>, <span class="bloc-code">MS_CLIENT_SECRET</span>, <span class="bloc-code">MS_TENANT</span> (ou « common »), <span class="bloc-code">MS_REDIRECT_URI</span>, puis redémarrez.</li>
+    <li>Revenez ici et cliquez <strong>Connecter Microsoft 365</strong>, puis acceptez avec votre compte.</li>
+  </ol>
+  <p class="petit">Les jetons sont stockés <strong>chiffrés</strong> (AES-256-GCM) en base. Sans connexion, les réunions fonctionnent quand même : collez simplement le lien Teams manuellement.</p>
+</div>
+<%- include('../partials/bas') %>

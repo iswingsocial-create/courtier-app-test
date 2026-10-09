@@ -1,0 +1,123 @@
+<%- include('../partials/haut', { titre: 'Échéances' }) %>
+<div class="entete-page">
+  <h1>📅 Renouvellements à venir</h1>
+  <a class="btn btn-secondaire btn-petit" href="/polices/nouvelle">+ Nouvelle police</a>
+</div>
+
+<% if (mMdp) { %><div class="alerte alerte-succes">Mot de passe modifié avec succès. Pensez à activer la <a href="/profil/deux-facteurs">double authentification</a>.</div><% } %>
+
+<div class="grille-stats">
+  <div class="stat"><div class="nombre"><%= stats.nbClients %></div><div class="etiquette">Entreprises</div></div>
+  <div class="stat"><div class="nombre"><%= stats.nbPolices %></div><div class="etiquette">Polices</div></div>
+  <div class="stat"><div class="nombre"><%= echus.length + j30.length %></div><div class="etiquette">Urgents (≤ 30 j)</div></div>
+  <div class="stat"><div class="nombre"><%= stats.nbBrouillons %></div><div class="etiquette">Brouillons à valider</div></div>
+  <div class="stat"><div class="nombre" style="<%= stats.nbTachesRetard ? 'color:#c0392b' : '' %>"><%= stats.nbTachesRetard %></div><div class="etiquette"><a href="/taches">Tâches en retard</a></div></div>
+  <div class="stat"><div class="nombre" style="<%= comptesRetard.length ? 'color:#c0392b' : '' %>"><%= comptesRetard.length %></div><div class="etiquette"><a href="/factures?statut=en_retard">Comptes en retard</a></div></div>
+</div>
+
+<% if (comptesRetard.length) { %>
+<div class="carte" style="border-left:4px solid #c0392b">
+  <h3>💰 Comptes en retard (<%= comptesRetard.length %>) — total dû : <strong><%= Number(totalRetard).toFixed(2) %> $</strong></h3>
+  <div class="tableau-deroulant"><table>
+    <thead><tr><th>Échue le</th><th>Facture</th><th>Entreprise</th><th>Solde dû</th><th></th></tr></thead>
+    <tbody>
+    <% comptesRetard.forEach((f) => { %>
+      <tr>
+        <td><span class="badge badge-echu"><%= f.date_echeance %></span></td>
+        <td><%= f.numero_facture %></td>
+        <td><%= f.entreprise %></td>
+        <td><strong><%= Number(f.solde).toFixed(2) %> $</strong></td>
+        <td><a class="btn btn-petit btn-secondaire" href="/factures/<%= f.id %>">Ouvrir</a></td>
+      </tr>
+    <% }) %>
+    </tbody>
+  </table></div>
+</div>
+<% } %>
+
+<% if (reunionsAVenir.length) { %>
+<div class="carte">
+  <h3>📅 Réunions à venir (7 jours)</h3>
+  <div class="tableau-deroulant"><table>
+    <thead><tr><th>Date</th><th>Titre</th><th>Avec</th><th>Lien</th><th></th></tr></thead>
+    <tbody>
+    <% reunionsAVenir.forEach((r) => { %>
+      <tr>
+        <td><%= r.date_heure.replace('T', ' ') %></td>
+        <td><%= r.titre %></td>
+        <td><%= r.entreprise || r.lead_nom || '—' %></td>
+        <td><% if (r.lien_teams) { %><a href="<%= r.lien_teams %>" target="_blank" rel="noopener">Rejoindre →</a><% } else { %>—<% } %></td>
+        <td><a class="btn btn-petit btn-secondaire" href="/reunions/<%= r.id %>">Ouvrir</a></td>
+      </tr>
+    <% }) %>
+    </tbody>
+  </table></div>
+</div>
+<% } %>
+
+<% if (rappelsRec.length) { %>
+<div class="carte">
+  <h3>🧾 Rappels de réclamations dépassés (<%= rappelsRec.length %>)</h3>
+  <div class="tableau-deroulant"><table>
+    <thead><tr><th>Rappel dû le</th><th>Entreprise</th><th>Réclamation</th><th></th></tr></thead>
+    <tbody>
+    <% rappelsRec.forEach((r) => { %>
+      <tr>
+        <td><span class="badge badge-echu"><%= r.date_rappel %></span></td>
+        <td><%= r.entreprise %></td>
+        <td><%= r.numero_reclamation || 'sans numéro' %></td>
+        <td><a class="btn btn-petit btn-secondaire" href="/reclamations/<%= r.id %>">Ouvrir</a></td>
+      </tr>
+    <% }) %>
+    </tbody>
+  </table></div>
+</div>
+<% } %>
+
+<% function bloc(titreListe, liste, classeBadge) { %>
+  <div class="carte">
+    <h3><%= titreListe %> (<%= liste.length %>)</h3>
+    <% if (!liste.length) { %><p class="petit">Aucune police dans cette période.</p><% } else { %>
+    <div class="tableau-deroulant"><table>
+      <thead><tr><th>Échéance</th><th>Entreprise</th><th>Police</th><th>Produit</th><th>Prime</th><th></th></tr></thead>
+      <tbody>
+      <% liste.forEach((p) => { %>
+        <tr>
+          <td><span class="badge <%= classeBadge %>"><%= p.jours < 0 ? 'Échue' : 'J-' + p.jours %></span><br><span class="petit"><%= p.date_echeance %></span></td>
+          <td><a href="/clients/<%= p.client_id %>"><%= p.client_raison_sociale %></a></td>
+          <td><%= p.numero_police %><br><span class="petit"><%= p.assureur %></span></td>
+          <td><%= NOMS_LIGNES[p.ligne] %></td>
+          <td><%= Number(p.prime_totale).toFixed(2) %> $</td>
+          <td><a class="btn btn-petit" href="/echeances/police/<%= p.id %>">Réviser</a></td>
+        </tr>
+      <% }) %>
+      </tbody>
+    </table></div>
+    <% } %>
+  </div>
+<% } %>
+
+<% bloc('🔴 Échues ou urgentes', echus, 'badge-echu'); %>
+<% bloc('🟠 30 jours et moins', j30, 'badge-j30'); %>
+<% bloc('🟡 31 à 60 jours', j60, 'badge-j60'); %>
+<% bloc('🔵 61 à 90 jours', j90, 'badge-j90'); %>
+
+<div class="carte">
+  <h3>⚪ Plus de 90 jours (<%= plusLoin.length %>)</h3>
+  <% if (!plusLoin.length) { %><p class="petit">Aucune.</p><% } else { %>
+  <div class="tableau-deroulant"><table>
+    <thead><tr><th>Échéance</th><th>Entreprise</th><th>Police</th><th></th></tr></thead>
+    <tbody>
+    <% plusLoin.forEach((p) => { %>
+      <tr>
+        <td><%= p.date_echeance %> <span class="petit">(J-<%= p.jours %>)</span></td>
+        <td><%= p.client_raison_sociale %></td>
+        <td><%= p.numero_police %></td>
+        <td><a class="btn btn-petit btn-secondaire" href="/echeances/police/<%= p.id %>">Voir</a></td>
+      </tr>
+    <% }) %>
+    </tbody>
+  </table></div>
+  <% } %>
+</div>
+<%- include('../partials/bas') %>

@@ -1,0 +1,8 @@
+<%- include('../partials/haut', { titre: 'Mot de passe temporaire' }) %>
+<div class="carte">
+  <h2>🔑 Mot de passe temporaire</h2>
+  <div class="alerte alerte-avert">Transmettez ce mot de passe à <strong><%= email %></strong> par un canal sûr. Il devra le changer au premier login.</div>
+  <pre class="bloc-code"><%= temporaire %></pre>
+  <div class="actions"><a class="btn btn-secondaire" href="/admin/utilisateurs">← Retour aux utilisateurs</a></div>
+</div>
+<%- include('../partials/bas') %>

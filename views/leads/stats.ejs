@@ -1,0 +1,23 @@
+<%- include('../partials/haut', { titre: 'Statistiques des leads' }) %>
+<div class="entete-page">
+  <h1>📊 Statistiques par campagne</h1>
+  <a class="btn btn-secondaire btn-petit" href="/leads">← Leads</a>
+</div>
+
+<div class="carte"><div class="tableau-deroulant"><table>
+  <thead><tr><th>Campagne</th><th>Source</th><th>Leads</th><th>Devenus clients</th><th>Taux de conversion</th></tr></thead>
+  <tbody>
+  <% stats.forEach((s) => { const taux = s.nb ? Math.round(100 * s.nb_clients / s.nb) : 0; %>
+    <tr>
+      <td><strong><%= s.campagne %></strong></td>
+      <td><%= NOMS_SOURCES[s.source] || s.source %></td>
+      <td><%= s.nb %></td>
+      <td><%= s.nb_clients %></td>
+      <td><%= taux %> %</td>
+    </tr>
+  <% }) %>
+  </tbody>
+</table></div>
+<% if (!stats.length) { %><p class="petit">Aucun lead pour l'instant.</p><% } %>
+</div>
+<%- include('../partials/bas') %>

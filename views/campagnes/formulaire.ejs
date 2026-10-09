@@ -1,0 +1,34 @@
+<%- include('../partials/haut', { titre: 'Nouvelle campagne' }) %>
+<div class="entete-page">
+  <h1>📣 Nouvelle campagne</h1>
+  <a class="btn btn-secondaire btn-petit" href="/campagnes">← Campagnes</a>
+</div>
+
+<% if (erreur) { %><div class="alerte alerte-erreur"><%= erreur %></div><% } %>
+<% if (typeof mIa !== 'undefined' && mIa) { %><div class="alerte alerte-info">Contenu généré par l'IA (source : <%= mIa %>) — relisez et ajustez avant d'enregistrer.</div><% } %>
+
+<div class="carte">
+  <form method="post" action="/campagnes" class="grille-form">
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+    <div><label for="nom">Nom de la campagne *</label>
+      <input type="text" id="nom" name="nom" required maxlength="120" value="<%= campagne.nom || '' %>" placeholder="Ex. : Restauration — printemps 2026"></div>
+    <div><label for="objet">Objet du courriel *</label>
+      <input type="text" id="objet" name="objet" required maxlength="160" value="<%= campagne.objet || '' %>" placeholder="Ex. : Vos assurances sont-elles à jour ?"></div>
+    <div>
+      <label>Classes d'affaires ciblées (secteurs) *</label>
+      <% if (!secteursDispo.length) { %><p class="petit">Aucun secteur dans votre portefeuille pour l'instant.</p><% } %>
+      <% secteursDispo.forEach((s) => { %>
+        <div class="case"><input type="checkbox" id="sec-<%= s %>" name="secteurs" value="<%= s %>" <%= (campagne.secteurs || []).includes(s) ? 'checked' : '' %>><label for="sec-<%= s %>"><%= s %></label></div>
+      <% }) %>
+      <p class="petit">Seules les entreprises de ces secteurs <strong>ayant consenti au marketing</strong> seront destinataires.</p>
+    </div>
+    <div><label for="contenu">Contenu *</label>
+      <textarea id="contenu" name="contenu" rows="8"><%= campagne.contenu || '' %></textarea>
+      <p class="petit">Astuce : remplissez le nom, l'objet et les secteurs, puis générez un premier texte avec l'IA.</p></div>
+    <div class="actions">
+      <button class="btn btn-petit" type="submit">Enregistrer la campagne</button>
+      <button class="btn btn-petit btn-secondaire" type="submit" formaction="/campagnes/ia">✨ Générer le contenu avec l'IA</button>
+    </div>
+  </form>
+</div>
+<%- include('../partials/bas') %>

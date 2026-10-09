@@ -1,0 +1,31 @@
+<%- include('../partials/haut', { titre: 'Nouvel utilisateur' }) %>
+<div class="entete-page"><h1>➕ Nouvel utilisateur</h1>
+<a class="btn btn-secondaire btn-petit" href="/admin/utilisateurs">← Utilisateurs</a></div>
+
+<% if (erreur) { %><div class="alerte alerte-erreur"><%= erreur %></div><% } %>
+
+<div class="carte">
+<form method="post" action="/admin/utilisateurs">
+  <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+  <div class="grille-form">
+    <div><label for="nom">Nom complet *</label><input type="text" id="nom" name="nom" required value="<%= valeurs.nom || '' %>"></div>
+    <div><label for="email">Courriel *</label><input type="email" id="email" name="email" required value="<%= valeurs.email || '' %>"></div>
+    <div><label for="cabinet_id">Cabinet *</label>
+      <select id="cabinet_id" name="cabinet_id" required>
+        <% cabinets.forEach((c) => { %>
+          <option value="<%= c.id %>" <%= String(valeurs.cabinet_id) === String(c.id) ? 'selected' : '' %>><%= c.nom %></option>
+        <% }) %>
+      </select></div>
+    <div><label for="role">Rôle *</label>
+      <select id="role" name="role" required>
+        <% Object.keys(NOMS_ROLES).forEach((r) => { %>
+          <option value="<%= r %>" <%= valeurs.role === r ? 'selected' : '' %>><%= NOMS_ROLES[r] %></option>
+        <% }) %>
+      </select></div>
+    <div><label for="mdp">Mot de passe temporaire *</label><input type="password" id="mdp" name="mot_de_passe" required autocomplete="new-password">
+      <p class="petit">Min. 10 caractères. L’utilisateur devra le changer au premier login.</p></div>
+  </div>
+  <div class="actions"><button class="btn" type="submit">Créer l’utilisateur</button></div>
+</form>
+</div>
+<%- include('../partials/bas') %>

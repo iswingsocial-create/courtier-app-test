@@ -1,0 +1,61 @@
+<%- include('../partials/haut', { titre: 'Réclamation — ' + (reclamation.numero_reclamation || 'sans numéro') }) %>
+<div class="entete-page">
+  <h1>🧾 Réclamation</h1>
+  <div class="actions" style="margin-top:0">
+    <a class="btn btn-secondaire btn-petit" href="/reclamations/<%= reclamation.id %>/modifier">Modifier</a>
+    <a class="btn btn-secondaire btn-petit" href="/reclamations">← Réclamations</a>
+  </div>
+</div>
+
+<% if (mSuivi) { %><div class="alerte alerte-succes">Suivi ajouté.</div><% } %>
+
+<div class="carte">
+  <dl class="dl">
+    <dt>Entreprise</dt><dd><a href="/clients/<%= reclamation.client_id %>"><%= reclamation.entreprise %></a></dd>
+    <dt>Police</dt><dd><%- reclamation.numero_police ? '<a href="/echeances/police/' + reclamation.police_id + '">' + reclamation.numero_police + '</a>' : '—' %></dd>
+    <dt>N° réclamation (assureur)</dt><dd><%= reclamation.numero_reclamation || '—' %></dd>
+    <dt>Statut</dt><dd><span class="badge badge-gris"><%= NOMS_RECLAMATION[reclamation.statut] %></span></dd>
+    <dt>Date du sinistre</dt><dd><%= reclamation.date_sinistre %></dd>
+    <dt>Date de déclaration</dt><dd><%= reclamation.date_declaration || '—' %></dd>
+    <dt>Montant réclamé</dt><dd><%= reclamation.montant_reclame != null ? Number(reclamation.montant_reclame).toFixed(2) + ' $' : '—' %></dd>
+    <dt>Montant réglé</dt><dd><%= reclamation.montant_regle != null ? Number(reclamation.montant_regle).toFixed(2) + ' $' : '—' %></dd>
+    <dt>Franchise appliquée</dt><dd><%= reclamation.franchise_appliquee != null ? Number(reclamation.franchise_appliquee).toFixed(2) + ' $' : '—' %></dd>
+    <dt>Expert en sinistre</dt><dd><%= reclamation.expert_nom || '—' %><%= reclamation.expert_contact ? ' (' + reclamation.expert_contact + ')' : '' %></dd>
+    <dt>Courtier responsable</dt><dd><%= reclamation.responsable_nom || '—' %></dd>
+    <dt>Date de rappel</dt><dd><%= reclamation.date_rappel || '—' %></dd>
+  </dl>
+  <h3>Description</h3>
+  <p><%= reclamation.description %></p>
+  <% if (reclamation.notes) { %><h3>Notes internes</h3><p><%= reclamation.notes %></p><% } %>
+</div>
+
+<div class="carte">
+  <h3>Changer le statut</h3>
+  <form method="post" action="/reclamations/<%= reclamation.id %>/statut" class="grille-form">
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+    <div><label for="statut">Nouveau statut</label>
+      <select id="statut" name="statut">
+        <% STATUTS.forEach((s) => { %>
+          <option value="<%= s %>" <%= reclamation.statut === s ? 'selected' : '' %>><%= NOMS_RECLAMATION[s] %></option>
+        <% }) %>
+      </select></div>
+    <div class="actions"><button class="btn btn-petit" type="submit">Appliquer</button></div>
+  </form>
+</div>
+
+<div class="carte">
+  <h3>📝 Historique de suivi (<%= suivis.length %>)</h3>
+  <form method="post" action="/reclamations/<%= reclamation.id %>/suivis">
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+    <label for="texte">Ajouter un suivi</label>
+    <textarea id="texte" name="texte" required placeholder="Appel avec l’expert, document reçu, entente…"></textarea>
+    <div class="actions"><button class="btn btn-petit" type="submit">Ajouter</button></div>
+  </form>
+  <% if (suivis.length) { %>
+  <ul class="suivis"><% suivis.forEach((s) => { %>
+    <li><div><%= s.texte %></div>
+      <span class="petit"><%= s.auteur || '—' %> · <%= s.cree_le.slice(0, 16).replace('T', ' ') %></span></li>
+  <% }) %></ul>
+  <% } %>
+</div>
+<%- include('../partials/bas') %>

@@ -1,0 +1,46 @@
+<%- include('../partials/haut', { titre: 'Facturation' }) %>
+<div class="entete-page">
+  <h1>💰 Facturation</h1>
+  <a class="btn btn-petit" href="/factures/nouvelle">+ Nouvelle facture</a>
+</div>
+
+<% if (nbRetard) { %>
+<div class="carte bordure-alerte">
+  <h3>⚠️ Comptes en retard (<%= nbRetard %>) — total dû : <strong><%= Number(totalDu).toFixed(2) %> $</strong></h3>
+  <p class="petit">Factures échues non soldées. <a href="/factures?statut=en_retard">Voir les comptes en retard →</a></p>
+</div>
+<% } %>
+
+<div class="carte">
+  <form method="get" action="/factures" class="grille-form">
+    <div><label for="statut">Statut</label>
+      <select id="statut" name="statut" data-autosubmit>
+        <option value="">Tous</option>
+        <% STATUTS.forEach((s) => { %>
+          <option value="<%= s %>" <%= statut === s ? 'selected' : '' %>><%= NOMS_STATUTS_FACTURE[s] %></option>
+        <% }) %>
+      </select></div>
+  </form>
+</div>
+
+<div class="carte"><div class="tableau-deroulant"><table>
+  <thead><tr><th>N°</th><th>Entreprise</th><th>Description</th><th>Montant</th><th>Payé</th><th>Solde</th><th>Échéance</th><th>Statut</th><th></th></tr></thead>
+  <tbody>
+  <% factures.forEach((f) => { const solde = Number(f.montant) - Number(f.montant_paye); %>
+    <tr>
+      <td><%= f.numero_facture %></td>
+      <td><a href="/clients/<%= f.client_id %>"><%= f.entreprise %></a></td>
+      <td><%= f.description %></td>
+      <td><%= Number(f.montant).toFixed(2) %> $</td>
+      <td><%= Number(f.montant_paye).toFixed(2) %> $</td>
+      <td><strong><%= solde.toFixed(2) %> $</strong></td>
+      <td><%= f.date_echeance %></td>
+      <td><span class="badge <%= f.statut === 'en_retard' ? 'badge-echu' : 'badge-gris' %>"><%= NOMS_STATUTS_FACTURE[f.statut] %></span></td>
+      <td><a class="btn btn-petit btn-secondaire" href="/factures/<%= f.id %>">Ouvrir</a></td>
+    </tr>
+  <% }) %>
+  </tbody>
+</table></div>
+<% if (!factures.length) { %><p class="petit">Aucune facture.</p><% } %>
+</div>
+<%- include('../partials/bas') %>

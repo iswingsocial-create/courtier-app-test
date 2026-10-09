@@ -1,0 +1,48 @@
+<%- include('../partials/haut', { titre: 'Utilisateurs' }) %>
+<div class="entete-page">
+  <h1>👤 Utilisateurs</h1>
+  <div class="actions" style="margin-top:0">
+    <a class="btn btn-secondaire btn-petit" href="/admin/cabinets">← Cabinets</a>
+    <a class="btn btn-petit" href="/admin/utilisateurs/nouveau">+ Nouvel utilisateur</a>
+  </div>
+</div>
+
+<div class="carte">
+  <form method="get" action="/admin/utilisateurs" class="grille-form">
+    <div><label for="cabinet">Filtrer par cabinet</label>
+      <select id="cabinet" name="cabinet" onchange="this.form.submit()">
+        <option value="">Tous</option>
+        <% cabinets.forEach((c) => { %>
+          <option value="<%= c.id %>" <%= cabinetFiltre === c.id ? 'selected' : '' %>><%= c.nom %></option>
+        <% }) %>
+      </select></div>
+  </form>
+</div>
+
+<div class="carte"><div class="tableau-deroulant"><table>
+  <thead><tr><th>Nom</th><th>Courriel</th><th>Cabinet</th><th>Rôle</th><th>2FA</th><th>Actif</th><th></th></tr></thead>
+  <tbody>
+  <% utilisateurs.forEach((u) => { %>
+    <tr>
+      <td><%= u.nom %></td><td><%= u.email %></td><td><%= u.cabinet_nom %></td>
+      <td><span class="badge badge-gris"><%= NOMS_ROLES[u.role] %></span></td>
+      <td><%= u.totp_actif ? '✅' : '—' %></td>
+      <td><%= u.actif ? '✅' : '<span class="badge badge-gris">désactivé</span>' %></td>
+      <td>
+        <form method="post" action="/admin/utilisateurs/<%= u.id %>/reinitialiser" class="inline" data-confirm="Réinitialiser le mot de passe de cet utilisateur ?">        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+        <button class="lien" type="submit">Réinitialiser le mot de passe</button></form>
+        <% if (u.actif) { %>
+        <form method="post" action="/admin/utilisateurs/<%= u.id %>/desactiver" class="inline" data-confirm="Désactiver ce compte ? Il ne pourra plus se connecter.">
+          <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+          <button class="lien" type="submit">Désactiver</button></form>
+        <% } else { %>
+        <form method="post" action="/admin/utilisateurs/<%= u.id %>/activer" class="inline" data-confirm="Réactiver ce compte ?">
+          <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+          <button class="lien" type="submit">Réactiver</button></form>
+        <% } %>
+      </td>
+    </tr>
+  <% }) %>
+  </tbody>
+</table></div></div>
+<%- include('../partials/bas') %>

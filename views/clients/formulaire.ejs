@@ -1,0 +1,58 @@
+<%- include('../partials/haut', { titre: client && client.id ? 'Modifier l’entreprise' : 'Nouvelle entreprise' }) %>
+<div class="entete-page">
+  <h1><%= client && client.id ? '✏️ Modifier l’entreprise' : '➕ Nouvelle entreprise' %></h1>
+  <a class="btn btn-secondaire btn-petit" href="<%= client && client.id ? '/clients/' + client.id : '/clients' %>">← Retour</a>
+</div>
+
+<% if (erreur) { %><div class="alerte alerte-erreur"><%= erreur %></div><% } %>
+
+<div class="carte">
+<form method="post" action="<%= client && client.id ? '/clients/' + client.id : '/clients' %>">
+  <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+  <h3>Entreprise</h3>
+  <div class="grille-form">
+    <div><label for="raison_sociale">Raison sociale *</label><input type="text" id="raison_sociale" name="raison_sociale" required value="<%= client ? (client.raison_sociale || '') : '' %>"></div>
+    <div><label for="neq">NEQ (10 chiffres)</label><input type="text" id="neq" name="neq" maxlength="10" value="<%= client && client.neq ? client.neq : '' %>"></div>
+    <div><label for="secteur_activite">Secteur d’activité</label><input type="text" id="secteur_activite" name="secteur_activite" value="<%= client && client.secteur_activite ? client.secteur_activite : '' %>"></div>
+    <div><label for="responsable_id">Courtier responsable</label>
+      <select id="responsable_id" name="responsable_id">
+        <option value="">— Aucun —</option>
+        <% utilisateurs.forEach((u) => { %>
+          <option value="<%= u.id %>" <%= client && String(client.responsable_id) === String(u.id) ? 'selected' : '' %>><%= u.nom %> (<%= u.role %>)</option>
+        <% }) %>
+      </select></div>
+  </div>
+
+  <h3>Personne-contact</h3>
+  <div class="grille-form">
+    <div><label for="prenom">Prénom *</label><input type="text" id="prenom" name="prenom" required value="<%= client ? client.prenom : '' %>"></div>
+    <div><label for="nom">Nom *</label><input type="text" id="nom" name="nom" required value="<%= client ? client.nom : '' %>"></div>
+    <div><label for="titre_contact">Titre / fonction</label><input type="text" id="titre_contact" name="titre_contact" placeholder="ex. : président, contrôleur" value="<%= client && client.titre_contact ? client.titre_contact : '' %>"></div>
+    <div><label for="courriel">Courriel</label><input type="email" id="courriel" name="courriel" value="<%= client && client.courriel ? client.courriel : '' %>"></div>
+    <div><label for="telephone">Téléphone</label><input type="tel" id="telephone" name="telephone" value="<%= client && client.telephone ? client.telephone : '' %>"></div>
+    <div><label for="adresse">Adresse</label><input type="text" id="adresse" name="adresse" value="<%= client && client.adresse ? client.adresse : '' %>"></div>
+    <div><label for="ville">Ville</label><input type="text" id="ville" name="ville" value="<%= client && client.ville ? client.ville : '' %>"></div>
+    <div><label for="code_postal">Code postal</label><input type="text" id="code_postal" name="code_postal" value="<%= client && client.code_postal ? client.code_postal : '' %>"></div>
+    <div><label for="langue">Langue</label>
+      <select id="langue" name="langue">
+        <option value="FR" <%= client && client.langue === 'FR' ? 'selected' : '' %>>Français</option>
+        <option value="EN" <%= client && client.langue === 'EN' ? 'selected' : '' %>>Anglais</option>
+      </select></div>
+  </div>
+  <label for="notes">Notes</label>
+  <textarea id="notes" name="notes"><%= client && client.notes ? client.notes : '' %></textarea>
+
+  <h3>Consentements — Loi 25</h3>
+  <% TYPES_CONSENTEMENT.forEach((t) => { %>
+    <div class="case">
+      <input type="checkbox" id="c_<%= t.type %>" name="consent_<%= t.type %>" <%= consentements[t.type] && consentements[t.type].accepte ? 'checked' : '' %>>
+      <label for="c_<%= t.type %>"><%= t.libelle %>
+        <% if (consentements[t.type] && consentements[t.type].accepte) { %><span class="petit">(accepté le <%= consentements[t.type].date_consentement %>)</span><% } %>
+      </label>
+    </div>
+  <% }) %>
+
+  <div class="actions"><button class="btn" type="submit">Enregistrer</button></div>
+</form>
+</div>
+<%- include('../partials/bas') %>

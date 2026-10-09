@@ -1,0 +1,10 @@
+<%- include('partials/haut', { titre: titre }) %>
+<div class="carte">
+  <h2><%= titre %></h2>
+  <p><%= message %></p>
+  <div class="actions">
+    <a class="btn btn-secondaire" href="javascript:history.back()">← Retour</a>
+    <a class="btn" href="/echeances">Tableau de bord</a>
+  </div>
+</div>
+<%- include('partials/bas') %>

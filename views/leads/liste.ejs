@@ -1,0 +1,38 @@
+<%- include('../partials/haut', { titre: 'Leads' }) %>
+<div class="entete-page">
+  <h1>🎯 Leads</h1>
+  <div>
+    <% if (voirArchives) { %><a class="btn btn-secondaire btn-petit" href="/leads">← Actifs</a><% } else { %><a class="btn btn-secondaire btn-petit" href="/leads?archives=1">Voir les archivés</a><% } %>
+    <a class="btn btn-secondaire btn-petit" href="/leads/stats">Statistiques</a>
+    <a class="btn btn-petit" href="/leads/nouveau">+ Nouveau lead</a>
+  </div>
+</div>
+
+<% if (nbRappels) { %>
+<div class="alerte alerte-avert">⏰ <%= nbRappels %> lead<%= nbRappels > 1 ? 's' : '' %> avec un rappel dépassé.</div>
+<% } %>
+
+<% STATUTS.forEach((s) => { const liste = groupes[s] || []; %>
+<div class="carte">
+  <h3><%= NOMS_STATUTS_LEAD[s] %> (<%= liste.length %>)</h3>
+  <% if (!liste.length) { %><p class="petit">Aucun.</p><% } else { %>
+  <div class="tableau-deroulant"><table>
+    <thead><tr><th>Nom</th><th>Entreprise</th><th>Contact</th><th>Source</th><th>Campagne</th><th>Rappel</th><th></th></tr></thead>
+    <tbody>
+    <% liste.forEach((l) => { %>
+      <tr>
+        <td><strong><%= l.nom %></strong></td>
+        <td><%= l.entreprise || '—' %></td>
+        <td><%= l.courriel || l.telephone || '—' %></td>
+        <td><%= NOMS_SOURCES[l.source] || l.source %></td>
+        <td><%= l.campagne || '—' %></td>
+        <td><%= l.date_rappel || '—' %></td>
+        <td><a class="btn btn-petit btn-secondaire" href="/leads/<%= l.id %>">Ouvrir</a></td>
+      </tr>
+    <% }) %>
+    </tbody>
+  </table></div>
+  <% } %>
+</div>
+<% }) %>
+<%- include('../partials/bas') %>

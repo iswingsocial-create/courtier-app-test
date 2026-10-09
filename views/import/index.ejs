@@ -1,0 +1,42 @@
+<%- include('../partials/haut', { titre: 'Import CSV' }) %>
+<div class="entete-page"><h1>📥 Import en lot (CSV)</h1></div>
+
+<div class="carte">
+  <h3>Comment ça marche</h3>
+  <ol>
+    <li><a href="/import/modele">Téléchargez le modèle CSV</a> (séparateur <code>;</code>, compatible Excel).</li>
+    <li>Une ligne <code>type=entreprise</code> crée une entreprise, <code>type=police</code> crée une police (retrouvée par raison sociale ou courriel), <code>type=protection</code> ajoute une protection à une police (retrouvée par numéro).</li>
+    <li>Produits acceptés : <%- produits.map((p) => '<code>' + p + '</code>').join(' ') %></li>
+    <li>Téléversez le fichier : vous recevrez un rapport ligne par ligne.</li>
+  </ol>
+  <form method="post" action="/import" enctype="multipart/form-data">
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+    <label for="fichier">Fichier CSV (max 5 Mo)</label>
+    <input type="file" id="fichier" name="fichier" accept=".csv,text/csv" required>
+    <div class="actions"><button class="btn" type="submit">Importer</button></div>
+  </form>
+</div>
+
+<% if (rapport) { %>
+<div class="carte">
+  <h3>📊 Rapport d’import</h3>
+  <% if (rapport.erreurGlobale) { %>
+    <div class="alerte alerte-erreur"><%= rapport.erreurGlobale %></div>
+  <% } else { %>
+    <p><strong><%= rapport.total %></strong> lignes traitées —
+      <span class="rapport-ok"><strong><%= rapport.crees %></strong> créées</span>,
+      <span class="rapport-erreur"><strong><%= rapport.erreurs %></strong> en erreur</span>.</p>
+    <div class="tableau-deroulant"><table>
+      <thead><tr><th>Ligne</th><th>Statut</th><th>Détail</th></tr></thead>
+      <tbody>
+      <% rapport.details.forEach((d) => { %>
+        <tr><td><%= d.ligne %></td>
+        <td class="<%= d.statut === 'ok' ? 'rapport-ok' : 'rapport-erreur' %>"><%= d.statut === 'ok' ? '✅ OK' : '❌ Erreur' %></td>
+        <td><%= d.message %></td></tr>
+      <% }) %>
+      </tbody>
+    </table></div>
+  <% } %>
+</div>
+<% } %>
+<%- include('../partials/bas') %>

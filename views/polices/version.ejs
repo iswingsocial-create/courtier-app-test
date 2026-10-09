@@ -1,0 +1,32 @@
+<%- include('../partials/haut', { titre: 'Version ' + version.version + ' — ' + police.numero_police }) %>
+<div class="entete-page">
+  <h1>🕘 Version <%= version.version %> — police <%= police.numero_police %></h1>
+  <div class="actions" style="margin-top:0">
+    <a class="btn btn-secondaire btn-petit" href="/polices/<%= police.id %>/versions">← Historique</a>
+  </div>
+</div>
+
+<div class="carte">
+  <h3>Instantané en lecture seule</h3>
+  <dl class="dl">
+    <dt>Police</dt><dd><%= police.numero_police %> — <%= NOMS_LIGNES[police.ligne] %> (<%= police.assureur %>)</dd>
+    <dt>Effet / Échéance</dt><dd><%= version.date_effet %> → <%= version.date_echeance %></dd>
+    <dt>Franchise</dt><dd><%= Number(version.franchise || 0).toFixed(2) %> $</dd>
+    <% if (version.notes) { %><dt>Notes</dt><dd><%= version.notes %></dd><% } %>
+    <dt>Instantané créé le</dt><dd><%= version.cree_le.slice(0, 16).replace('T', ' ') %> par <%= version.auteur || '—' %></dd>
+  </dl>
+</div>
+
+<div class="carte">
+  <h3>Protections au moment de cette version (<%= version.protections.length %>)</h3>
+  <div class="tableau-deroulant"><table>
+    <thead><tr><th>Code</th><th>Protection</th><th>Prime</th></tr></thead>
+    <tbody>
+    <% version.protections.forEach((p) => { %>
+      <tr><td><span class="badge badge-gris"><%= p.code %></span></td><td><%= p.libelle %></td>
+      <td><%= Number(p.prime).toFixed(2) %> $</td></tr>
+    <% }) %>
+    </tbody>
+  </table></div>
+</div>
+<%- include('../partials/bas') %>

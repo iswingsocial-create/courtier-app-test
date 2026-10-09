@@ -1,0 +1,42 @@
+<%- include('../partials/haut', { titre: 'Planifier une réunion' }) %>
+<div class="entete-page">
+  <h1>📅 Planifier une réunion</h1>
+  <a class="btn btn-secondaire btn-petit" href="/reunions">← Réunions</a>
+</div>
+
+<% if (erreur) { %><div class="alerte alerte-erreur"><%= erreur %></div><% } %>
+<% if (!msConnecte) { %><div class="alerte alerte-info">Microsoft 365 n'est pas connecté : le lien Teams sera à coller manuellement (ou <a href="/admin/microsoft">connectez Microsoft 365</a>).</div><% } %>
+
+<div class="carte">
+  <form method="post" action="/reunions" class="grille-form">
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+    <div><label for="titre">Titre *</label>
+      <input type="text" id="titre" name="titre" required maxlength="160" value="<%= reunion.titre || '' %>" placeholder="Ex. : Révision annuelle — CGL"></div>
+    <div><label for="date_heure">Date et heure *</label>
+      <input type="datetime-local" id="date_heure" name="date_heure" required value="<%= reunion.date_heure || '' %>"></div>
+    <div><label for="client_id">Entreprise (optionnel)</label>
+      <select id="client_id" name="client_id">
+        <option value="">— Aucune —</option>
+        <% entreprises.forEach((e) => { %>
+          <option value="<%= e.id %>" <%= String(reunion.client_id || '') === String(e.id) ? 'selected' : '' %>><%= e.raison_sociale %></option>
+        <% }) %>
+      </select></div>
+    <div><label for="lead_id">Lead (optionnel)</label>
+      <select id="lead_id" name="lead_id">
+        <option value="">— Aucun —</option>
+        <% leads.forEach((l) => { %>
+          <option value="<%= l.id %>" <%= String(reunion.lead_id || '') === String(l.id) ? 'selected' : '' %>><%= l.nom %><%= l.entreprise ? ' (' + l.entreprise + ')' : '' %></option>
+        <% }) %>
+      </select></div>
+    <div><label for="lien_teams">Lien Teams (manuel)</label>
+      <input type="url" id="lien_teams" name="lien_teams" maxlength="500" value="<%= reunion.lien_teams || '' %>" placeholder="https://teams.microsoft.com/…"></div>
+    <% if (msConnecte) { %>
+    <div class="case"><input type="checkbox" id="generer_teams" name="generer_teams" checked>
+      <label for="generer_teams">Générer le lien Teams automatiquement via Microsoft 365</label></div>
+    <% } %>
+    <div><label for="notes">Notes</label>
+      <textarea id="notes" name="notes" rows="2"><%= reunion.notes || '' %></textarea></div>
+    <div class="actions"><button class="btn" type="submit">Planifier</button></div>
+  </form>
+</div>
+<%- include('../partials/bas') %>

@@ -1,0 +1,70 @@
+<%- include('../partials/haut', { titre: 'Lead : ' + lead.nom }) %>
+<div class="entete-page">
+  <h1>🎯 <%= lead.nom %></h1>
+  <div>
+    <span class="badge badge-gris"><%= NOMS_STATUTS_LEAD[lead.statut] %></span>
+    <a class="btn btn-secondaire btn-petit" href="/leads">← Leads</a>
+  </div>
+</div>
+
+<% if (mSuivi) { %><div class="alerte alerte-succes">Suivi ajouté.</div><% } %>
+<% if (mConverti) { %><div class="alerte alerte-succes">Lead converti en entreprise.</div><% } %>
+<% if (lead.client_id) { %><div class="alerte alerte-info">Ce lead est devenu l'entreprise <a href="/clients/<%= lead.client_id %>"><%= lead.entreprise_liee %></a>.</div><% } %>
+
+<div class="carte">
+  <h3>Informations</h3>
+  <dl class="dl">
+    <dt>Entreprise</dt><dd><%= lead.entreprise || '—' %></dd>
+    <dt>Courriel</dt><dd><%= lead.courriel || '—' %></dd>
+    <dt>Téléphone</dt><dd><%= lead.telephone || '—' %></dd>
+    <dt>Source</dt><dd><%= NOMS_SOURCES[lead.source] || lead.source %></dd>
+    <dt>Campagne</dt><dd><%= lead.campagne || '—' %></dd>
+    <% if (lead.utm_source || lead.utm_medium || lead.utm_campaign) { %>
+    <dt>UTM</dt><dd class="petit"><%= [lead.utm_source, lead.utm_medium, lead.utm_campaign].filter(Boolean).join(' / ') %></dd>
+    <% } %>
+    <dt>Responsable</dt><dd><%= lead.responsable_nom || '—' %></dd>
+    <dt>Rappel</dt><dd><%= lead.date_rappel || '—' %></dd>
+    <dt>Besoin</dt><dd><%= lead.besoin || '—' %></dd>
+    <dt>Notes</dt><dd><%= lead.notes || '—' %></dd>
+  </dl>
+  <div class="actions">
+    <% if (!lead.client_id) { %>
+    <form method="post" action="/leads/<%= lead.id %>/convertir" class="inline" data-confirm="Convertir ce lead en entreprise cliente ?">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+      <button class="btn btn-petit" type="submit">🏢 Convertir en entreprise</button>
+    </form>
+    <% } %>
+    <a class="btn btn-petit btn-secondaire" href="/reunions/nouvelle?lead=<%= lead.id %>">📅 Planifier une réunion</a>
+    <form method="post" action="/leads/<%= lead.id %>/<%= lead.archive ? 'desarchiver' : 'archiver' %>" class="inline" data-confirm="<%= lead.archive ? 'Désarchiver ce lead ?' : 'Archiver ce lead ?' %>">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+      <button class="btn btn-petit btn-secondaire" type="submit"><%= lead.archive ? 'Désarchiver' : 'Archiver' %></button>
+    </form>
+  </div>
+</div>
+
+<div class="carte">
+  <h3>Changer le statut</h3>
+  <form method="post" action="/leads/<%= lead.id %>/statut" class="grille-form">
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+    <div><label for="statut">Statut</label>
+      <select id="statut" name="statut">
+        <% STATUTS.forEach((s) => { %><option value="<%= s %>" <%= lead.statut === s ? 'selected' : '' %>><%= NOMS_STATUTS_LEAD[s] %></option><% }) %>
+      </select></div>
+    <div class="actions aligne-fin"><button class="btn btn-petit" type="submit">Mettre à jour</button></div>
+  </form>
+</div>
+
+<div class="carte">
+  <h3>Suivi (<%= suivis.length %>)</h3>
+  <form method="post" action="/leads/<%= lead.id %>/suivis" class="grille-form">
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+    <div><label for="texte">Ajouter une note de suivi</label>
+      <textarea id="texte" name="texte" rows="2" required maxlength="2000"></textarea></div>
+    <div class="actions aligne-fin"><button class="btn btn-petit" type="submit">Ajouter</button></div>
+  </form>
+  <% suivis.forEach((s) => { %>
+    <p><span class="petit"><%= s.cree_le.slice(0, 16).replace('T', ' ') %> — <%= s.auteur || 'système' %></span><br><%= s.texte %></p>
+  <% }) %>
+  <% if (!suivis.length) { %><p class="petit">Aucun suivi pour l'instant.</p><% } %>
+</div>
+<%- include('../partials/bas') %>
