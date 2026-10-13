@@ -59,7 +59,11 @@ function utilisateursCabinet(cabinetId) {
 }
 
 function assureursCabinet(cabinetId) {
-  return bd.prepare('SELECT id, nom FROM assureurs WHERE cabinet_id = ? AND archive = 0 ORDER BY nom').all(cabinetId);
+  return bd.prepare(`
+    SELECT a.id, a.nom,
+           (SELECT GROUP_CONCAT(produit) FROM assureur_produits ap WHERE ap.assureur_id = a.id) AS produits
+    FROM assureurs a WHERE a.cabinet_id = ? AND a.archive = 0 ORDER BY a.nom
+  `).all(cabinetId);
 }
 
 // Contexte de validation (le cabinetId de la requête en cours).

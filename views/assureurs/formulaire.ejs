@@ -31,6 +31,29 @@
     <div><label for="mod_courriel">Courriel</label><input type="email" id="mod_courriel" name="mod_courriel" value="<%= assureur && assureur.mod_courriel ? assureur.mod_courriel : '' %>"></div>
   </div>
 
+  <h3>💰 Comptabilité <span class="petit">(financement par prélèvement direct)</span></h3>
+  <div class="grille-form">
+    <div><label for="compta_nom">Nom du contact</label><input type="text" id="compta_nom" name="compta_nom" value="<%= assureur && assureur.compta_nom ? assureur.compta_nom : '' %>"></div>
+    <div><label for="compta_telephone">Téléphone</label><input type="tel" id="compta_telephone" name="compta_telephone" value="<%= assureur && assureur.compta_telephone ? assureur.compta_telephone : '' %>"></div>
+    <div><label for="compta_courriel">Courriel</label><input type="email" id="compta_courriel" name="compta_courriel" value="<%= assureur && assureur.compta_courriel ? assureur.compta_courriel : '' %>"></div>
+  </div>
+
+  <h3>🏷️ Produits offerts et taux de commission</h3>
+  <p class="petit">Cochez les produits offerts par cet assureur et indiquez le taux de commission (%) pour chacun.</p>
+  <div class="tableau-deroulant"><table>
+    <thead><tr><th></th><th>Produit</th><th>Commission (%)</th></tr></thead>
+    <tbody>
+    <% LIGNES.forEach((l) => { %>
+      <tr>
+        <td><input type="checkbox" id="prod_<%= l %>" name="produits" value="<%= l %>" <%= produits && Object.prototype.hasOwnProperty.call(produits, l) ? 'checked' : '' %>></td>
+        <td><label for="prod_<%= l %>"><%= NOMS_LIGNES[l] %></label></td>
+        <td><input type="number" name="commission_<%= l %>" step="0.1" min="0" max="100" style="width:7em" placeholder="ex. 12.5"
+          value="<%= produits && produits[l] != null ? produits[l] : '' %>"></td>
+      </tr>
+    <% }) %>
+    </tbody>
+  </table></div>
+
   <label for="notes">Notes</label>
   <textarea id="notes" name="notes"><%= assureur && assureur.notes ? assureur.notes : '' %></textarea>
 

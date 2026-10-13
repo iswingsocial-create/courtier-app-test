@@ -169,6 +169,27 @@ courtier-app/
 - Règle d'or respectée : comptes et courriels s'archivent, jamais supprimés.
 - Les pièces jointes ne sont pas conservées en v1.
 
+### 🏦 Assureurs (onglet « Assureurs »)
+- **Fiche assureur** : coordonnées générales, contacts **nouvelle affaire**,
+  **modifications / avenants** et **comptabilité** (financement par prélèvement direct),
+  notes, archivage (impossible s'il reste des polices actives reliées).
+- **Produits offerts** : cases à cocher parmi les 9 produits (CGL, biens, perte
+  d'exploitation, E&O, cyber, flotte, cautionnement, D&O, autre) + **taux de
+  commission (%) par produit**. Ex. : un assureur peut ne pas offrir le cyber
+  ou la flotte. Les produits décochés sont retirés de la configuration
+  (simple paramétrage, pas une suppression métier).
+- **Statistiques par assureur** sur la fiche, calculées **selon le rôle** :
+  nombre de polices actives, volume de primes (somme des primes des protections),
+  commissions estimées (prime × taux du produit ; alerte si un taux manque).
+  - **Admin** : tout le cabinet · **Courtier** : son portefeuille uniquement ·
+    **Manager** : son équipe uniquement.
+- **Équipes** : dans **Admin → Utilisateurs**, l'admin rattache chaque utilisateur
+  à un manager (`manager_id`) via le menu « Équipe ». L'équipe d'un manager =
+  lui-même + ses rattachés (sans rattaché : lui seul).
+- **Formulaire police** : le menu « Assureur » ne propose que les assureurs offrant
+  le produit sélectionné (filtrage côté client via `data-produits` ; si aucun
+  produit n'est configuré, tout est proposé comme avant).
+
 ### 🏷️ Terminologie et libellés d'interface
 Les libellés affichés ne sont **pas** dispersés au hasard : les statuts et constantes
 d'interface sont centralisés dans chaque route sous forme de constantes `NOMS_*`
@@ -261,6 +282,7 @@ PORT=3101 node scripts/test-ajustements.js
 PORT=3101 node scripts/test-nouveaux-modules.js
 PORT=3101 node scripts/test-principes.js
 PORT=3101 node scripts/test-courriels.js
+PORT=3101 node scripts/test-assureurs.js
 ```
 
 `test-ajustements.js` — 47 tests : login/CSRF, changement de mdp forcé, seed commercial, CRUD entreprise
@@ -294,6 +316,15 @@ vers un hôte fictif, activer/désactiver, cycle archiver/désarchiver) ; rédac
 (page, validation, IA avec et sans contexte, envoi en échec SMTP gracieux) ;
 404 sur courriel inexistant ; parsing MIME (RFC 2047, quoted-printable, multipart),
 assainissement HTML, chiffrement roundtrip, liaison auto entreprise (connue/inconnue).
+
+`test-assureurs.js` — 47 tests : fiches assureurs enrichies. Contacts comptabilité ;
+produits offerts (cases à cocher, taux de commission par produit, validation 0–100 %,
+retrait d'un produit décoché) ; liste sans compteur de polices ; filtre du menu
+assureur par produit dans le formulaire police (`data-produits` + JS) ; équipes
+(`manager_id` assigné par l'admin, validation même cabinet / pas d'auto-rattachement) ;
+statistiques par assureur selon le rôle — admin (tout le cabinet), manager (son équipe),
+courtier (son portefeuille : nombres vérifiés, pas de fuite inter-courtiers),
+manager sans équipe (lui seul) ; cloisonnement inter-cabinets ; audit.
 
 > `test-phase1.js` correspond à l'ancien schéma (auto/habitation) et n'est plus
 > exécuté — la suite de référence est `test-ajustements.js`.

@@ -89,15 +89,18 @@ router.get('/utilisateurs', (req, res) => {
   let utilisateurs;
   if (cabinetFiltre) {
     utilisateurs = bd.prepare(`
-      SELECT u.*, c.nom AS cabinet_nom FROM users u JOIN cabinets c ON c.id = u.cabinet_id
+      SELECT u.*, c.nom AS cabinet_nom, m.nom AS manager_nom FROM users u JOIN cabinets c ON c.id = u.cabinet_id
+      LEFT JOIN users m ON m.id = u.manager_id
       WHERE u.cabinet_id = ? ORDER BY u.nom`).all(cabinetFiltre);
   } else {
     utilisateurs = bd.prepare(`
-      SELECT u.*, c.nom AS cabinet_nom FROM users u JOIN cabinets c ON c.id = u.cabinet_id
+      SELECT u.*, c.nom AS cabinet_nom, m.nom AS manager_nom FROM users u JOIN cabinets c ON c.id = u.cabinet_id
+      LEFT JOIN users m ON m.id = u.manager_id
       ORDER BY c.nom, u.nom`).all();
   }
   const cabinets = bd.prepare('SELECT * FROM cabinets ORDER BY nom').all();
-  res.render('admin/utilisateurs', { utilisateurs, cabinets, cabinetFiltre, NOMS_ROLES });
+  const managers = bd.prepare(`SELECT id, nom, cabinet_id FROM users WHERE role IN ('manager','admin') ORDER BY nom`).all();
+  res.render('admin/utilisateurs', { utilisateurs, cabinets, cabinetFiltre, managers, NOMS_ROLES });
 });
 
 router.get('/utilisateurs/nouveau', (req, res) => {
@@ -191,6 +194,29 @@ router.post('/utilisateurs/:id/activer', (req, res) => {
   if (!cible) return res.status(404).render('erreur', { titre: 'Introuvable', message: 'Utilisateur introuvable.' });
   bd.prepare('UPDATE users SET actif = 1 WHERE id = ?').run(cible.id);
   journal(cible.cabinet_id, req.utilisateur.id, 'utilisateur_active', `Compte réactivé : ${cible.email}`);
+  res.redirect('/admin/utilisateurs');
+});
+
+// --- Rattacher un utilisateur à un manager (équipe) -------------------------------------
+// L'équipe d'un manager = lui-même + les utilisateurs avec manager_id = lui.
+// Utilisé pour les statistiques par assureur (périmètre « votre équipe »).
+router.post('/utilisateurs/:id/manager', (req, res) => {
+  const cible = bd.prepare('SELECT * FROM users WHERE id = ?').get(Number(req.params.id));
+  if (!cible) return res.status(404).render('erreur', { titre: 'Introuvable', message: 'Utilisateur introuvable.' });
+  const managerId = req.body.manager_id ? Number(req.body.manager_id) : null;
+  if (managerId) {
+    const m = bd.prepare(`SELECT id FROM users WHERE id = ? AND cabinet_id = ? AND role IN ('manager','admin') AND actif = 1`)
+      .get(managerId, cible.cabinet_id);
+    if (!m) {
+      return res.status(400).render('erreur', { titre: 'Manager invalide', message: 'Le manager doit appartenir au même cabinet.' });
+    }
+    if (managerId === cible.id) {
+      return res.status(400).render('erreur', { titre: 'Action impossible', message: 'Un utilisateur ne peut pas être son propre manager.' });
+    }
+  }
+  bd.prepare('UPDATE users SET manager_id = ? WHERE id = ?').run(managerId, cible.id);
+  journal(cible.cabinet_id, req.utilisateur.id, 'utilisateur_manager',
+    managerId ? `Utilisateur ${cible.email} rattaché au manager id ${managerId}` : `Utilisateur ${cible.email} retiré de son équipe`);
   res.redirect('/admin/utilisateurs');
 });
 

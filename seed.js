@@ -97,13 +97,30 @@ function semer() {
     `);
     // Fiches assureurs de démonstration (reliées aux polices ci-dessous)
     const insererAssureur = bd.prepare(`
-      INSERT OR IGNORE INTO assureurs (cabinet_id, nom, telephone_general, na_nom, mod_nom)
-      VALUES (?, ?, ?, ?, ?)
+      INSERT OR IGNORE INTO assureurs (cabinet_id, nom, telephone_general, na_nom, mod_nom,
+                                       compta_nom, compta_telephone, compta_courriel)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
     `);
     const idAssureur = (nom) => bd.prepare('SELECT id FROM assureurs WHERE cabinet_id = ? AND nom = ?').get(cab.lastInsertRowid, nom).id;
-    insererAssureur.run(cab.lastInsertRowid, 'Intact Assurance', '1-866-464-2424', 'Équipe nouvelles affaires', 'Service avenants');
-    insererAssureur.run(cab.lastInsertRowid, 'Beneva', '1-866-899-4845', 'Équipe nouvelles affaires', 'Service avenants');
-    insererAssureur.run(cab.lastInsertRowid, 'Desjardins Assurances', '1-866-838-7584', 'Équipe nouvelles affaires', 'Service avenants');
+    insererAssureur.run(cab.lastInsertRowid, 'Intact Assurance', '1-866-464-2424', 'Équipe nouvelles affaires', 'Service avenants',
+      'Comptabilité Intact', '1-866-464-2424', 'comptabilite@intact.demo');
+    insererAssureur.run(cab.lastInsertRowid, 'Beneva', '1-866-899-4845', 'Équipe nouvelles affaires', 'Service avenants',
+      'Comptabilité Beneva', '1-866-899-4845', 'comptabilite@beneva.demo');
+    insererAssureur.run(cab.lastInsertRowid, 'Desjardins Assurances', '1-866-838-7584', 'Équipe nouvelles affaires', 'Service avenants',
+      'Comptabilité Desjardins', '1-866-838-7584', 'comptabilite@desjardins.demo');
+    // Produits offerts + taux de commission (démo : Intact sans cyber, Beneva sans flotte)
+    const insererProduit = bd.prepare(`
+      INSERT OR IGNORE INTO assureur_produits (assureur_id, produit, commission_pct) VALUES (?, ?, ?)
+    `);
+    const produitsDemo = {
+      'Intact Assurance': { cgl: 12.5, biens: 12.5, perte_exploitation: 12.5, eo: 15, flotte: 10, cautionnement: 10, do: 15, autre: 12.5 },
+      'Beneva': { cgl: 15, biens: 15, perte_exploitation: 15, eo: 15, cyber: 17.5, cautionnement: 12, do: 15, autre: 15 },
+      'Desjardins Assurances': { cgl: 12, biens: 12, perte_exploitation: 12, eo: 12, cyber: 12, flotte: 12, cautionnement: 12, do: 12, autre: 12 },
+    };
+    for (const [nomAss, produits] of Object.entries(produitsDemo)) {
+      const aid = idAssureur(nomAss);
+      for (const [produit, taux] of Object.entries(produits)) insererProduit.run(aid, produit, taux);
+    }
     const insererPolice = bd.prepare(`
       INSERT INTO polices (cabinet_id, client_id, ligne, assureur, assureur_id, numero_police, date_effet, date_echeance,
                            franchise, statut, responsable_id)

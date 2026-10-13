@@ -20,12 +20,24 @@
 </div>
 
 <div class="carte"><div class="tableau-deroulant"><table>
-  <thead><tr><th>Nom</th><th>Courriel</th><th>Cabinet</th><th>Rôle</th><th>2FA</th><th>Actif</th><th></th></tr></thead>
+  <thead><tr><th>Nom</th><th>Courriel</th><th>Cabinet</th><th>Rôle</th><th>Équipe</th><th>2FA</th><th>Actif</th><th></th></tr></thead>
   <tbody>
   <% utilisateurs.forEach((u) => { %>
     <tr>
       <td><%= u.nom %></td><td><%= u.email %></td><td><%= u.cabinet_nom %></td>
       <td><span class="badge badge-gris"><%= NOMS_ROLES[u.role] %></span></td>
+      <td class="petit">
+        <form method="post" action="/admin/utilisateurs/<%= u.id %>/manager" class="inline">
+          <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+          <select name="manager_id" onchange="this.form.submit()" title="Rattacher à un manager">
+            <option value="">— Aucune —</option>
+            <% managers.filter((m) => m.cabinet_id === u.cabinet_id && m.id !== u.id).forEach((m) => { %>
+              <option value="<%= m.id %>" <%= u.manager_id === m.id ? 'selected' : '' %>><%= m.nom %></option>
+            <% }) %>
+          </select>
+        </form>
+        <% if (u.manager_nom) { %><br><%= u.manager_nom %><% } %>
+      </td>
       <td><%= u.totp_actif ? '✅' : '—' %></td>
       <td><%= u.actif ? '✅' : '<span class="badge badge-gris">désactivé</span>' %></td>
       <td>

@@ -45,4 +45,26 @@ document.addEventListener('DOMContentLoaded', () => {
         .catch(() => {});
     });
   });
+
+  // Filtrage du menu assureur selon le produit choisi (formulaire police) :
+  // les options de #assureur_id portent data-produits="cgl,biens" (produits offerts).
+  // Si aucun assureur n'a de produits configurés, on affiche tout (comportement actuel).
+  const selLigne = document.getElementById('ligne');
+  const selAssureur = document.getElementById('assureur_id');
+  if (selLigne && selAssureur) {
+    const filtrerAssureurs = () => {
+      const options = Array.from(selAssureur.options);
+      const configure = options.some((o) => o.value && o.getAttribute('data-produits'));
+      options.forEach((o) => {
+        if (!o.value) { o.hidden = false; return; }
+        if (!configure) { o.hidden = false; return; }
+        const produits = (o.getAttribute('data-produits') || '').split(',').filter(Boolean);
+        o.hidden = o.selected ? false : !produits.includes(selLigne.value);
+      });
+      const sel = selAssureur.selectedOptions[0];
+      if (sel && sel.hidden) selAssureur.value = '';
+    };
+    selLigne.addEventListener('change', filtrerAssureurs);
+    filtrerAssureurs();
+  }
 });
