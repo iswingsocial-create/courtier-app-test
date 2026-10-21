@@ -8,36 +8,39 @@
 </head>
 <body>
 <% if (typeof utilisateur !== 'undefined' && utilisateur) { %>
+<%
+  // Menu principal par sections métier : un lien direct (Échéances, l'écran
+  // du travail quotidien) puis des sections dépliantes (<details> natif —
+  // aucun JavaScript requis). La section de la page courante s'ouvre par
+  // défaut et son libellé est souligné ; le lien courant est surligné.
+  const SECTIONS_MENU = [
+    { id: 'clients', libelle: '👥 Clients', liens: [['/clients', 'Entreprises'], ['/leads', 'Leads']] },
+    { id: 'soumissions', libelle: '📝 Soumissions', liens: [['/auto', 'Auto'], ['/biens', 'Biens'], ['/rc', 'RC'], ['/cyber', 'Cyber'], ['/eo', 'E&O'], ['/do', 'D&O'], ['/pe', "Perte d'exploitation"], ['/flotte', 'Flotte'], ['/cautionnement', 'Cautionnement']] },
+    { id: 'polices', libelle: '🛡️ Polices', liens: [['/polices', 'Polices'], ['/reclamations', 'Réclamations']] },
+    { id: 'communications', libelle: '✉️ Communications', liens: [['/courriels', 'Courriels'], ['/brouillons', 'Brouillons'], ['/campagnes', 'Campagnes'], ['/reunions', 'Réunions']] },
+    { id: 'outils-ia', libelle: '🤖 Outils IA', liens: [['/ouverture', '🎙️ Ouvrir un dossier'], ['/analyses', '📥 Analyser un document'], ['/assistant', 'Assistant IA']] },
+    { id: 'gestion', libelle: '🗂️ Gestion', liens: [['/assureurs', 'Assureurs'], ['/factures', 'Facturation'], ['/taches', 'Tâches'], ['/import', 'Import'], ['/exports', 'Exports']] },
+  ];
+  if (utilisateur.role === 'admin') {
+    SECTIONS_MENU.push({ id: 'admin', libelle: '⚙️ Admin', liens: [['/admin/utilisateurs', 'Admin'], ['/admin/journal', 'Journal']] });
+  }
+  const cheminMenu = (typeof cheminActuel !== 'undefined' && cheminActuel) ? cheminActuel : '';
+  const estCourant = (url) => url === '/echeances'
+    ? (cheminMenu === '/' || cheminMenu.startsWith('/echeances'))
+    : cheminMenu.startsWith(url);
+%>
 <header class="barre-haut">
   <a class="logo" href="/echeances">🛡️ Courtier</a>
-  <nav>
-    <a href="/echeances">Échéances</a>
-    <a href="/clients">Entreprises</a>
-    <a href="/assureurs">Assureurs</a>
-    <a href="/polices">Polices</a>
-    <a href="/auto">Auto</a>
-    <a href="/biens">Biens</a>
-    <a href="/rc">RC</a>
-    <a href="/cyber">Cyber</a>
-    <a href="/eo">E&O</a>
-    <a href="/do">D&O</a>
-    <a href="/pe">Perte d'exploitation</a>
-    <a href="/flotte">Flotte</a>
-    <a href="/cautionnement">Cautionnement</a>
-    <a href="/reclamations">Réclamations</a>
-    <a href="/taches">Tâches</a>
-    <a href="/factures">Facturation</a>
-    <a href="/leads">Leads</a>
-    <a href="/campagnes">Campagnes</a>
-    <a href="/reunions">Réunions</a>
-    <a href="/brouillons">Brouillons</a>
-    <a href="/courriels">Courriels</a>
-    <a href="/assistant">Assistant IA</a>
-    <a href="/analyses">📥 Analyser un document</a>
-    <a href="/ouverture">🎙️ Ouvrir un dossier</a>
-    <a href="/import">Import</a>
-    <a href="/exports">Exports</a>
-    <% if (utilisateur.role === 'admin') { %><a href="/admin/utilisateurs">Admin</a><a href="/admin/journal">Journal</a><% } %>
+  <nav class="menu-sections">
+    <a class="menu-direct<%= estCourant('/echeances') ? ' actif' : '' %>" href="/echeances">Échéances</a>
+    <% for (const section of SECTIONS_MENU) { const sectionCourante = section.liens.some(([url]) => estCourant(url)); %>
+    <details class="menu-section" data-section="<%= section.id %>"<%= sectionCourante ? ' open' : '' %>>
+      <summary<%- sectionCourante ? ' class="courant"' : '' %>><%- section.libelle %></summary>
+      <div class="menu-liens">
+        <% for (const [url, libelle] of section.liens) { %><a<%- estCourant(url) ? ' class="actif"' : '' %> href="<%= url %>"><%- libelle %></a><% } %>
+      </div>
+    </details>
+    <% } %>
   </nav>
   <div class="utilisateur">
     <span><%= utilisateur.cabinet_nom %></span>

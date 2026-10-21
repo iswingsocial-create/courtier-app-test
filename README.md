@@ -4706,6 +4706,17 @@ Retour de Patrick en testant la version publiée : la révision d'une analyse pr
 
 Test : `scripts/test-analyse-client-cible.js` (36 vérifications — fiche et pré-sélection, données de filtrage, refus 400 sans rien insérer, insertion cohérente, création forcée, verrouillage demande, CSRF). Capture 126.
 
+## Menu principal réorganisé par sections
+
+Demande de Patrick : « réorganise le menu pour qu'il soit plus naturel, moins de liens, mets-les par section, plus simple à trouver ». La barre du haut (`views/partials/haut.ejs`) ne présente plus ~26 liens à plat mais :
+
+- **Échéances** en lien direct, seul en tête (l'écran du travail quotidien) ;
+- **7 sections métier dépliantes** — 👥 Clients (Entreprises, Leads) · 📝 Soumissions (les 9 produits) · 🛡️ Polices (Polices, Réclamations) · ✉️ Communications (Courriels, Brouillons, Campagnes, Réunions) · 🤖 Outils IA (🎙️ Ouvrir un dossier, 📥 Analyser un document, Assistant IA) · 🗂️ Gestion (Assureurs, Facturation, Tâches, Import, Exports) · ⚙️ Admin (Admin, Journal — rôle admin seulement, comme avant).
+
+Mécanique : `<details>`/`<summary>` natifs stylés dans `public/style.css` — **aucun JavaScript requis**, tous les liens restent présents dans le HTML. La section de la page courante est **ouverte par défaut**, son libellé est marqué (`summary.courant`, souligné) et le lien courant est surligné (`a.actif`), à partir de `res.locals.cheminActuel` posé par `lib/middleware.js`. Mobile d'abord : sous 760 px, la nav passe en pleine largeur en colonne (zones tactiles ≥ 40 px) ; sur écran large, les sections sont en ligne dans la barre et le panneau se déplie en surimpression. Aucune URL ni aucun libellé n'a changé, aucun lien perdu.
+
+Test : `scripts/test-menu-sections.js` (101 vérifications — chaque page principale répond, les 7 en-têtes de section présents, les 28 liens historiques présents exactement une fois avec la bonne URL, section courante marquée page par page, section Admin absente pour un rôle non-admin). Captures 127 (mobile, menu fermé), 128 (mobile, Soumissions dépliée), 129 (bureau, panneau en surimpression).
+
 ## Volontairement non inclus (phases suivantes)
 
 - **Phase 2** : classification automatique des courriels (reçus/envoyés),

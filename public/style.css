@@ -30,6 +30,38 @@ a { color: var(--primaire); }
 .barre-haut nav { display: flex; gap: 4px; flex-wrap: wrap; flex: 1; }
 .barre-haut nav a { color: #d1d5db; text-decoration: none; padding: 8px 10px; border-radius: 6px; }
 .barre-haut nav a:hover { background: #1f2937; color: #fff; }
+
+/* Menu principal par sections dépliantes (<details> natif, aucun JS requis).
+   Mobile d'abord : la nav passe en pleine largeur sous le logo, les sections
+   se déplient en colonne ; sur écran large, le panneau se déplie en
+   surimpression sous le libellé de la section. */
+.barre-haut nav.menu-sections { align-items: flex-start; }
+.barre-haut nav a.actif { background: var(--primaire); color: #fff; }
+.barre-haut .menu-direct { display: flex; align-items: center; min-height: 44px; font-weight: 600; color: #fff; }
+.menu-section { position: relative; }
+.menu-section > summary {
+  list-style: none; cursor: pointer; user-select: none; white-space: nowrap;
+  color: #d1d5db; padding: 8px 10px; min-height: 44px; border-radius: 6px;
+  display: flex; align-items: center; gap: 6px;
+}
+.menu-section > summary::-webkit-details-marker { display: none; }
+.menu-section > summary::after { content: "▾"; font-size: .75rem; opacity: .7; }
+.menu-section > summary:hover { background: #1f2937; color: #fff; }
+.menu-section > summary.courant { color: #fff; font-weight: 600; box-shadow: inset 0 -3px 0 var(--primaire); }
+.menu-section .menu-liens {
+  display: flex; flex-direction: column; gap: 2px; min-width: 210px;
+  background: #1f2937; border: 1px solid #374151; border-radius: 8px; padding: 6px;
+}
+.menu-section .menu-liens a { min-height: 40px; display: flex; align-items: center; }
+@media (min-width: 761px) {
+  .menu-section .menu-liens { position: absolute; top: calc(100% + 4px); left: 0; z-index: 60; box-shadow: 0 10px 24px rgba(0,0,0,.35); }
+}
+@media (max-width: 760px) {
+  .barre-haut { gap: 8px 12px; }
+  .barre-haut nav.menu-sections { flex: 1 1 100%; order: 3; flex-direction: column; align-items: stretch; flex-wrap: nowrap; }
+  .barre-haut .menu-direct, .menu-section > summary { width: 100%; }
+  .menu-section .menu-liens { min-width: 0; }
+}
 .barre-haut .utilisateur { display: flex; align-items: center; gap: 10px; font-size: .9rem; }
 .barre-haut .utilisateur a { color: #d1d5db; }
 button.lien { background: none; border: none; color: #d1d5db; cursor: pointer; font-size: .9rem; padding: 0; text-decoration: underline; }
