@@ -1,0 +1,8 @@
+﻿# Exemple : import E&O / responsabilité professionnelle — 1 soumission, 1 activité professionnelle, garanties, antécédents
+# Rattachement par « Entreprise » (la soumission E&O active la plus récente est utilisée).
+# Créez d’abord l’entreprise « Groupe Conseil Lussier inc. » (type=entreprise).
+type;Entreprise;Courriel entreprise;Soumission (id);Date d’effet souhaitée;Statut;Notes;Activité professionnelle;Chiffre d’affaires ($);Nb de professionnels;Limite par sinistre;Limite agrégat;Franchise;Base de garantie;Prime;Avenant — frais de défense;Avenant — médias et contenu;Avenant — cyber associé;Assureur actuel;Police actuelle;Expiration actuelle;Années d’assurance continue;Réclamations E&O 5 ans;Circonstances;Consentement crédit;Consentement dossier d’assurance
+soumission_eo;Groupe Conseil Lussier inc.;;;2026-12-01;brouillon;Soumission E&O — consultants TI;;;;;;;;;;;;;;;;;;;
+activite_eo;Groupe Conseil Lussier inc.;;;;;;Conseil en transformation numérique;450000;4;;;;;;;;;;;;;;;;
+garanties_eo;Groupe Conseil Lussier inc.;;;;;;;;;2000000;2000000;10000;Réclamations-présentées;9500;oui;oui;non;;;;;;;;
+antecedents_eo;Groupe Conseil Lussier inc.;;;;;;;;;;;;;;;;;Assureur Exemple inc.;EO-2024-900;2026-12-01;4;2023-06-15|Erreur d’implantation|45000|oui;Un client a menacé de poursuivre;oui;oui

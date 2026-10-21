@@ -1,0 +1,68 @@
+<%- include('../partials/haut', { titre: 'Soumission Cyber #' + s.id + ' — version ' + version.version }) %>
+<div class="entete-page">
+  <h1>🕘 Soumission Cyber #<%= s.id %> — version v<%= version.version %></h1>
+  <div>
+    <span class="badge badge-gris"><%= NOMS_STATUTS_SOUMISSION[version.statut] || version.statut %></span>
+    <a class="btn btn-secondaire btn-petit" href="/cyber/<%= s.id %>#versions">← Fiche soumission</a>
+  </div>
+</div>
+
+<p class="petit">Instantané figé du <%= (version.cree_le || '').slice(0, 16).replace('T', ' ') %> par <%= version.auteur || '—' %> — lecture seule, rien ne peut être modifié ici.</p>
+
+<div class="carte">
+  <dl class="dl">
+    <dt>Entreprise</dt><dd><strong><%= clientNom %></strong></dd>
+    <dt>Date d’effet souhaitée</dt><dd><%= version.date_effet_souhaitee || '—' %></dd>
+    <dt>Notes</dt><dd><%= version.notes || '—' %></dd>
+  </dl>
+</div>
+
+<% const d = version.donnees || {}; %>
+<div class="carte">
+  <h2>🛡️ Mesures de sécurité (<%= (d.mesures || []).length %>)</h2>
+  <div class="tableau-deroulant"><table>
+    <thead><tr><th>Mesure</th><th>Maturité</th><th>Détails</th></tr></thead>
+    <tbody>
+    <% (d.mesures || []).forEach((m) => { %>
+      <tr>
+        <td><strong><%= NOMS_TYPE_MESURE[m.type_mesure] || m.type_mesure %></strong></td>
+        <td><%= m.statut ? NOMS_STATUT_MESURE[m.statut] : '—' %></td>
+        <td><%= m.details || '—' %><% if (m.notes) { %><br><span class="petit"><%= m.notes %></span><% } %></td>
+      </tr>
+    <% }) %>
+    </tbody>
+  </table></div>
+  <% if (!(d.mesures || []).length) { %><p class="petit">Aucune.</p><% } %>
+</div>
+
+<div class="carte">
+  <h2>📜 Garanties</h2>
+  <% const g = d.garanties; %>
+  <% if (g) { %>
+  <dl class="dl">
+    <dt>Limite par sinistre</dt><dd><%= g.limite_par_sinistre ? Number(g.limite_par_sinistre).toLocaleString('fr-CA') + ' $' : '—' %></dd>
+    <dt>Limite agrégat annuel</dt><dd><%= g.limite_agregat ? Number(g.limite_agregat).toLocaleString('fr-CA') + ' $' : '—' %></dd>
+    <dt>Franchise</dt><dd><%= g.franchise ? Number(g.franchise).toLocaleString('fr-CA') + ' $' : '—' %></dd>
+    <dt>Délai de carence</dt><dd><%= g.delai_carence || '—' %></dd>
+    <dt>Prime</dt><dd><%= g.prime ? Number(g.prime).toLocaleString('fr-CA') + ' $' : '—' %></dd>
+    <dt>Avenants</dt><dd>
+      <% const av = g.avenants || {}; const codes = Object.keys(av).filter((k) => av[k]); %>
+      <%= codes.length ? codes.map((k) => ((AVENANTS_CYBER.find(([c]) => c === k) || [k, k])[1])).join(', ') : '—' %>
+    </dd>
+  </dl>
+  <% } else { %><p class="petit">Non renseignées.</p><% } %>
+</div>
+
+<div class="carte">
+  <h2>📋 Antécédents</h2>
+  <% const a = d.antecedents; %>
+  <% if (a) { %>
+  <dl class="dl">
+    <dt>Assureur actuel</dt><dd><%= a.assureur_actuel || '—' %></dd>
+    <dt>Police actuelle</dt><dd><%= a.numero_police_actuelle || '—' %></dd>
+    <dt>Années d’assurance continue</dt><dd><%= a.annees_assurance_continue !== null && a.annees_assurance_continue !== undefined ? a.annees_assurance_continue : '—' %></dd>
+    <dt>Incidents cyber 5 ans</dt><dd><%= (a.incidents_5ans || []).length ? a.incidents_5ans.map((x) => [x.date, x.type, x.montant ? x.montant + ' $' : null, x.reclame ? 'réclamé : ' + x.reclame : null].filter(Boolean).join(' — ')).join(' ; ') : 'Aucun' %></dd>
+  </dl>
+  <% } else { %><p class="petit">Non renseignés.</p><% } %>
+</div>
+<%- include('../partials/bas') %>

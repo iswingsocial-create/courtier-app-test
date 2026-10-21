@@ -1,0 +1,62 @@
+<%- include('../partials/haut', { titre: 'Soumission RC #' + s.id + ' — version ' + version.version }) %>
+<div class="entete-page">
+  <h1>🕘 Soumission RC #<%= s.id %> — version v<%= version.version %></h1>
+  <div>
+    <span class="badge badge-gris"><%= NOMS_STATUTS_SOUMISSION[version.statut] || version.statut %></span>
+    <a class="btn btn-secondaire btn-petit" href="/rc/<%= s.id %>#versions">← Fiche soumission</a>
+  </div>
+</div>
+
+<p class="petit">Instantané figé du <%= (version.cree_le || '').slice(0, 16).replace('T', ' ') %> par <%= version.auteur || '—' %> — lecture seule, rien ne peut être modifié ici.</p>
+
+<div class="carte">
+  <dl class="dl">
+    <dt>Entreprise</dt><dd><strong><%= clientNom %></strong></dd>
+    <dt>Date d’effet souhaitée</dt><dd><%= version.date_effet_souhaitee || '—' %></dd>
+    <dt>Notes</dt><dd><%= version.notes || '—' %></dd>
+  </dl>
+</div>
+
+<% const d = version.donnees || {}; %>
+<div class="carte">
+  <h2>🏭 Lieux d’exploitation (<%= (d.exploitations || []).length %>)</h2>
+  <% (d.exploitations || []).forEach((e) => { %>
+    <h3><%= e.adresse || 'Lieu d’exploitation' %></h3>
+    <dl class="dl">
+      <dt>Ville</dt><dd><%= [e.ville, e.code_postal].filter(Boolean).join(', ') || '—' %></dd>
+      <dt>Type d’activité</dt><dd><%= e.type_activite || '—' %></dd>
+      <dt>Code de classification</dt><dd><%= e.code_classification || '—' %></dd>
+      <dt>Chiffre d’affaires</dt><dd><%= e.chiffre_affaires ? Number(e.chiffre_affaires).toLocaleString('fr-CA') + ' $' : '—' %></dd>
+      <dt>Masse salariale</dt><dd><%= e.masse_salariale ? Number(e.masse_salariale).toLocaleString('fr-CA') + ' $' : '—' %></dd>
+      <dt>Employés</dt><dd><%= e.nb_employes !== null && e.nb_employes !== undefined ? e.nb_employes : '—' %></dd>
+      <dt>Superficie</dt><dd><%= e.superficie_pi2 ? Number(e.superficie_pi2).toLocaleString('fr-CA') + ' pi²' : '—' %></dd>
+      <dt>Sous-traitants</dt><dd><%= e.sous_traitants ? NOMS_SOUS_TRAITANT[e.sous_traitants] : '—' %></dd>
+      <dt>Description</dt><dd><%= e.description_activites || '—' %></dd>
+      <dt>Garanties</dt><dd>
+        <% if (e.garanties) { %>
+          <%= e.garanties.formule ? NOMS_FORMULE_RC[e.garanties.formule] : '—' %> ·
+          limite/sinistre <%= e.garanties.limite_par_sinistre ? Number(e.garanties.limite_par_sinistre).toLocaleString('fr-CA') + ' $' : '—' %> ·
+          agrégat <%= e.garanties.limite_agregat ? Number(e.garanties.limite_agregat).toLocaleString('fr-CA') + ' $' : '—' %> ·
+          franchise <%= e.garanties.franchise ? Number(e.garanties.franchise).toLocaleString('fr-CA') + ' $' : '—' %>
+          <% const av = e.garanties.avenants || {}; const codes = Object.keys(av).filter((k) => av[k]); %>
+          <% if (codes.length) { %><br><span class="petit">Avenants : <%= codes.map((k) => (AVENANTS_RC.find(([c]) => c === k) || [k, k])[1]).join(', ') %></span><% } %>
+        <% } else { %>—<% } %>
+      </dd>
+    </dl>
+  <% }) %>
+  <% if (!(d.exploitations || []).length) { %><p class="petit">Aucun.</p><% } %>
+</div>
+
+<div class="carte">
+  <h2>📋 Antécédents</h2>
+  <% const a = d.antecedents; %>
+  <% if (a) { %>
+  <dl class="dl">
+    <dt>Assureur actuel</dt><dd><%= a.assureur_actuel || '—' %></dd>
+    <dt>Police actuelle</dt><dd><%= a.numero_police_actuelle || '—' %></dd>
+    <dt>Années d’assurance continue</dt><dd><%= a.annees_assurance_continue !== null && a.annees_assurance_continue !== undefined ? a.annees_assurance_continue : '—' %></dd>
+    <dt>Sinistres 5 ans</dt><dd><%= (a.sinistres_5ans || []).length ? a.sinistres_5ans.map((x) => [x.date, x.type, x.montant ? x.montant + ' $' : null].filter(Boolean).join(' — ')).join(' ; ') : 'Aucun' %></dd>
+  </dl>
+  <% } else { %><p class="petit">Non renseignés.</p><% } %>
+</div>
+<%- include('../partials/bas') %>

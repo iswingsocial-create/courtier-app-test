@@ -1,0 +1,43 @@
+<%- include('../partials/haut', { titre: 'Soumissions flotte automobile' }) %>
+<div class="entete-page">
+  <h1>🚛 Soumissions flotte automobile</h1>
+  <div>
+    <% if (voirArchives) { %><a class="btn btn-secondaire btn-petit" href="/flotte">← Actives</a><% } else { %><a class="btn btn-secondaire btn-petit" href="/flotte?archives=1">Voir les archivées</a><% } %>
+    <a class="btn btn-petit" href="/flotte/nouveau">+ Nouvelle soumission</a>
+  </div>
+</div>
+
+<div class="carte">
+  <form method="get" action="/flotte" class="grille-form">
+    <% if (voirArchives) { %><input type="hidden" name="archives" value="1"><% } %>
+    <div><label for="statut">Statut</label>
+      <select id="statut" name="statut" data-autosubmit>
+        <option value="">— Tous —</option>
+        <% Object.keys(NOMS_STATUTS_SOUMISSION).forEach((k) => { %>
+          <option value="<%= k %>"<%= statut === k ? ' selected' : '' %>><%= NOMS_STATUTS_SOUMISSION[k] %></option>
+        <% }) %>
+      </select></div>
+  </form>
+</div>
+
+<div class="carte">
+  <div class="tableau-deroulant"><table>
+    <thead><tr><th>#</th><th>Entreprise</th><th>Statut</th><th>Effet souhaité</th><th>Véhicules</th><th>Conducteurs</th><th>Limite RC</th><th></th></tr></thead>
+    <tbody>
+    <% soumissions.forEach((s) => { %>
+      <tr>
+        <td><%= s.id %></td>
+        <td><strong><%= s.client_nom || '—' %></strong><% if (s.usage_dominant) { %><br><span class="petit"><%= NOMS_USAGES_DOMINANTS[s.usage_dominant] || s.usage_dominant %></span><% } %></td>
+        <td><span class="badge <%= s.statut === 'convertie_police' ? 'badge-ok' : (s.statut === 'soumise' ? 'badge-j' : 'badge-gris') %>"><%= NOMS_STATUTS_SOUMISSION[s.statut] %></span></td>
+        <td><%= s.date_effet_souhaitee || '—' %></td>
+        <td><%= s.nb_vehicules_reels %></td>
+        <td><%= s.nb_conducteurs %></td>
+        <td><%= s.limite_rc ? Number(s.limite_rc).toLocaleString('fr-CA') + ' $' : '—' %></td>
+        <td><a class="btn btn-petit btn-secondaire" href="/flotte/<%= s.id %>">Ouvrir</a></td>
+      </tr>
+    <% }) %>
+    </tbody>
+  </table></div>
+  <% if (!soumissions.length) { %><p class="petit">Aucune soumission<%= voirArchives ? ' archivée' : '' %>.</p><% } %>
+</div>
+<%- include('../partials/bas') %>

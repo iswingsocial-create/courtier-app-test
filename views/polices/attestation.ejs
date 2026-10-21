@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Attestation d’assurance — <%= vehicule.vin || 'véhicule' %></title>
+<link rel="stylesheet" href="/attestation.css">
+</head>
+<body>
+<div class="actions noprint"><button class="btn" id="btn-imprimer">🖨️ Imprimer</button></div>
+<div class="page">
+  <h1>Attestation d’assurance automobile</h1>
+  <p class="sous-titre">Province de Québec — à conserver dans le véhicule</p>
+  <dl>
+    <dt>Assuré</dt><dd><strong><%= client ? client.raison_sociale : '—' %></strong>
+      <% if (client && (client.adresse || client.ville)) { %><br><%= [client.adresse, client.ville, client.code_postal].filter(Boolean).join(', ') %><% } %></dd>
+    <dt>Véhicule</dt><dd><%= [vehicule.annee, vehicule.marque, vehicule.modele].filter(Boolean).join(' ') %></dd>
+    <dt>NIV (VIN)</dt><dd><%= vehicule.vin || '—' %></dd>
+    <dt>Numéro de police</dt><dd><strong><%= police.numero_police %></strong></dd>
+    <dt>Assureur</dt><dd><%= police.assureur %></dd>
+    <dt>Période d’assurance</dt><dd>du <%= police.date_effet %> au <%= police.date_echeance %></dd>
+    <dt>Produit</dt><dd><%= NOMS_LIGNES[police.ligne] %></dd>
+  </dl>
+  <p class="pied">Document émis par le cabinet à titre informatif à partir des données de la police.
+    En cas de divergence, les Conditions particulières de la police priment. Émise le <%= new Date().toISOString().slice(0, 10) %>.</p>
+</div>
+<div class="actions noprint"><a class="btn" href="/echeances/police/<%= police.id %>">← Retour à la fiche</a></div>
+<script src="/attestation.js"></script>
+</body>
+</html>

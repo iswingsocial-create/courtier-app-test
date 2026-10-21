@@ -79,6 +79,15 @@ app.use('/admin', require('./routes/admin'));
 app.use('/clients', require('./routes/clients'));
 app.use('/assureurs', require('./routes/assureurs'));
 app.use('/polices', require('./routes/polices'));
+app.use('/auto', require('./routes/auto')); // soumissions FPQ1 (étape 2/10)
+app.use('/biens', require('./routes/biens')); // soumissions biens commerciaux (étape 2/10 biens)
+app.use('/rc', require('./routes/rc')); // soumissions RC commerciale (étape 2/10 RC)
+app.use('/cyber', require('./routes/cyber')); // soumissions cyberrisques (étape 2/10 cyber)
+app.use('/eo', require('./routes/eo')); // soumissions E&O (étape 2/10 E&O)
+app.use('/do', require('./routes/do')); // soumissions D&O (étape 2/10 D&O)
+app.use('/pe', require('./routes/pe')); // soumissions perte d'exploitation (étape 2/10 PE)
+app.use('/flotte', require('./routes/flotte')); // soumissions flotte automobile (étape 3/10 flotte)
+app.use('/cautionnement', require('./routes/cautionnement')); // soumissions cautionnement (étape 2/10 cautionnement)
 app.use('/reclamations', require('./routes/reclamations'));
 app.use('/taches', require('./routes/taches'));
 app.use('/factures', require('./routes/factures'));
@@ -87,10 +96,16 @@ app.use('/capture', require('./routes/capture')); // formulaire public (sans aut
 app.use('/campagnes', require('./routes/campagnes'));
 app.use('/reunions', require('./routes/reunions'));
 app.use('/import', require('./routes/import'));
+app.use('/exports', require('./routes/exports')); // exports CSV/JSON par module (étape 5/10)
 app.use('/echeances', require('./routes/echeances'));
+app.use('/echeances', require('./routes/verifications-avenants')); // vérification des avenants (fiche police)
 app.use('/brouillons', require('./routes/brouillons'));
 app.use('/courriels', require('./routes/courriels'));
 app.use('/assistant', require('./routes/assistant'));
+app.use('/analyses', require('./routes/analyses'));
+app.use('/ouverture', require('./routes/ouverture')); // ouverture de dossier à la voix (dictée + Google Maps)
+app.use('/google-places', require('./routes/places')); // JSON Google Places (formulaire client, révision)
+app.use('/demandes-infos', require('./routes/demandes-infos')); // analyse de documents IA (étapes 1-5)
 
 // --- Synchronisation IMAP automatique (toutes les 5 minutes) --------------------------
 // Ne fait rien s'il n'y a aucun compte actif. Les erreurs sont journalisées,

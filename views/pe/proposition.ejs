@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Proposition d’assurance perte d’exploitation — Soumission perte d’exploitation #<%= p.soumissionId %></title>
+<link rel="stylesheet" href="/proposition.css">
+</head>
+<body>
+<div class="actions noprint">
+  <button class="btn" type="button" data-action="imprimer">🖨️ Imprimer</button>
+  <a class="btn" href="/pe/<%= p.soumissionId %>/proposition.pdf<%= vParam ? '?v=' + vParam : '' %>">⬇️ Télécharger PDF</a>
+  <a class="btn btn-secondaire" href="/pe/<%= p.soumissionId %>">← Retour à la soumission</a>
+</div>
+<script src="/proposition.js"></script>
+<div class="page">
+  <p class="cabinet"><%= p.cabinetNom %></p>
+  <h1>Proposition d’assurance perte d’exploitation</h1>
+  <p class="sous-titre">Formulaire de proposition — Perte d’exploitation / interruption des affaires (Québec)</p>
+  <p class="ref">Soumission perte d’exploitation #<%= p.soumissionId %> — version v<%= p.versionNumero %><%= p.versionFigee ? ' (figée)' : '' %>
+    <% if (p.dateEffet) { %> · Date d’effet souhaitée : <%= p.dateEffet %><% } %></p>
+
+  <h2>1. Proposant / assuré</h2>
+  <dl>
+    <dt>Nom</dt><dd><strong><%= p.client ? p.client.raison_sociale : '—' %></strong></dd>
+    <% if (p.client && (p.client.adresse || p.client.ville || p.client.code_postal)) { %>
+    <dt>Adresse</dt><dd><%= [p.client.adresse, p.client.ville, p.client.code_postal].filter(Boolean).join(', ') %></dd>
+    <% } %>
+    <% if (p.client && p.client.telephone) { %><dt>Téléphone</dt><dd><%= p.client.telephone %></dd><% } %>
+    <% if (p.client && p.client.courriel) { %><dt>Courriel</dt><dd><%= p.client.courriel %></dd><% } %>
+    <% if (p.client && (p.client.prenom || p.client.nom)) { %><dt>Personne-contact</dt><dd><%= [p.client.prenom, p.client.nom].filter(Boolean).join(' ') %><% if (p.client.titre_contact) { %> (<%= p.client.titre_contact %>)<% } %></dd><% } %>
+    <% if (p.courtierNom) { %><dt>Courtier responsable</dt><dd><%= p.courtierNom %></dd><% } %>
+    <% if (p.notes) { %><dt>Notes</dt><dd><%= p.notes %></dd><% } %>
+  </dl>
+
+  <h2>2. Établissements assurés (<%= p.etablissements.length %>)</h2>
+  <% p.etablissements.forEach((x, i) => { %>
+    <h3>Établissement <%= i + 1 %> — <%= x.nom_lieu || x.adresse || '—' %></h3>
+    <dl>
+      <% if (x.adresse) { %><dt>Adresse</dt><dd><%= x.adresse %></dd><% } %>
+      <% if (x.occupation) { %><dt>Occupation</dt><dd><%= x.occupation %></dd><% } %>
+      <dt>Chiffre d’affaires</dt><dd><strong><%= x.chiffre_affaires_libelle %></strong></dd>
+      <dt>Superficie</dt><dd><%= x.superficie_libelle %></dd>
+      <dt>Année de construction</dt><dd><%= x.annee_construction_libelle %></dd>
+      <dt>Base de valeur</dt><dd><%= x.base_valeur_libelle %></dd>
+    </dl>
+  <% }) %>
+  <% if (!p.etablissements.length) { %><p>Aucun établissement saisi.</p><% } %>
+
+  <h2>3. Garanties demandées</h2>
+  <% const g = p.garanties; %>
+  <% if (g) { %>
+  <dl>
+    <dt>Limite</dt><dd><strong><%= g.limite_libelle %></strong></dd>
+    <dt>Période d’indemnité</dt><dd><strong><%= g.periode_indemnite_libelle %></strong></dd>
+    <dt>Franchise (délai de carence)</dt><dd><%= g.franchise_jours_libelle %></dd>
+    <dt>Base d’indemnité</dt><dd><strong><%= g.base_libelle %></strong></dd>
+    <% if (g.prime && g.prime_libelle !== '—') { %><dt>Prime</dt><dd><%= g.prime_libelle %></dd><% } %>
+    <% if (g.avenants_libelles.length) { %><dt>Avenants</dt><dd><%= g.avenants_libelles.join(', ') %></dd><% } %>
+  </dl>
+  <p><em><strong>La période d’indemnité doit couvrir le retour complet à la normale — travaux, permis, équipements ; une période trop courte épuise la limite avant la reprise. La franchise est un délai de carence en jours : les premiers jours d’arrêt ne sont pas indemnisés.</strong></em></p>
+  <% } else { %><p>Non définies.</p><% } %>
+
+  <h2>4. Antécédents d’assurance</h2>
+  <% const a = p.antecedents; %>
+  <% if (a) { %>
+  <dl>
+    <dt>Assureur actuel</dt><dd><%= a.assureur_actuel || '—' %></dd>
+    <dt>Police actuelle</dt><dd><%= a.numero_police_actuelle || '—' %><% if (a.date_expiration_actuelle) { %> (expire le <%= a.date_expiration_actuelle %>)<% } %></dd>
+    <dt>Années d’assurance continue</dt><dd><%= a.annees_assurance_continue || '—' %></dd>
+    <dt>Interruptions (5 ans)</dt><dd><%= (a.interruptions_libelles || []).length ? a.interruptions_libelles.join(' ; ') : 'Aucune' %></dd>
+  </dl>
+  <% } else { %><p>Non renseignés.</p><% } %>
+
+  <h2>5. Consentements</h2>
+  <% if (p.consentementsLibelles.length) { %>
+  <p><% p.consentementsLibelles.forEach((l, i) => { %>☑ <%= l %><% if (i < p.consentementsLibelles.length - 1) { %><br><% } %><% }) %></p>
+  <% } else { %><p>Aucun consentement enregistré.</p><% } %>
+
+  <p class="pied">Document généré le <%= p.genereLe %> à partir de la soumission perte d’exploitation #<%= p.soumissionId %> (version v<%= p.versionNumero %><%= p.versionFigee ? ', figée' : '' %>) — proposition conforme à la version figée, vérifiez avant envoi à l’assureur.</p>
+
+  <div class="signatures">
+    <div><div class="ligne">Signature du proposant</div><p>Date : _______________</p></div>
+    <div><div class="ligne">Signature du courtier</div><p>Date : _______________</p></div>
+  </div>
+</div>
+<div class="actions noprint"><a class="btn btn-secondaire" href="/pe/<%= p.soumissionId %>">← Retour à la soumission</a></div>
+</body>
+</html>

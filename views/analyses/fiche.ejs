@@ -1,0 +1,203 @@
+<%- include('../partials/haut', { titre: 'Analyse — ' + a.nom_origine }) %>
+<div class="entete-page"><h1>📥 Analyse — <%= a.nom_origine %></h1></div>
+
+<div class="carte">
+  <p>
+    <strong>Statut :</strong> <%= NOMS_STATUTS[a.statut] || a.statut %> ·
+    <strong>Produit détecté :</strong> <%= a.produit_detecte ? (NOMS_PRODUITS[a.produit_detecte] || a.produit_detecte) : 'indéterminé' %> ·
+    <strong>Confiance :</strong> <%= a.confiance_globale != null ? Math.round(a.confiance_globale * 100) + ' %' : '—' %> ·
+    <strong>Moteur :</strong> <%= a.moteur || '—' %> ·
+    <strong>Extraction :</strong> <%= a.methode_extraction || '—' %>
+  </p>
+  <% if (a.message) { %><p class="alerte">ℹ️ <%= a.message %></p><% } %>
+  <% if (typeof demandeLiee !== 'undefined' && demandeLiee) { %>
+    <p>💬 <strong>Réponse à la demande d'informations #<%= demandeLiee.id %></strong> (soumission <%= NOMS_PRODUITS[demandeLiee.produit] || demandeLiee.produit %> #<%= demandeLiee.soumission_id %>) — <a href="/demandes-infos/<%= demandeLiee.id %>">voir la demande</a> · <a href="/<%= demandeLiee.produit %>/<%= demandeLiee.soumission_id %>">voir la soumission</a></p>
+  <% } %>
+  <% if (a.statut === 'insere') { %>
+    <p>✅ Inséré :
+      <% if (a.soumission_id && a.produit_insere) { %>soumission <a href="/<%= a.produit_insere === 'auto' ? 'auto' : a.produit_insere %>/<%= a.soumission_id %>">#<%= a.soumission_id %></a> (<%= NOMS_PRODUITS[a.produit_insere] || a.produit_insere %>)<% } %>
+      <% if (a.police_id) { %> · police <a href="/echeances/police/<%= a.police_id %>">#<%= a.police_id %></a><% } %>
+    </p>
+  <% } %>
+  <div style="display:flex;gap:8px;flex-wrap:wrap;">
+    <form method="post" action="/analyses/<%= a.id %>/relancer" class="inline">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+      <button type="submit">↻ Ré-analyser</button>
+    </form>
+    <% if (!a.archive) { %>
+    <form method="post" action="/analyses/<%= a.id %>/archiver" class="inline">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+      <button type="submit">Archiver</button>
+    </form>
+    <% } else { %>
+    <form method="post" action="/analyses/<%= a.id %>/desarchiver" class="inline">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+      <button type="submit">Désarchiver</button>
+    </form>
+    <% } %>
+    <a href="/analyses">← Retour à la liste</a>
+  </div>
+</div>
+
+<% if (typeof insere !== 'undefined' && insere) { %><p class="alerte" style="background:#e6f7e6;">✅ Insertion terminée — voir le statut ci-dessous.</p><% } %>
+
+<% if (['a_reviser','analyse','pret'].includes(a.statut)) { %>
+<div class="carte">
+  <h3>✍️ Révision — confirmez avant l'insertion</h3>
+  <p class="petit">Corrigez les valeurs au besoin, décochez les champs à exclure, choisissez la cible.
+    <strong>Rien n'est inséré tant que vous n'avez pas cliqué sur « Insérer les champs retenus ».</strong></p>
+  <form method="post" action="/analyses/<%= a.id %>/inserer">
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+    <label for="produit">Produit</label>
+    <select id="produit" name="produit">
+      <option value="">— Choisir —</option>
+      <% Object.entries(NOMS_PRODUITS).forEach(function ([code, nom]) { %>
+        <option value="<%= code %>" <%= a.produit_detecte === code ? 'selected' : '' %>><%= nom %></option>
+      <% }); %>
+    </select>
+    <label>Cible de l'insertion</label>
+    <div class="radio-ligne">
+      <label><input type="radio" name="cible" value="soumission" <%= !(typeof demandeLiee !== 'undefined' && demandeLiee) ? 'checked' : '' %>> Créer une nouvelle soumission du produit choisi</label>
+      <label><input type="radio" name="cible" value="soumission_existante" <%= (typeof demandeLiee !== 'undefined' && demandeLiee) ? 'checked' : '' %>> Ajouter les éléments de listes à une soumission existante :</label>
+      <select name="soumission_existante">
+        <% (soumissionsExistantes || []).forEach(function (s) { %>
+          <option value="<%= s.produit %>:<%= s.id %>" <%= (typeof demandeLiee !== 'undefined' && demandeLiee && demandeLiee.produit === s.produit && demandeLiee.soumission_id === s.id) ? 'selected' : '' %>>[<%= NOMS_PRODUITS[s.produit] || s.produit %>] #<%= s.id %> — <%= s.raison_sociale || 'Entreprise à confirmer' %> (<%= s.statut %>)</option>
+        <% }); %>
+      </select>
+      <label><input type="radio" name="cible" value="police_nouvelle"> Créer une police (module commercial)</label>
+      <label><input type="radio" name="cible" value="police_existante"> Rattacher le document à une police existante :</label>
+      <select name="police_id">
+        <% polices.forEach(function (p) { %>
+          <option value="<%= p.id %>"><%= p.numero_police %> — <%= p.raison_sociale %> (<%= p.ligne %>)</option>
+        <% }); %>
+      </select>
+    </div>
+    <% if (a.reponsesCiblees && a.reponsesCiblees.length) { %>
+    <h4>💬 Réponses aux questions posées au client</h4>
+    <p class="petit">Cette analyse provient de la réponse à la demande d'informations<% if (typeof demandeLiee !== 'undefined' && demandeLiee) { %> #<%= demandeLiee.id %><% } %>. Chaque réponse retenue sera écrite dans l'élément existant de la soumission et fermera la question correspondante.</p>
+    <table class="tableau">
+      <thead><tr><th>Inclure</th><th>Question / champ</th><th>Valeur (modifiable)</th><th>Confiance</th><th>Extrait source</th></tr></thead>
+      <tbody>
+      <% a.reponsesCiblees.forEach(function (c, i) { %>
+        <tr>
+          <td><input type="checkbox" name="cible_<%= i %>_inclure" checked></td>
+          <td><%= c.libelle %> <span class="petit">(élément #<%= c.id %>)</span></td>
+          <td>
+            <% if (c.champ === 'gicleurs') { %>
+              <select name="cible_<%= i %>_valeur">
+                <option value="1" <%= c.valeur ? 'selected' : '' %>>Oui — protégé par des gicleurs</option>
+                <option value="0" <%= !c.valeur ? 'selected' : '' %>>Non — aucun gicleur</option>
+              </select>
+            <% } else { %>
+              <input type="text" name="cible_<%= i %>_valeur" value="<%= c.valeur %>" style="width:100%;">
+            <% } %>
+          </td>
+          <td>haute</td>
+          <td class="petit"><%= c.extrait || '—' %> <em>(<%= c.source || 'Réponse courriel' %>)</em></td>
+        </tr>
+      <% }); %>
+      </tbody>
+    </table>
+    <% } %>
+    <table class="tableau">
+      <thead><tr><th>Inclure</th><th>Champ</th><th>Valeur (modifiable)</th><th>Confiance</th><th>Extrait source</th></tr></thead>
+      <tbody>
+      <% a.champs.forEach(function (c, i) { %>
+        <tr>
+          <td><input type="checkbox" name="inclure_<%= i %>" <%= c.confiance !== 'basse' ? 'checked' : '' %>></td>
+          <td><%= c.libelle %> <span class="petit">(<%= c.table %>.<%= c.colonne %>)</span></td>
+          <td><input type="text" name="valeur_<%= i %>" value="<%= c.valeur %>" style="width:100%;"></td>
+          <td><span style="font-weight:bold;color:<%= c.confiance === 'haute' ? '#1a7f1a' : c.confiance === 'moyenne' ? '#b8860b' : '#c0392b' %>;"><%= c.confiance %></span></td>
+          <td class="petit"><%= c.extrait || '—' %><% if (c.source) { %> <em>(<%= c.source %>)</em><% } %></td>
+        </tr>
+      <% }); %>
+      </tbody>
+    </table>
+    <% Object.entries(a.listes || {}).forEach(function ([type, items]) { %>
+      <% const metaL = META_LISTES[type]; if (!metaL || !items.length) return; %>
+      <% const colsL = Object.entries(metaL.champs).filter(function ([cle, cm]) { return !cm.produits || !a.produit_detecte || cm.produits.includes(a.produit_detecte); }); %>
+      <h4>📋 <%= metaL.libelle %> (<%= items.length %>) — liste complète détectée</h4>
+      <p class="petit">Chaque ligne cochée sera insérée comme un élément de la soumission (créée ou existante, selon la cible). Corrigez les cellules au besoin ; les lignes décochées ne sont simplement pas insérées.</p>
+      <table class="tableau">
+        <thead><tr><th>Inclure</th><% colsL.forEach(function ([cle, cm]) { %><th><%= cm.libelle %></th><% }); %><th>Confiance</th></tr></thead>
+        <tbody id="corps-liste-<%= type %>" data-prochain-index="<%= items.length %>">
+        <% items.forEach(function (item, i) { %>
+          <tr>
+            <td><input type="checkbox" name="liste_<%= type %>_<%= i %>_inclure" <%= item.confiance !== 'basse' ? 'checked' : '' %>></td>
+            <% colsL.forEach(function ([cle, cm]) { %>
+              <td><input type="text" name="liste_<%= type %>_<%= i %>_<%= cle %>" value="<%= item.champs[cle] != null ? item.champs[cle] : '' %>" style="width:100%;"></td>
+            <% }); %>
+            <td><span style="font-weight:bold;color:<%= item.confiance === 'haute' ? '#1a7f1a' : item.confiance === 'moyenne' ? '#b8860b' : '#c0392b' %>;"><%= item.confiance %></span></td>
+          </tr>
+        <% }); %>
+        </tbody>
+      </table>
+      <template id="modele-ligne-<%= type %>">
+        <tr>
+          <td><input type="checkbox" name="liste_<%= type %>___N___inclure" checked></td>
+          <% colsL.forEach(function ([cle, cm]) { %>
+            <td><input type="text" name="liste_<%= type %>___N___<%= cle %>" value="" style="width:100%;"></td>
+          <% }); %>
+          <td>manuelle</td>
+        </tr>
+      </template>
+      <button type="button" class="btn btn-petit btn-secondaire" data-ajouter-ligne="<%= type %>">＋ Ajouter une ligne</button>
+    <% }); %>
+    <button type="submit">✔ Insérer les champs retenus</button>
+  </form>
+</div>
+<script src="/analyse-revision.js" defer></script>
+<% } else { %>
+<div class="carte">
+  <h3>Champs proposés (<%= a.champs.length %>)</h3>
+  <% if (!a.champs.length) { %>
+    <p class="petit">Aucun champ proposé pour le moment.</p>
+  <% } else { %>
+  <table class="tableau">
+    <thead><tr><th>Champ</th><th>Valeur proposée</th><th>Confiance</th><th>Extrait source</th></tr></thead>
+    <tbody>
+    <% a.champs.forEach(function (c) { %>
+      <tr>
+        <td><%= c.libelle %> <span class="petit">(<%= c.table %>.<%= c.colonne %>)</span></td>
+        <td><%= c.valeur %></td>
+        <td><%= c.confiance %></td>
+        <td class="petit"><%= c.extrait || '—' %></td>
+      </tr>
+    <% }); %>
+    </tbody>
+  </table>
+  <% } %>
+</div>
+<% const typesListesRO = Object.entries(a.listes || {}).filter(function ([t, items]) { return META_LISTES[t] && items.length; }); %>
+<% if (typesListesRO.length) { %>
+<div class="carte">
+  <h3>Listes détectées</h3>
+  <% typesListesRO.forEach(function ([type, items]) { %>
+    <% const metaL = META_LISTES[type]; const colsL = Object.entries(metaL.champs).filter(function ([cle, cm]) { return !cm.produits || !a.produit_detecte || cm.produits.includes(a.produit_detecte); }); %>
+    <h4>📋 <%= metaL.libelle %> (<%= items.length %>)</h4>
+    <table class="tableau">
+      <thead><tr><% colsL.forEach(function ([cle, cm]) { %><th><%= cm.libelle %></th><% }); %><th>Confiance</th></tr></thead>
+      <tbody>
+      <% items.forEach(function (item) { %>
+        <tr>
+          <% colsL.forEach(function ([cle, cm]) { %><td><%= item.champs[cle] != null ? item.champs[cle] : '—' %></td><% }); %>
+          <td><%= item.confiance %></td>
+        </tr>
+      <% }); %>
+      </tbody>
+    </table>
+  <% }); %>
+</div>
+<% } %>
+<% } %>
+
+<div class="carte">
+  <h3>Texte extrait</h3>
+  <% if (a.texte_extrait) { %>
+    <pre style="white-space:pre-wrap;max-height:400px;overflow:auto;"><%= a.texte_extrait %></pre>
+  <% } else { %>
+    <p class="petit">Aucun texte extrait.</p>
+  <% } %>
+</div>
+
+<%- include('../partials/bas') %>

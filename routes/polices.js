@@ -14,7 +14,7 @@ const { exigeAuth, exigeMotDePasseChange, verifieCsrf, journal, estDateValide, e
 const router = express.Router();
 router.use(exigeAuth, exigeMotDePasseChange);
 
-const LIGNES = ['cgl', 'biens', 'perte_exploitation', 'eo', 'cyber', 'flotte', 'cautionnement', 'do', 'autre'];
+const LIGNES = ['cgl', 'biens', 'perte_exploitation', 'eo', 'cyber', 'flotte', 'cautionnement', 'do', 'auto', 'autre'];
 const NOMS_LIGNES = {
   cgl: 'Responsabilité civile (CGL)',
   biens: 'Biens commerciaux',
@@ -24,6 +24,7 @@ const NOMS_LIGNES = {
   flotte: 'Flotte automobile',
   cautionnement: 'Cautionnement',
   do: 'Administrateurs et dirigeants (D&O)',
+  auto: 'Assurance automobile (FPQ1)',
   autre: 'Autre',
 };
 const STATUTS = ['active', 'a_renouveler', 'resiliee'];
@@ -89,18 +90,19 @@ function entreprisesMenu(req, cabinetId) {
 // --- Versioning (règle d'or) ---------------------------------------------------------------------------
 // Chaque version est un snapshot complet (champs + protections) en lecture seule.
 // v1 = création ; chaque modification (formulaire, protection) crée v(n+1).
-function creerVersionPolice(policeId, userId) {
+// noteAvenant (optionnel) : décrit un avenant en cours de terme (ex. FPQ1 auto).
+function creerVersionPolice(policeId, userId, noteAvenant = null) {
   const police = bd.prepare('SELECT * FROM polices WHERE id = ?').get(policeId);
   if (!police) return null;
   const protections = bd.prepare('SELECT code, libelle, prime FROM police_protections WHERE police_id = ? ORDER BY code').all(policeId);
   const maxV = bd.prepare('SELECT COALESCE(MAX(version), 0) AS m FROM police_versions WHERE police_id = ?').get(policeId).m;
   const v = maxV + 1;
   bd.prepare(`
-    INSERT INTO police_versions (police_id, version, date_effet, date_echeance, franchise, notes, protections_json, cree_par)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    INSERT INTO police_versions (police_id, version, date_effet, date_echeance, franchise, notes, avenant_note, protections_json, cree_par)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
   `).run(policeId, v, police.date_effet, police.date_echeance, police.franchise, police.notes,
-    JSON.stringify(protections), userId || null);
-  journal(police.cabinet_id, userId, 'police_version', `Police id ${policeId} → version ${v}`);
+    noteAvenant, JSON.stringify(protections), userId || null);
+  journal(police.cabinet_id, userId, 'police_version', `Police id ${policeId} → version ${v}${noteAvenant ? ' (' + noteAvenant + ')' : ''}`);
   return v;
 }
 
@@ -235,6 +237,26 @@ router.get('/:id/versions/:v', (req, res) => {
   if (!version) return res.status(404).render('erreur', { titre: 'Introuvable', message: 'Version introuvable.' });
   version.protections = JSON.parse(version.protections_json || '[]');
   res.render('polices/version', { police, version, NOMS_LIGNES });
+});
+
+// --- Attestation d'assurance (carte rose) — police auto FPQ1 ----------------------------------------------
+// Page imprimable par véhicule, à partir des données FPQ1 courantes (live).
+router.get('/:id/attestation/:vid', (req, res) => {
+  const police = policeDuCabinet(req.params.id, res.locals.cabinetId);
+  if (!police) return res.status(404).render('erreur', { titre: 'Introuvable', message: 'Police introuvable.' });
+  if (clientHorsPortefeuille(res.locals.cabinetId, req.utilisateur, police.client_id)) return reponseHorsPortefeuille(res);
+  if (police.ligne !== 'auto' || !police.auto_soumission_id) {
+    return res.status(404).render('erreur', { titre: 'Non disponible', message: 'L’attestation n’est disponible que pour les polices automobiles (FPQ1) liées à une soumission.' });
+  }
+  const fpq1 = require('../lib/fpq1');
+  const s = fpq1.obtenirSoumission(police.auto_soumission_id, res.locals.cabinetId);
+  if (!s) return res.status(404).render('erreur', { titre: 'Introuvable', message: 'Soumission d’origine introuvable.' });
+  const vehicule = (s.vehicules || []).find((v) => String(v.id) === String(req.params.vid) && !v.archive);
+  if (!vehicule) return res.status(404).render('erreur', { titre: 'Introuvable', message: 'Véhicule introuvable sur cette police.' });
+  const client = bd.prepare(`
+    SELECT raison_sociale, adresse, ville, code_postal FROM clients WHERE id = ? AND cabinet_id = ?
+  `).get(police.client_id, res.locals.cabinetId);
+  res.render('polices/attestation', { police, vehicule, client, NOMS_LIGNES });
 });
 
 // --- Protections d'une police ---------------------------------------------------------------------------

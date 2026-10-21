@@ -142,14 +142,14 @@ function dansJours(n) { const d = new Date(); d.setDate(d.getDate() + n); return
   r = await req(jar, 'POST', `/polices/${idPolice}/protections`, { form: { _csrf: jetonR, code: 'RC-GEN', prime: '2850.00' } });
   test('ajout protection RC-GEN → 302', r.statut === 302, r.statut);
 
-  // Produit invalide (ancien 'auto') refusé
+  // Produit invalide refusé ('auto' est désormais un produit valide — FPQ1 étape 3)
   r = await req(jar, 'GET', '/polices/nouvelle');
   r = await req(jar, 'POST', '/polices', { form: {
-    _csrf: csrf(r.texte), client_id: idEnt, ligne: 'auto', assureur_id: idAssureur,
-    numero_police: 'AUTO-X', date_effet: dansJours(-10), date_echeance: dansJours(300),
+    _csrf: csrf(r.texte), client_id: idEnt, ligne: 'avion', assureur_id: idAssureur,
+    numero_police: 'XXX-1', date_effet: dansJours(-10), date_echeance: dansJours(300),
     franchise: '0', statut: 'active',
   }});
-  test("ligne 'auto' refusée → 400", r.statut === 400 && /Produit invalide/.test(r.texte), r.statut);
+  test("ligne 'avion' refusée → 400", r.statut === 400 && /Produit invalide/.test(r.texte), r.statut);
 
   // ---- 4. Réclamations ---------------------------------------------------------------
   console.log('4. Réclamations');

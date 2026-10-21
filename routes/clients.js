@@ -8,6 +8,7 @@ const fs = require('fs');
 const multer = require('multer');
 
 const bd = require('../lib/bd');
+const placesGoogle = require('../lib/places-google');
 const { exigeAuth, exigeMotDePasseChange, verifieCsrf, journal, estCourrielValide,
   estAdmin, estCourtier, clausePortefeuille, clientHorsPortefeuille, reponseHorsPortefeuille } = require('../lib/middleware');
 
@@ -108,7 +109,7 @@ router.get('/', (req, res) => {
 
 // --- Nouveau / modifier --------------------------------------------------------------------
 router.get('/nouveau', (req, res) => {
-  res.render('clients/formulaire', { erreur: null, client: null, consentements: {}, TYPES_CONSENTEMENT, utilisateurs: utilisateursCabinet(res.locals.cabinetId), peutChangerResponsable: estAdmin(req) });
+  res.render('clients/formulaire', { erreur: null, client: null, consentements: {}, TYPES_CONSENTEMENT, utilisateurs: utilisateursCabinet(res.locals.cabinetId), peutChangerResponsable: estAdmin(req), googleConfiguree: placesGoogle.obtenirReglageGoogle(res.locals.cabinetId).configuree });
 });
 
 function corpsClient(corps) {
@@ -119,6 +120,8 @@ function corpsClient(corps) {
     secteur_activite: v(corps.secteur_activite) || null,
     courriel_entreprise: v(corps.courriel_entreprise) || null,
     telephone_entreprise: v(corps.telephone_entreprise) || null,
+    site_web: v(corps.site_web) || null,
+    place_id_google: v(corps.place_id_google) || null,
     chiffre_affaires: v(corps.chiffre_affaires) ? Number(corps.chiffre_affaires) : null,
     nb_employes: v(corps.nb_employes) ? Number(corps.nb_employes) : null,
     prenom: v(corps.prenom),
@@ -128,6 +131,7 @@ function corpsClient(corps) {
     telephone: v(corps.telephone) || null,
     adresse: v(corps.adresse) || null,
     ville: v(corps.ville) || null,
+    province: v(corps.province) || null,
     code_postal: v(corps.code_postal) || null,
     langue: corps.langue,
     notes: v(corps.notes) || null,
@@ -141,19 +145,21 @@ router.post('/', (req, res) => {
     : (estCourtier(req) ? req.utilisateur.id : responsableValide(req.body.responsable_id, res.locals.cabinetId));
   if (resp === 'invalide') erreurs.push('Courtier responsable invalide.');
   if (erreurs.length) {
-    return res.status(400).render('clients/formulaire', { erreur: erreurs.join(' '), client: req.body, consentements: {}, TYPES_CONSENTEMENT, utilisateurs: utilisateursCabinet(res.locals.cabinetId), peutChangerResponsable: estAdmin(req) });
+    return res.status(400).render('clients/formulaire', { erreur: erreurs.join(' '), client: req.body, consentements: {}, TYPES_CONSENTEMENT, utilisateurs: utilisateursCabinet(res.locals.cabinetId), peutChangerResponsable: estAdmin(req), googleConfiguree: placesGoogle.obtenirReglageGoogle(res.locals.cabinetId).configuree });
   }
   const c = corpsClient(req.body);
   const r = bd.prepare(`
     INSERT INTO clients (cabinet_id, raison_sociale, neq, secteur_activite,
-                         courriel_entreprise, telephone_entreprise, chiffre_affaires, nb_employes,
+                         courriel_entreprise, telephone_entreprise, site_web, place_id_google,
+                         chiffre_affaires, nb_employes,
                          prenom, nom, titre_contact,
-                         courriel, telephone, adresse, ville, code_postal, langue, notes, responsable_id)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                         courriel, telephone, adresse, ville, province, code_postal, langue, notes, responsable_id)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `).run(res.locals.cabinetId, c.raison_sociale, c.neq, c.secteur_activite,
-    c.courriel_entreprise, c.telephone_entreprise, c.chiffre_affaires, c.nb_employes,
+    c.courriel_entreprise, c.telephone_entreprise, c.site_web, c.place_id_google,
+    c.chiffre_affaires, c.nb_employes,
     c.prenom, c.nom, c.titre_contact,
-    c.courriel, c.telephone, c.adresse, c.ville, c.code_postal, c.langue, c.notes, resp);
+    c.courriel, c.telephone, c.adresse, c.ville, c.province, c.code_postal, c.langue, c.notes, resp);
   synchroniserContactPrincipal(res.locals.cabinetId, r.lastInsertRowid, c);
   enregistrerConsentements(r.lastInsertRowid, req.body);
   journal(res.locals.cabinetId, req.utilisateur.id, 'entreprise_creee', `Entreprise ${c.raison_sociale} (id ${r.lastInsertRowid})`);
@@ -165,7 +171,7 @@ router.get('/:id/modifier', (req, res) => {
   if (!client) return res.status(404).render('erreur', { titre: 'Introuvable', message: 'Entreprise introuvable.' });
   if (clientHorsPortefeuille(res.locals.cabinetId, req.utilisateur, client.id)) return reponseHorsPortefeuille(res);
   const consentements = lireConsentements(client.id);
-  res.render('clients/formulaire', { erreur: null, client, consentements, TYPES_CONSENTEMENT, utilisateurs: utilisateursCabinet(res.locals.cabinetId), peutChangerResponsable: estAdmin(req) });
+  res.render('clients/formulaire', { erreur: null, client, consentements, TYPES_CONSENTEMENT, utilisateurs: utilisateursCabinet(res.locals.cabinetId), peutChangerResponsable: estAdmin(req), googleConfiguree: placesGoogle.obtenirReglageGoogle(res.locals.cabinetId).configuree });
 });
 
 router.post('/:id', (req, res) => {
@@ -177,21 +183,26 @@ router.post('/:id', (req, res) => {
   const resp = estAdmin(req) ? responsableValide(req.body.responsable_id, res.locals.cabinetId) : client.responsable_id;
   if (resp === 'invalide') erreurs.push('Courtier responsable invalide.');
   if (erreurs.length) {
-    return res.status(400).render('clients/formulaire', { erreur: erreurs.join(' '), client: { ...client, ...req.body }, consentements: lireConsentements(client.id), TYPES_CONSENTEMENT, utilisateurs: utilisateursCabinet(res.locals.cabinetId), peutChangerResponsable: estAdmin(req) });
+    return res.status(400).render('clients/formulaire', { erreur: erreurs.join(' '), client: { ...client, ...req.body }, consentements: lireConsentements(client.id), TYPES_CONSENTEMENT, utilisateurs: utilisateursCabinet(res.locals.cabinetId), peutChangerResponsable: estAdmin(req), googleConfiguree: placesGoogle.obtenirReglageGoogle(res.locals.cabinetId).configuree });
   }
   const c = corpsClient(req.body);
+  // Le place_id Google n'est remplacé que si le formulaire en porte un
+  // (recherche effectuée) — un enregistrement sans recherche le conserve.
+  const placeId = c.place_id_google || client.place_id_google || null;
   bd.prepare(`
     UPDATE clients SET raison_sociale = ?, neq = ?, secteur_activite = ?,
                        courriel_entreprise = ?, telephone_entreprise = ?,
+                       site_web = ?, place_id_google = ?,
                        chiffre_affaires = ?, nb_employes = ?,
                        prenom = ?, nom = ?, titre_contact = ?,
-                       courriel = ?, telephone = ?, adresse = ?, ville = ?, code_postal = ?, langue = ?, notes = ?,
+                       courriel = ?, telephone = ?, adresse = ?, ville = ?, province = ?, code_postal = ?, langue = ?, notes = ?,
                        responsable_id = ?
     WHERE id = ? AND cabinet_id = ?
   `).run(c.raison_sociale, c.neq, c.secteur_activite,
-    c.courriel_entreprise, c.telephone_entreprise, c.chiffre_affaires, c.nb_employes,
+    c.courriel_entreprise, c.telephone_entreprise, c.site_web, placeId,
+    c.chiffre_affaires, c.nb_employes,
     c.prenom, c.nom, c.titre_contact,
-    c.courriel, c.telephone, c.adresse, c.ville, c.code_postal, c.langue, c.notes, resp,
+    c.courriel, c.telephone, c.adresse, c.ville, c.province, c.code_postal, c.langue, c.notes, resp,
     client.id, res.locals.cabinetId);
   synchroniserContactPrincipal(res.locals.cabinetId, client.id, c);
   enregistrerConsentements(client.id, req.body);

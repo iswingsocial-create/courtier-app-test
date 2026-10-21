@@ -16,7 +16,8 @@
       <tr><td><span class="badge badge-gris">v<%= v.version %></span></td>
       <td><%= v.date_effet %></td><td><%= v.date_echeance %></td>
       <td><%= Number(v.franchise || 0).toFixed(2) %> $</td>
-      <td><%= v.notes ? (v.notes.length > 60 ? v.notes.slice(0, 60) + '…' : v.notes) : '—' %></td>
+      <td><%= v.notes ? (v.notes.length > 60 ? v.notes.slice(0, 60) + '…' : v.notes) : '—' %>
+        <% if (v.avenant_note) { %><br><span class="badge badge-j">📝 <%= v.avenant_note.length > 70 ? v.avenant_note.slice(0, 70) + '…' : v.avenant_note %></span><% } %></td>
       <td><%= v.cree_le.slice(0, 16).replace('T', ' ') %></td><td><%= v.auteur || '—' %></td>
       <td><a class="btn btn-petit btn-secondaire" href="/polices/<%= police.id %>/versions/<%= v.version %>">Voir</a></td></tr>
     <% }) %>

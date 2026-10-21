@@ -1,0 +1,75 @@
+<%- include('../partials/haut', { titre: 'Soumission cautionnement #' + s.id + ' — version ' + version.version }) %>
+<div class="entete-page">
+  <h1>🕘 Soumission cautionnement #<%= s.id %> — version v<%= version.version %></h1>
+  <div>
+    <span class="badge badge-gris"><%= NOMS_STATUTS_SOUMISSION[version.statut] || version.statut %></span>
+    <a class="btn btn-secondaire btn-petit" href="/cautionnement/<%= s.id %>#versions">← Fiche soumission</a>
+  </div>
+</div>
+
+<p class="petit">Instantané figé du <%= (version.cree_le || '').slice(0, 16).replace('T', ' ') %> par <%= version.auteur || '—' %> — lecture seule, rien ne peut être modifié ici.</p>
+
+<div class="carte">
+  <dl class="dl">
+    <dt>Entreprise (principal)</dt><dd><strong><%= clientNom %></strong></dd>
+    <dt>Caution visée</dt><dd><%= s.assureur || '—' %></dd>
+    <dt>Secteur d’activité</dt><dd><%= s.secteur_activite || '—' %></dd>
+    <dt>Date d’effet souhaitée</dt><dd><%= version.date_effet_souhaitee || '—' %></dd>
+    <dt>Notes</dt><dd><%= version.notes || '—' %></dd>
+  </dl>
+</div>
+
+<% const d = version.donnees || {}; %>
+
+<div class="carte">
+  <h2>📜 Obligations (<%= (d.obligations || []).length %>)</h2>
+  <div class="tableau-deroulant"><table>
+    <thead><tr><th>Type</th><th>Bénéficiaire</th><th>Projet</th><th>Contrat</th><th>Cautionnement</th><th>Prime estimée</th></tr></thead>
+    <tbody>
+    <% (d.obligations || []).forEach((x) => { %>
+      <tr>
+        <td><strong><%= x.type ? NOMS_TYPES_OBLIGATION[x.type] : '—' %></strong></td>
+        <td><%= x.beneficiaire || '—' %></td>
+        <td><%= x.description_projet || '—' %></td>
+        <td><%= x.montant_contrat !== null && x.montant_contrat !== undefined ? Number(x.montant_contrat).toLocaleString('fr-CA') + ' $' : '—' %></td>
+        <td><%= x.montant_cautionnement !== null && x.montant_cautionnement !== undefined ? Number(x.montant_cautionnement).toLocaleString('fr-CA') + ' $' : '—' %></td>
+        <td><%= x.prime_estimee !== null && x.prime_estimee !== undefined ? Number(x.prime_estimee).toLocaleString('fr-CA') + ' $' : '—' %></td>
+      </tr>
+    <% }) %>
+    </tbody>
+  </table></div>
+  <% if (!(d.obligations || []).length) { %><p class="petit">Aucune.</p><% } %>
+</div>
+
+<div class="carte">
+  <h2>🏦 Ligne de cautionnement</h2>
+  <% const g = d.garanties; %>
+  <% if (g) { %>
+  <dl class="dl">
+    <dt>Limite globale (capacité)</dt><dd><%= g.limite_globale ? Number(g.limite_globale).toLocaleString('fr-CA') + ' $' : '—' %></dd>
+    <dt>Limite par projet</dt><dd><%= g.limite_par_projet ? Number(g.limite_par_projet).toLocaleString('fr-CA') + ' $' : '—' %></dd>
+    <dt>Fonds de roulement</dt><dd><%= g.fonds_roulement ? Number(g.fonds_roulement).toLocaleString('fr-CA') + ' $' : '—' %></dd>
+    <dt>Valeur nette</dt><dd><%= g.valeur_nette ? Number(g.valeur_nette).toLocaleString('fr-CA') + ' $' : '—' %></dd>
+    <dt>Prime de la ligne</dt><dd><%= g.prime ? Number(g.prime).toLocaleString('fr-CA') + ' $' : '—' %></dd>
+  </dl>
+  <% } else { %><p class="petit">Non renseignée.</p><% } %>
+</div>
+
+<div class="carte">
+  <h2>📋 Antécédents</h2>
+  <% const a = d.antecedents; %>
+  <% if (a) { %>
+  <dl class="dl">
+    <dt>Caution actuelle</dt><dd><%= a.assureur_actuel || '—' %></dd>
+    <dt>Ligne actuelle</dt><dd><%= a.numero_ligne_actuelle || '—' %></dd>
+    <dt>Années de cautionnement continu</dt><dd><%= a.annees_cautionnement_continu !== null && a.annees_cautionnement_continu !== undefined ? a.annees_cautionnement_continu : '—' %></dd>
+    <dt>Refus / résiliation antérieur(e)</dt><dd><%= a.refus_resiliation_ant ? 'Oui' : 'Non' %><% if (a.refus_resiliation_details) { %> — <%= a.refus_resiliation_details %><% } %></dd>
+    <dt>Réclamations 5 ans</dt><dd><%= (a.reclamations_5ans || []).length ? a.reclamations_5ans.map((x) => [x.date, x.cautionnement, x.montant ? x.montant + ' $' : null, x.statut].filter(Boolean).join(' — ')).join(' ; ') : 'Aucune' %></dd>
+    <dt>Consentements</dt><dd>
+      <% const co = a.consentements || {}; const coActifs = CONSENTEMENTS_CAUT.filter(([k]) => consentementActif(co, k)); %>
+      <%= coActifs.length ? coActifs.map(([k, lib]) => lib).join(', ') : '—' %>
+    </dd>
+  </dl>
+  <% } else { %><p class="petit">Non renseignés.</p><% } %>
+</div>
+<%- include('../partials/bas') %>

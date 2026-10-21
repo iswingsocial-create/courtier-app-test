@@ -6,6 +6,7 @@ const bcrypt = require('bcrypt');
 
 const bd = require('../lib/bd');
 const { exigeAuth, exigeMotDePasseChange, exigeRole, journal, estCourrielValide, ROLES, NOMS_ROLES } = require('../lib/middleware');
+const { dictionnaire } = require('../lib/contexte-ia');
 
 const router = express.Router();
 router.use(exigeAuth, exigeMotDePasseChange, exigeRole('admin'));
@@ -163,6 +164,88 @@ router.get('/journal', (req, res) => {
   const utilisateurs = bd.prepare('SELECT id, nom FROM users WHERE cabinet_id = ? ORDER BY nom').all(res.locals.cabinetId);
   const actions = bd.prepare('SELECT DISTINCT action FROM journal_audit WHERE cabinet_id = ? ORDER BY action').all(res.locals.cabinetId);
   res.render('admin/journal', { lignes, utilisateurs, actions, filtreUser, filtreAction, page: pageCourante, pages, total });
+});
+
+// Dictionnaire des champs (étape 4/10) : métadonnées du modèle de données,
+// lisible par l'humain et par l'IA. Aucune donnée client ici.
+router.get('/dictionnaire', (req, res) => {
+  res.render('admin/dictionnaire', { dictionnaire });
+});
+
+// --- Clé IA (Cohere) — module « Analyse de documents IA », étape 4/5 --------
+// La clé est chiffrée au repos (lib/reglages-ia.js) et n'apparaît jamais en clair.
+const reglagesIA = require('../lib/reglages-ia');
+const placesGoogle = require('../lib/places-google');
+
+function rendreCohere(req, res, extra = {}) {
+  const cabinetId = res.locals.cabinetId;
+  res.render('admin/cohere', {
+    reglage: reglagesIA.obtenirReglage(cabinetId),
+    effectif: reglagesIA.moteurEffectif(cabinetId),
+    reglageGoogle: placesGoogle.obtenirReglageGoogle(cabinetId),
+    message: extra.message || null,
+    ok: !!extra.ok,
+    resultatTest: extra.resultatTest || null,
+    messageGoogle: extra.messageGoogle || null,
+    okGoogle: !!extra.okGoogle,
+    resultatTestGoogle: extra.resultatTestGoogle || null,
+  });
+}
+
+router.get('/cohere', (req, res) => rendreCohere(req, res));
+
+router.post('/cohere/cle', (req, res) => {
+  try {
+    reglagesIA.definirCle(res.locals.cabinetId, req.utilisateur.id, req.body.cle);
+    rendreCohere(req, res, { message: 'Clé API Cohere enregistrée (chiffrée).', ok: true });
+  } catch (e) {
+    rendreCohere(req, res, { message: e.message });
+  }
+});
+
+router.post('/cohere/effacer', (req, res) => {
+  reglagesIA.effacerCle(res.locals.cabinetId, req.utilisateur.id);
+  rendreCohere(req, res, { message: 'Clé du cabinet retirée.', ok: true });
+});
+
+router.post('/cohere/moteur', (req, res) => {
+  try {
+    reglagesIA.definirMoteur(res.locals.cabinetId, req.utilisateur.id, String(req.body.moteur || ''));
+    rendreCohere(req, res, { message: 'Moteur mis à jour.', ok: true });
+  } catch (e) {
+    rendreCohere(req, res, { message: e.message });
+  }
+});
+
+router.post('/cohere/tester', async (req, res) => {
+  const resultatTest = await reglagesIA.testerConnexion(res.locals.cabinetId);
+  journal(res.locals.cabinetId, req.utilisateur.id, 'analyse_reglage_test',
+    `Test de connexion Cohere : ${resultatTest.ok ? 'réussi' : 'échec'} — ${resultatTest.message}`);
+  rendreCohere(req, res, { resultatTest });
+});
+
+// --- Clé Google Maps (Places) — ouverture de dossier à la voix ---------------
+// Même pattern que la clé Cohere : chiffrée au repos (lib/places-google.js),
+// jamais affichée en clair, réservée à l'admin.
+router.post('/cohere/google/cle', (req, res) => {
+  try {
+    placesGoogle.definirCleGoogle(res.locals.cabinetId, req.utilisateur.id, req.body.cle);
+    rendreCohere(req, res, { messageGoogle: 'Clé API Google Places enregistrée (chiffrée).', okGoogle: true });
+  } catch (e) {
+    rendreCohere(req, res, { messageGoogle: e.message });
+  }
+});
+
+router.post('/cohere/google/effacer', (req, res) => {
+  placesGoogle.effacerCleGoogle(res.locals.cabinetId, req.utilisateur.id);
+  rendreCohere(req, res, { messageGoogle: 'Clé Google Places du cabinet retirée.', okGoogle: true });
+});
+
+router.post('/cohere/google/tester', async (req, res) => {
+  const resultatTestGoogle = await placesGoogle.testerConnexionGoogle(res.locals.cabinetId);
+  journal(res.locals.cabinetId, req.utilisateur.id, 'google_reglage_test',
+    `Test de connexion Google Places : ${resultatTestGoogle.ok ? 'réussi' : 'échec'} — ${resultatTestGoogle.message}`);
+  rendreCohere(req, res, { resultatTestGoogle });
 });
 
 // Réinitialiser le mot de passe d'un utilisateur (génère un temporaire à changer)

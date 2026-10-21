@@ -1,0 +1,8 @@
+﻿# Exemple : import D&O / administrateurs et dirigeants — 1 soumission, 1 dirigeant, garanties, antécédents
+# Rattachement par « Entreprise » (la soumission D&O active la plus récente est utilisée).
+# Créez d’abord l’entreprise « Forges Bélanger inc. » (type=entreprise).
+type;Entreprise;Courriel entreprise;Soumission (id);Date d’effet souhaitée;Statut;Notes;Nom du dirigeant;Fonction / titre;Années d’expérience;Antécédents personnels;Limite par sinistre;Limite agrégat;Franchise;Base de garantie;Prime;Avenant — frais de défense;Avenant — pratiques d’emploi;Avenant — fidélité / crime;Assureur actuel;Police actuelle;Expiration actuelle;Années d’assurance continue;Réclamations D&O 5 ans;Poursuites en cours ou envisagées;Consentement crédit;Consentement dossier d’assurance
+soumission_do;Forges Bélanger inc.;;;2026-12-01;brouillon;Soumission D&O — manufacture;;;;;;;;;;;;;;;;;;;;
+dirigeant_do;Forges Bélanger inc.;;;;;;Marc Bélanger;Président;18;Aucune réclamation ou poursuite personnelle.;;;;;;;;;;;;;;;;
+garanties_do;Forges Bélanger inc.;;;;;;;;;;2000000;2000000;25000;Réclamations-présentées;4500;oui;non;non;;;;;;;;
+antecedents_do;Forges Bélanger inc.;;;;;;;;;;;;;;;;;;Aucun;;;0;2022-08-30|Poursuite d’un actionnaire minoritaire|120000|oui;Aucune poursuite en cours ni envisagée.;oui;non

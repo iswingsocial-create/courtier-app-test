@@ -9,6 +9,19 @@
 <div class="carte">
 <form method="post" action="<%= client && client.id ? '/clients/' + client.id : '/clients' %>">
   <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+  <input type="hidden" id="place_id_google" name="place_id_google" value="<%= client && client.place_id_google ? client.place_id_google : '' %>">
+  <% if (typeof googleConfiguree !== 'undefined' && googleConfiguree) { %>
+  <div style="border:1px solid #ccc;border-radius:8px;padding:12px;margin-bottom:14px;">
+    <h3 style="margin-top:0;">🗺️ Rechercher sur Google Maps</h3>
+    <p class="petit">Retrouvez l’entreprise pour remplir adresse, ville, province, code postal,
+      téléphone et site web d’un clic. Vérifiez avant d’enregistrer — rien n’est écrit sans vous.</p>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;">
+      <input type="text" id="rech-google-q" placeholder="Nom de l’entreprise, ville…" style="flex:1;min-width:220px;" value="<%= client ? (client.raison_sociale || '') : '' %>">
+      <button type="button" id="btn-rech-google" class="btn btn-secondaire">🔍 Rechercher sur Google Maps</button>
+    </div>
+    <div id="resultats-google" style="margin-top:10px;"></div>
+  </div>
+  <% } %>
   <h3>Entreprise</h3>
   <div class="grille-form">
     <div><label for="raison_sociale">Raison sociale *</label><input type="text" id="raison_sociale" name="raison_sociale" required value="<%= client ? (client.raison_sociale || '') : '' %>"></div>
@@ -16,6 +29,7 @@
     <div><label for="secteur_activite">Secteur d’activité</label><input type="text" id="secteur_activite" name="secteur_activite" value="<%= client && client.secteur_activite ? client.secteur_activite : '' %>"></div>
     <div><label for="courriel_entreprise">Courriel de l’entreprise</label><input type="email" id="courriel_entreprise" name="courriel_entreprise" value="<%= client && client.courriel_entreprise ? client.courriel_entreprise : '' %>"></div>
     <div><label for="telephone_entreprise">Téléphone de l’entreprise</label><input type="tel" id="telephone_entreprise" name="telephone_entreprise" value="<%= client && client.telephone_entreprise ? client.telephone_entreprise : '' %>"></div>
+    <div><label for="site_web">Site web</label><input type="text" id="site_web" name="site_web" value="<%= client && client.site_web ? client.site_web : '' %>"></div>
     <div><label for="chiffre_affaires">Chiffre d’affaires ($)</label><input type="number" id="chiffre_affaires" name="chiffre_affaires" min="0" step="0.01" value="<%= client && client.chiffre_affaires != null ? client.chiffre_affaires : '' %>"></div>
     <div><label for="nb_employes">Nombre d’employés</label><input type="number" id="nb_employes" name="nb_employes" min="0" step="1" value="<%= client && client.nb_employes != null ? client.nb_employes : '' %>"></div>
     <% if (peutChangerResponsable) { %>
@@ -41,6 +55,7 @@
     <div><label for="telephone">Téléphone du contact</label><input type="tel" id="telephone" name="telephone" value="<%= client && client.telephone ? client.telephone : '' %>"></div>
     <div><label for="adresse">Adresse</label><input type="text" id="adresse" name="adresse" value="<%= client && client.adresse ? client.adresse : '' %>"></div>
     <div><label for="ville">Ville</label><input type="text" id="ville" name="ville" value="<%= client && client.ville ? client.ville : '' %>"></div>
+    <div><label for="province">Province</label><input type="text" id="province" name="province" value="<%= client && client.province ? client.province : '' %>" placeholder="QC"></div>
     <div><label for="code_postal">Code postal</label><input type="text" id="code_postal" name="code_postal" value="<%= client && client.code_postal ? client.code_postal : '' %>"></div>
     <div><label for="langue">Langue</label>
       <select id="langue" name="langue">
@@ -64,4 +79,5 @@
   <div class="actions"><button class="btn" type="submit">Enregistrer</button></div>
 </form>
 </div>
+<script src="/clients-google.js" defer></script>
 <%- include('../partials/bas') %>

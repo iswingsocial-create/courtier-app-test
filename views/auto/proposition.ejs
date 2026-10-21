@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Proposition d’assurance automobile — Soumission #<%= p.soumissionId %></title>
+<link rel="stylesheet" href="/proposition.css">
+</head>
+<body>
+<div class="actions noprint">
+  <button class="btn" type="button" data-action="imprimer">🖨️ Imprimer</button>
+  <a class="btn" href="/auto/<%= p.soumissionId %>/proposition.pdf<%= vParam ? '?v=' + vParam : '' %>">⬇️ Télécharger PDF</a>
+  <a class="btn btn-secondaire" href="/auto/<%= p.soumissionId %>">← Retour à la soumission</a>
+</div>
+<script src="/proposition.js"></script>
+<div class="page">
+  <p class="cabinet"><%= p.cabinetNom %></p>
+  <h1>Proposition d’assurance automobile</h1>
+  <p class="sous-titre">Formulaire de proposition — FPQ1 (Québec)</p>
+  <p class="ref">Soumission #<%= p.soumissionId %> — version v<%= p.versionNumero %><%= p.versionFigee ? ' (figée)' : '' %>
+    <% if (p.dateEffet) { %> · Date d’effet souhaitée : <%= p.dateEffet %><% } %></p>
+
+  <h2>1. Proposant / assuré</h2>
+  <dl>
+    <dt>Nom</dt><dd><strong><%= p.client ? p.client.raison_sociale : '—' %></strong></dd>
+    <% if (p.client && (p.client.adresse || p.client.ville || p.client.code_postal)) { %>
+    <dt>Adresse</dt><dd><%= [p.client.adresse, p.client.ville, p.client.code_postal].filter(Boolean).join(', ') %></dd>
+    <% } %>
+    <% if (p.client && p.client.telephone) { %><dt>Téléphone</dt><dd><%= p.client.telephone %></dd><% } %>
+    <% if (p.client && p.client.courriel) { %><dt>Courriel</dt><dd><%= p.client.courriel %></dd><% } %>
+    <% if (p.client && (p.client.prenom || p.client.nom)) { %><dt>Personne-contact</dt><dd><%= [p.client.prenom, p.client.nom].filter(Boolean).join(' ') %><% if (p.client.titre_contact) { %> (<%= p.client.titre_contact %>)<% } %></dd><% } %>
+    <% if (p.courtierNom) { %><dt>Courtier responsable</dt><dd><%= p.courtierNom %></dd><% } %>
+    <% if (p.notes) { %><dt>Notes</dt><dd><%= p.notes %></dd><% } %>
+  </dl>
+
+  <h2>2. Conducteurs (<%= p.conducteurs.length %>)</h2>
+  <% if (p.conducteurs.length) { %>
+  <table>
+    <thead><tr><th>Nom</th><th>Naissance</th><th>Permis</th><th>Expérience</th><th>Lien</th><th>Principal</th></tr></thead>
+    <tbody>
+    <% p.conducteurs.forEach((cd) => { %>
+      <tr>
+        <td><strong><%= cd.prenom %> <%= cd.nom %></strong>
+          <% const infr = cd.infractions || []; const susp = cd.suspensions || []; %>
+          <% if (infr.length || susp.length) { %><br><small>
+            <% if (infr.length) { %>Infractions : <%= infr.map((x) => [x.date, x.type, x.points ? x.points + ' pts' : null].filter(Boolean).join(' — ')).join(' ; ') %><% } %>
+            <% if (susp.length) { %><%= infr.length ? ' · ' : '' %>Suspensions : <%= susp.join(' ; ') %><% } %>
+          </small><% } %>
+        </td>
+        <td><%= cd.date_naissance || '—' %></td>
+        <td><%= cd.numero_permis ? cd.numero_permis + ' (' + (cd.province_permis || 'QC') + ')' : '—' %><% if (cd.date_obtention_permis) { %><br><small>obtenu le <%= cd.date_obtention_permis %></small><% } %></td>
+        <td><%= cd.annees_experience_ca ? cd.annees_experience_ca + ' ans (Canada)' : '—' %></td>
+        <td><%= cd.lien_assure || '—' %></td>
+        <td><%= cd.conducteur_principal ? 'Oui' : '—' %></td>
+      </tr>
+    <% }) %>
+    </tbody>
+  </table>
+  <% } else { %><p>Aucun conducteur saisi.</p><% } %>
+
+  <h2>3. Véhicules (<%= p.vehicules.length %>)</h2>
+  <% p.vehicules.forEach((vh, i) => { %>
+    <h3>Véhicule <%= i + 1 %> — <%= [vh.annee, vh.marque, vh.modele, vh.version_finition].filter(Boolean).join(' ') || '—' %></h3>
+    <dl>
+      <dt>NIV (VIN)</dt><dd><%= vh.vin || '—' %></dd>
+      <dt>Achat</dt><dd><%= [vh.etat_libelle, vh.date_achat ? 'le ' + vh.date_achat : null, vh.prix_achat ? p.fmtMontant(vh.prix_achat) : null].filter(Boolean).join(' · ') || '—' %></dd>
+      <dt>Financement</dt><dd><%= vh.financement_libelle || '—' %><% if (vh.creancier_nom) { %> — <%= vh.creancier_nom %><% } %></dd>
+      <dt>Usage</dt><dd><%= vh.usage_libelle || '—' %><% if (vh.km_annuel) { %> · <%= vh.km_annuel %> km/an<% } %></dd>
+      <dt>Stationnement</dt><dd><%= vh.stationnement || '—' %></dd>
+      <dt>Antivol TAG / pneus d’hiver</dt><dd><%= vh.antivol_tag ? 'TAG oui' : 'TAG non' %> · <%= vh.pneus_hiver ? 'pneus d’hiver oui' : 'pneus d’hiver non' %></dd>
+      <% if (vh.garanties) { %>
+      <dt>Responsabilité civile</dt><dd><strong><%= vh.garanties.rc_libelle %></strong></dd>
+      <dt>Dommages au véhicule</dt><dd><%= vh.garanties.protection_b_libelle %> — franchise <%= vh.garanties.franchise_libelle %></dd>
+      <% if (vh.garanties.avenants_libelles.length) { %><dt>Avenants</dt><dd><%= vh.garanties.avenants_libelles.join(', ') %></dd><% } %>
+      <% } else { %><dt>Garanties</dt><dd>Non définies</dd><% } %>
+    </dl>
+  <% }) %>
+  <% if (!p.vehicules.length) { %><p>Aucun véhicule saisi.</p><% } %>
+
+  <h2>4. Antécédents d’assurance</h2>
+  <% const a = p.antecedents; %>
+  <% if (a) { %>
+  <dl>
+    <dt>Assureur actuel</dt><dd><%= a.assureur_actuel || '—' %></dd>
+    <dt>Police actuelle</dt><dd><%= a.numero_police_actuelle || '—' %><% if (a.date_expiration_actuelle) { %> (expire le <%= a.date_expiration_actuelle %>)<% } %></dd>
+    <dt>Années d’assurance continue</dt><dd><%= a.annees_assurance_continue || '—' %></dd>
+    <dt>Déclarations</dt><dd><%= [a.resiliation_ant && 'résiliation antérieure', a.non_paiement_ant && 'non-paiement antérieur', a.faillite && 'faillite', a.casier_judiciaire && 'casier judiciaire'].filter(Boolean).join(', ') || 'Aucune' %></dd>
+    <dt>Sinistres (6 ans)</dt><dd><%= (a.sinistres_6ans || []).length ? a.sinistres_6ans.map((x) => [x.date, x.type, x.montant ? x.montant + ' $' : null].filter(Boolean).join(' — ')).join(' ; ') : 'Aucun' %></dd>
+  </dl>
+  <% } else { %><p>Non renseignés.</p><% } %>
+
+  <h2>5. Consentements</h2>
+  <% if (p.consentementsLibelles.length) { %>
+  <p><% p.consentementsLibelles.forEach((l, i) => { %>☑ <%= l %><% if (i < p.consentementsLibelles.length - 1) { %><br><% } %><% }) %></p>
+  <% } else { %><p>Aucun consentement enregistré.</p><% } %>
+
+  <p class="pied">Document généré le <%= p.genereLe %> à partir de la soumission #<%= p.soumissionId %> (version v<%= p.versionNumero %><%= p.versionFigee ? ', figée' : '' %>) — vérifiez avant envoi à l’assureur.</p>
+
+  <div class="signatures">
+    <div><div class="ligne">Signature du proposant</div><p>Date : _______________</p></div>
+    <div><div class="ligne">Signature du courtier</div><p>Date : _______________</p></div>
+  </div>
+</div>
+<div class="actions noprint"><a class="btn btn-secondaire" href="/auto/<%= p.soumissionId %>">← Retour à la soumission</a></div>
+</body>
+</html>

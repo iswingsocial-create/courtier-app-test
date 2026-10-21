@@ -58,6 +58,10 @@ tr:hover td { background: #f9fafb; }
 .badge-ok { background: #d1fae5; color: #065f46; }
 .badge-gris { background: #e5e7eb; color: #374151; }
 .badge-echu { background: #7f1d1d; color: #fff; }
+.badge-vert { background: #d1fae5; color: #065f46; }
+.badge-bleu { background: #dbeafe; color: #1e40af; }
+.badge-violet { background: #ede9fe; color: #5b21b6; }
+.titre-section { font-size: 1.25rem; margin: 1.6rem 0 0.8rem; }
 
 /* Formulaires */
 label { display: block; font-weight: 600; margin: 12px 0 4px; }
@@ -67,6 +71,7 @@ input[type=text], input[type=email], input[type=password], input[type=tel], inpu
 textarea { min-height: 90px; resize: vertical; }
 input:focus, select:focus, textarea:focus { outline: 2px solid var(--primaire); border-color: var(--primaire); }
 .grille-form { display: grid; grid-template-columns: 1fr 1fr; gap: 0 16px; }
+.grille-form .pleine-largeur { grid-column: 1 / -1; }
 @media (max-width: 640px) { .grille-form { grid-template-columns: 1fr; } }
 .case { display: flex; gap: 10px; align-items: flex-start; margin: 8px 0; }
 .case input { width: auto; margin-top: 4px; }
@@ -122,3 +127,7 @@ footer { text-align: center; color: var(--texte-doux); font-size: .85rem; paddin
 .pre-ligne { white-space: pre-line; }
 .chat-form { display: flex; gap: 8px; margin-top: 12px; }
 .chat-form input[type="text"] { flex: 1; }
+
+/* Exports : radios et cases à cocher en ligne */
+.radio-ligne { display: flex; gap: 18px; margin: 8px 0; flex-wrap: wrap; }
+.radio-ligne label { margin: 0; font-weight: 400; display: flex; align-items: center; gap: 6px; }

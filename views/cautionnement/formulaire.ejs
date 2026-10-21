@@ -1,0 +1,39 @@
+<%- include('../partials/haut', { titre: 'Nouvelle soumission cautionnement' }) %>
+<div class="entete-page">
+  <h1>📜 Nouvelle soumission cautionnement</h1>
+  <div><a class="btn btn-secondaire btn-petit" href="/cautionnement">← Soumissions</a></div>
+</div>
+
+<% if (erreur) { %><div class="alerte alerte-erreur"><%= erreur %></div><% } %>
+
+<div class="carte">
+  <form method="post" action="/cautionnement" class="grille-form">
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+    <div><label for="client_id">Entreprise cliente (le principal) *</label>
+      <select id="client_id" name="client_id" required>
+        <option value="">— Choisir —</option>
+        <% entreprises.forEach((e) => { %>
+          <option value="<%= e.id %>"<%= String(valeurs.client_id || '') === String(e.id) ? ' selected' : '' %>><%= e.raison_sociale %></option>
+        <% }) %>
+      </select></div>
+    <div><label for="assureur">Caution visée (si connue)</label>
+      <input type="text" id="assureur" name="assureur" maxlength="120" value="<%= valeurs.assureur || '' %>" placeholder="Ex. : Intact Cautionnement"></div>
+    <div><label for="secteur_activite">Secteur d’activité du principal</label>
+      <input type="text" id="secteur_activite" name="secteur_activite" maxlength="160" value="<%= valeurs.secteur_activite || '' %>" placeholder="Ex. : Construction — entrepreneur général"></div>
+    <div><label for="annee_fondation">Année de fondation</label>
+      <input type="number" id="annee_fondation" name="annee_fondation" min="1800" max="2100" step="1" value="<%= valeurs.annee_fondation || '' %>"></div>
+    <div><label for="chiffre_affaires">Chiffre d’affaires annuel ($)</label>
+      <input type="number" id="chiffre_affaires" name="chiffre_affaires" min="0" step="0.01" value="<%= valeurs.chiffre_affaires || '' %>"></div>
+    <div><label for="nb_employes">Nombre d’employés</label>
+      <input type="number" id="nb_employes" name="nb_employes" min="0" step="1" value="<%= valeurs.nb_employes || '' %>"></div>
+    <div><label for="date_effet_souhaitee">Date d’effet souhaitée</label>
+      <input type="date" id="date_effet_souhaitee" name="date_effet_souhaitee" value="<%= valeurs.date_effet_souhaitee || '' %>"></div>
+    <div><label for="date_echeance_visee">Date d’échéance visée</label>
+      <input type="date" id="date_echeance_visee" name="date_echeance_visee" value="<%= valeurs.date_echeance_visee || '' %>"></div>
+    <div style="grid-column:1/-1"><label for="notes">Notes</label>
+      <textarea id="notes" name="notes" rows="3"><%= valeurs.notes || '' %></textarea></div>
+    <div class="actions" style="grid-column:1/-1"><button class="btn" type="submit">Créer la soumission</button></div>
+  </form>
+  <p class="petit">Les obligations (cautionnements demandés), la ligne de cautionnement et les antécédents s’ajoutent ensuite sur la fiche, les obligations en nombre illimité.</p>
+</div>
+<%- include('../partials/bas') %>

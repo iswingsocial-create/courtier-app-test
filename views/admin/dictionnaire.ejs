@@ -1,0 +1,48 @@
+<%- include('../partials/haut', { titre: 'Dictionnaire des champs' }) %>
+<div class="entete-page">
+  <h1>📖 Dictionnaire des champs</h1>
+  <a class="btn btn-secondaire btn-petit" href="/admin/utilisateurs">← Utilisateurs</a>
+</div>
+
+<div class="carte">
+  <p class="petit">Métadonnées du modèle de données — <strong><%= dictionnaire.tables.length %> tables</strong>,
+  <%= dictionnaire.tables.reduce((n, t) => n + t.colonnes.length, 0) %> colonnes.
+  Lisible par l'humain <em>et</em> par l'IA (étape 4/10). <strong>Aucune donnée client ici</strong>, uniquement la structure.</p>
+  <p class="petit">🔒 <%= dictionnaire.regle_or %></p>
+  <div class="grille-form">
+    <div><label for="recherche-dictionnaire">Rechercher un champ</label>
+      <input type="search" id="recherche-dictionnaire" data-dictionnaire-recherche
+        placeholder="ex. franchise, vin, consentement…" autocomplete="off"></div>
+  </div>
+  <p class="petit" id="compteur-dictionnaire" aria-live="polite"></p>
+</div>
+
+<% const parDomaine = {}; %>
+<% dictionnaire.tables.forEach((t) => { (parDomaine[t.domaine] = parDomaine[t.domaine] || []).push(t); }); %>
+<% Object.keys(dictionnaire.domaines).forEach((dom) => { %>
+  <% if (!parDomaine[dom]) return; %>
+  <h2 class="titre-section"><%= dictionnaire.domaines[dom] %></h2>
+  <% parDomaine[dom].forEach((t) => { %>
+  <div class="carte" data-dictionnaire-table="<%= t.nom %>">
+    <h3><code><%= t.nom %></code>
+      <% if (t.versionnage) { %><span class="badge badge-bleu">versionnée</span><% } %>
+    </h3>
+    <p class="petit"><%= t.description %></p>
+    <div class="tableau-deroulant"><table data-dictionnaire-colonnes>
+      <thead><tr><th>Colonne</th><th>Libellé</th><th>Type</th><th>Usage</th><th>Description</th></tr></thead>
+      <tbody>
+      <% t.colonnes.forEach((c) => { %>
+        <tr data-dictionnaire-texte="<%= (c.nom + ' ' + c.libelle + ' ' + c.description + ' ' + (c.valeurs || []).join(' ')).toLowerCase() %>">
+          <td><code><%= c.nom %></code><% if (c.relations && c.relations.length) { %><br><span class="petit">→ <%= c.relations.join(', ') %></span><% } %></td>
+          <td><%= c.libelle %><% if (c.figee) { %><br><span class="badge badge-gris">figée</span><% } %></td>
+          <td class="petit"><%= c.type %><% if (c.valeurs) { %><br><%= c.valeurs.join(' · ') %><% } %></td>
+          <td><span class="badge <%= c.usage === 'soumission' ? 'badge-vert' : c.usage === 'gestion' ? 'badge-bleu' : c.usage === 'les_deux' ? 'badge-violet' : 'badge-gris' %>"><%= c.usage.replace('_', ' ') %></span></td>
+          <td class="petit"><%= c.description %></td>
+        </tr>
+      <% }); %>
+      </tbody>
+    </table></div>
+  </div>
+  <% }); %>
+<% }); %>
+<%- include('../partials/bas') %>

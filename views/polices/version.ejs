@@ -13,6 +13,7 @@
     <dt>Effet / Échéance</dt><dd><%= version.date_effet %> → <%= version.date_echeance %></dd>
     <dt>Franchise</dt><dd><%= Number(version.franchise || 0).toFixed(2) %> $</dd>
     <% if (version.notes) { %><dt>Notes</dt><dd><%= version.notes %></dd><% } %>
+    <% if (version.avenant_note) { %><dt>Avenant</dt><dd><span class="badge badge-j">📝 <%= version.avenant_note %></span></dd><% } %>
     <dt>Instantané créé le</dt><dd><%= version.cree_le.slice(0, 16).replace('T', ' ') %> par <%= version.auteur || '—' %></dd>
   </dl>
 </div>

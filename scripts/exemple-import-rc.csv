@@ -1,0 +1,8 @@
+﻿# Exemple : import RC commerciale — 1 soumission, 1 lieu d’exploitation, garanties, antécédents
+# Rattachement par « Entreprise » (la soumission RC active la plus récente est utilisée).
+# Créez d’abord l’entreprise « Constructions Méthot inc. » (type=entreprise).
+type;Entreprise;Courriel entreprise;Soumission (id);Date d’effet souhaitée;Statut;Notes;Adresse;Ville;Code postal;Activité;Code de classification;Description des activités;Chiffre d’affaires;Masse salariale;Nb d’employés;Superficie (pi²);Sous-traitants;Lieu (id);Adresse du lieu;Formule de garantie;Limite par sinistre;Limite agrégat;Franchise;Prime;Avenant — pollution;Avenant — parapluie;Assureur actuel;Police actuelle;Expiration actuelle;Années d’assurance continue;Sinistres 5 ans;Consentement crédit;Consentement dossier d’assurance
+soumission_rc;Constructions Méthot inc.;;;2026-11-01;brouillon;Soumission RC atelier + entrepôt;;;;;;;;;;;;;;;;;;;;;;;;;;;
+lieu_rc;Constructions Méthot inc.;;;;;;1200 boul. Industriel;Laval;H7L 4B2;atelier de réparation;54321;Réparation de machinerie lourde;2500000;800000;22;15000;assures;;;;;;;;;;;;;;;;
+garanties_rc;Constructions Méthot inc.;;;;;;;;;;;;;;;;;;1200 boul. Industriel;locaux_operations;2000000;4000000;2500;;oui;non;;;;;;;
+antecedents_rc;Constructions Méthot inc.;;;;;;;;;;;;;;;;;;;;;;;;;;Intact Assurance;CGL-2024-300;2026-11-01;7;2024-04-10|Blessure visiteur|8000;oui;oui

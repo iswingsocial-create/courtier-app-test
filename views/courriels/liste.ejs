@@ -12,6 +12,20 @@
     <%= synchro === 'erreur' ? 'La synchronisation a échoué — vérifiez le compte (bouton Tester).' : `Synchronisation terminée : ${synchro} nouveau(x) courriel(s).` %>
   </div>
 <% } %>
+<% if (typeof reclassement !== 'undefined' && reclassement) { %>
+  <div class="alerte alerte-ok">
+    ♻️ Reclassement terminé : <strong><%= reclassement.classes %> courriel(s) classé(s)</strong>,
+    <%= reclassement.suggestions %> suggestion(s) à valider ci-dessous,
+    <%= reclassement.sans %> toujours sans correspondance.
+  </div>
+<% } %>
+<% if (typeof aClasser !== 'undefined' && aClasser) { %>
+  <div class="alerte alerte-avert">
+    🗂️ <strong>À classer</strong> : ces courriels n’ont pas pu être rattachés automatiquement
+    (adresse inconnue, aucun numéro de police reconnu). Quand une suggestion apparaît,
+    validez-la en un clic — ou ouvrez le message pour le lier manuellement.
+  </div>
+<% } %>
 <div class="carte">
   <% if (dossier === 'reception') { %>
   <div class="filtres-ligne">
@@ -21,6 +35,10 @@
       <button class="btn btn-petit btn-secondaire" type="submit">Filtrer</button>
     </form>
     <form method="post" action="/courriels/comptes/synchroniser-tous" class="inline"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button class="btn btn-petit btn-secondaire" type="submit">🔄 Synchroniser</button></form>
+    <% if (!voirArchives) { %>
+      <% if (aClasser) { %><a class="btn btn-petit" href="/courriels">← Tous les courriels</a><% } else { %><a class="btn btn-secondaire btn-petit" href="/courriels?aclasser=1">🗂️ À classer (<%= nbAClasser %>)</a><% } %>
+      <form method="post" action="/courriels/reclasser" class="inline"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button class="btn btn-petit btn-secondaire" type="submit">♻️ Reclasser les non classés</button></form>
+    <% } %>
     <% if (voirArchives) { %><a class="btn btn-secondaire btn-petit" href="/courriels">← Actifs</a><% } else { %><a class="btn btn-secondaire btn-petit" href="/courriels?archives=1">Archivés</a><% } %>
   </div>
   <% } %>
@@ -35,7 +53,23 @@
         <% if (dossier === 'reception') { %><td><%= c.lu ? '📭' : '📬' %></td><% } %>
         <td><%= dossier === 'reception' ? c.expediteur : c.destinataires %></td>
         <td><a href="/courriels/<%= c.id %>"><%= c.sujet %></a></td>
-        <td><%= c.client_raison_sociale || '<span class="petit">—</span>' %></td>
+        <td>
+          <% if (c.client_raison_sociale) { %>
+            <%= c.client_raison_sociale %>
+            <% const badge = badgeClassement(c); if (badge) { %><br><span class="badge badge-gris"><%= badge %></span><% } %>
+          <% } else if (c.suggestion) { %>
+            <span class="petit">💡 Suggestion : <strong><%= c.suggestion.raisonSociale %></strong>
+              (<%= NOMS_METHODES_CLASSEMENT[c.suggestion.methode] || c.suggestion.methode %><% if (c.suggestion.detail && c.suggestion.methode === 'numero_police') { %> — <%= c.suggestion.detail %><% } %>)</span>
+            <form method="post" action="/courriels/<%= c.id %>/lier" class="inline">
+              <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+              <input type="hidden" name="client_id" value="<%= c.suggestion.clientId %>">
+              <% if (c.suggestion.policeId) { %><input type="hidden" name="police_id" value="<%= c.suggestion.policeId %>"><% } %>
+              <button class="btn btn-petit" type="submit">Lier</button>
+            </form>
+          <% } else { %>
+            <span class="petit">—</span>
+          <% } %>
+        </td>
         <td class="petit"><%= (c.date_courriel || c.cree_le || '').slice(0, 16).replace('T', ' ') %></td>
         <td><a class="btn btn-petit btn-secondaire" href="/courriels/<%= c.id %>">Ouvrir</a></td>
       </tr>

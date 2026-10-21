@@ -1,0 +1,8 @@
+﻿# Exemple : import perte d’exploitation — 1 soumission, 1 établissement, garanties, antécédents
+# Rattachement par « Entreprise » (la soumission PE active la plus récente est utilisée).
+# Créez d’abord l’entreprise « Boulangerie Chaleur inc. » (type=entreprise).
+type;Entreprise;Courriel entreprise;Soumission (id);Date d’effet souhaitée;Statut;Notes;Nom du lieu;Adresse du lieu;Occupation;Chiffre d’affaires ($);Superficie (m²);Année de construction;Base de valeur;Limite;Période d’indemnité;Franchise (jours);Base d’indemnité;Prime;Avenant — frais supplémentaires;Avenant — dépendance aux fournisseurs;Avenant — accès civil;Avenant — détérioration des stocks;Assureur actuel;Police actuelle;Expiration actuelle;Années d’assurance continue;Interruptions 5 ans;Consentement crédit;Consentement dossier d’assurance
+soumission_pe;Boulangerie Chaleur inc.;;;2026-11-29;brouillon;Renouvellement perte d’exploitation — fournil et magasin;;;;;;;;;;;;;;;;;;;;;;;
+etablissement_pe;Boulangerie Chaleur inc.;;;;;;Fournil;123 rue Sainte-Catherine E, Montréal;Boulangerie — fournil;750000;250;1965;Coût de remplacement;;;;;;;;;;;;;;;;
+garanties_pe;Boulangerie Chaleur inc.;;;;;;;;;;;;;800000;12 mois;3;Marge brute;2800;oui;non;non;oui;;;;;;;
+antecedents_pe;Boulangerie Chaleur inc.;;;;;;;;;;;;;;;;;;;;;;Beneva;PE-2022-4410;2026-11-29;4;2022-03-11|Bris d’équipement (four)|6|28000;oui;oui

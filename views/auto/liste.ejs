@@ -1,0 +1,42 @@
+<%- include('../partials/haut', { titre: 'Soumissions auto (FPQ1)' }) %>
+<div class="entete-page">
+  <h1>🚗 Soumissions auto</h1>
+  <div>
+    <% if (voirArchives) { %><a class="btn btn-secondaire btn-petit" href="/auto">← Actives</a><% } else { %><a class="btn btn-secondaire btn-petit" href="/auto?archives=1">Voir les archivées</a><% } %>
+    <a class="btn btn-petit" href="/auto/nouveau">+ Nouvelle soumission</a>
+  </div>
+</div>
+
+<div class="carte">
+  <form method="get" action="/auto" class="grille-form">
+    <% if (voirArchives) { %><input type="hidden" name="archives" value="1"><% } %>
+    <div><label for="statut">Statut</label>
+      <select id="statut" name="statut" data-autosubmit>
+        <option value="">— Tous —</option>
+        <% Object.keys(NOMS_STATUTS_SOUMISSION).forEach((k) => { %>
+          <option value="<%= k %>"<%= statut === k ? ' selected' : '' %>><%= NOMS_STATUTS_SOUMISSION[k] %></option>
+        <% }) %>
+      </select></div>
+  </form>
+</div>
+
+<div class="carte">
+  <div class="tableau-deroulant"><table>
+    <thead><tr><th>#</th><th>Entreprise</th><th>Statut</th><th>Effet souhaité</th><th>Conducteurs</th><th>Véhicules</th><th></th></tr></thead>
+    <tbody>
+    <% soumissions.forEach((s) => { %>
+      <tr>
+        <td><%= s.id %></td>
+        <td><strong><%= s.client_nom || '—' %></strong></td>
+        <td><span class="badge <%= s.statut === 'convertie_police' ? 'badge-ok' : (s.statut === 'soumise' ? 'badge-j' : 'badge-gris') %>"><%= NOMS_STATUTS_SOUMISSION[s.statut] %></span></td>
+        <td><%= s.date_effet_souhaitee || '—' %></td>
+        <td><%= s.nb_conducteurs %></td>
+        <td><%= s.nb_vehicules %></td>
+        <td><a class="btn btn-petit btn-secondaire" href="/auto/<%= s.id %>">Ouvrir</a></td>
+      </tr>
+    <% }) %>
+    </tbody>
+  </table></div>
+  <% if (!soumissions.length) { %><p class="petit">Aucune soumission<%= voirArchives ? ' archivée' : '' %>.</p><% } %>
+</div>
+<%- include('../partials/bas') %>

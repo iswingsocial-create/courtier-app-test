@@ -1,0 +1,111 @@
+<%- include('../partials/haut', { titre: 'Clé IA (Cohere)' }) %>
+<div class="entete-page">
+  <h1>🔑 Clé IA (Cohere)</h1>
+  <a class="btn btn-secondaire btn-petit" href="/admin/cabinets">← Cabinets</a>
+</div>
+
+<% if (message) { %><div class="alerte <%= ok ? 'alerte-succes' : 'alerte-erreur' %>"><%= message %></div><% } %>
+
+<div class="carte">
+  <h3>État</h3>
+  <p>
+    Moteur choisi : <strong><%= reglage.moteur %></strong> ·
+    Moteur effectif : <strong><%= effectif.mode === 'cohere' ? 'Cohere (Canada)' : 'local (règles)' %></strong><br>
+    Clé du cabinet : <% if (reglage.cleCabinetPresente) { %><span class="badge badge-ok">Enregistrée</span> <%= reglage.masque %><% } else { %>aucune<% } %><br>
+    Clé d'environnement (COHERE_API_KEY) : <%= reglage.cleEnvPresente ? 'présente' : 'absente' %>
+  </p>
+  <p class="petit">La clé est stockée <strong>chiffrée AES-256-GCM</strong> dans la base (même mécanisme que les
+    jetons Microsoft 365). Elle n'apparaît jamais en clair — ni ici, ni dans le journal, ni dans les réponses.
+    Seuls ses 4 derniers caractères, masqués, sont affichés.</p>
+</div>
+
+<div class="carte">
+  <h3>Enregistrer ou remplacer la clé</h3>
+  <form method="post" action="/admin/cohere/cle" class="grille-form">
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+    <label for="cle">Clé API Cohere</label>
+    <input type="password" id="cle" name="cle" autocomplete="off" placeholder="Collez la clé Cohere du cabinet" required>
+    <button type="submit">💾 Enregistrer la clé (chiffrée)</button>
+  </form>
+  <% if (reglage.cleCabinetPresente) { %>
+  <form method="post" action="/admin/cohere/effacer" class="inline" style="margin-top:10px;">
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+    <button class="btn btn-secondaire btn-petit" type="submit">Retirer la clé du cabinet</button>
+  </form>
+  <% } %>
+</div>
+
+<div class="carte">
+  <h3>Moteur d'analyse</h3>
+  <form method="post" action="/admin/cohere/moteur" class="grille-form">
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+    <label for="moteur">Choix du moteur</label>
+    <select id="moteur" name="moteur">
+      <option value="auto" <%= reglage.moteur === 'auto' ? 'selected' : '' %>>Auto — Cohere si une clé est présente, sinon local</option>
+      <option value="cohere" <%= reglage.moteur === 'cohere' ? 'selected' : '' %>>Cohere — toujours l'IA (repli local en cas d'erreur)</option>
+      <option value="local" <%= reglage.moteur === 'local' ? 'selected' : '' %>>Local — règles seulement, aucun appel externe</option>
+    </select>
+    <button type="submit">Appliquer</button>
+  </form>
+  <p class="petit">Le moteur choisi s'applique à l'analyse de documents et à l'assistant IA.
+    En mode Cohere, le texte extrait et le dictionnaire du produit détecté sont envoyés à Cohere (Canada)
+    en JSON strict ; la réponse est validée contre le dictionnaire avant d'être proposée.</p>
+</div>
+
+<div class="carte">
+  <h3>Tester la connexion</h3>
+  <form method="post" action="/admin/cohere/tester">
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+    <button type="submit">📡 Tester la connexion à Cohere</button>
+  </form>
+  <% if (resultatTest) { %>
+    <p style="margin-top:10px;"><%= resultatTest.ok ? '✅' : '⚠️' %> <%= resultatTest.message %></p>
+  <% } %>
+</div>
+
+<h2 style="margin-top:28px;">🗺️ Clé Google Maps (Places)</h2>
+<% if (typeof messageGoogle !== 'undefined' && messageGoogle) { %><div class="alerte <%= okGoogle ? 'alerte-succes' : 'alerte-erreur' %>"><%= messageGoogle %></div><% } %>
+
+<div class="carte">
+  <h3>État</h3>
+  <p>
+    Clé du cabinet : <% if (reglageGoogle.cleCabinetPresente) { %><span class="badge badge-ok">Enregistrée</span> <%= reglageGoogle.masque %><% } else { %>aucune<% } %><br>
+    Clé d'environnement (GOOGLE_PLACES_API_KEY) : <%= reglageGoogle.cleEnvPresente ? 'présente' : 'absente' %>
+  </p>
+  <p class="petit">Cette clé sert à l'<strong>enrichissement Google Maps</strong> : retrouver l'entreprise
+    (adresse complète, code postal, téléphone, site web) lors d'une <strong>ouverture de dossier à la voix</strong>
+    ou depuis le formulaire d'entreprise. Elle est stockée <strong>chiffrée AES-256-GCM</strong>, comme la clé
+    Cohere, et ne sert qu'à des recherches — les coordonnées trouvées sont toujours <strong>révisées par un
+    humain</strong> avant d'entrer au dossier. Coût : quelques cents par recherche (facturation Google Cloud du cabinet).</p>
+</div>
+
+<div class="carte">
+  <h3>Enregistrer ou remplacer la clé</h3>
+  <form method="post" action="/admin/cohere/google/cle" class="grille-form">
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+    <label for="cle-google">Clé API Google Places</label>
+    <input type="password" id="cle-google" name="cle" autocomplete="off" placeholder="Collez la clé Google Places du cabinet" required>
+    <button type="submit">💾 Enregistrer la clé (chiffrée)</button>
+  </form>
+  <% if (reglageGoogle.cleCabinetPresente) { %>
+  <form method="post" action="/admin/cohere/google/effacer" class="inline" style="margin-top:10px;">
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+    <button class="btn btn-secondaire btn-petit" type="submit">Retirer la clé du cabinet</button>
+  </form>
+  <% } %>
+  <p class="petit">La clé se crée dans <strong>Google Cloud Console</strong> (projet du cabinet, facturation
+    activée, API « Places API (New) » activée). Elle n'est jamais affichée en clair.</p>
+</div>
+
+<div class="carte">
+  <h3>Tester la connexion</h3>
+  <form method="post" action="/admin/cohere/google/tester">
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+    <button type="submit">📡 Tester la connexion à Google Places</button>
+  </form>
+  <% if (typeof resultatTestGoogle !== 'undefined' && resultatTestGoogle) { %>
+    <p style="margin-top:10px;"><%= resultatTestGoogle.ok ? '✅' : '⚠️' %> <%= resultatTestGoogle.message %></p>
+  <% } %>
+</div>
+
+<%- include('../partials/bas') %>

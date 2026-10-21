@@ -1,0 +1,58 @@
+<% /* Section « Informations manquantes » + suivi des demandes (boucle courriel).
+      Attend : sectionDemandes = { produit, soumissionId, manques[], demandes[], brouillon }.
+      Lecture seule ici : la préparation et l'envoi passent par /demandes-infos. */ %>
+<% if (typeof sectionDemandes !== 'undefined' && sectionDemandes) { %>
+<div class="carte" id="informations-manquantes">
+  <h3>❓ Informations manquantes <% if (sectionDemandes.manques.length) { %>(<%= sectionDemandes.manques.length %>)<% } %></h3>
+
+  <% (sectionDemandes.demandes || []).forEach(function (d) { %>
+    <div style="border:1px solid #ddd;border-radius:8px;padding:8px 12px;margin:8px 0;">
+      <p style="margin:0;">
+        <% if (d.statut === 'brouillon') { %>📝 <strong>Brouillon de demande</strong> — rien n'est parti.
+        <% } else if (d.statut === 'envoyee') { %>📤 <strong>Questions envoyées le <%= (d.envoyee_le || '').slice(0, 10) %></strong> à <%= d.destinataire || '—' %> — en attente de réponse<%= d.mode_envoi === 'simule' ? ' (envoi simulé)' : '' %>.
+        <% } else if (d.statut === 'partiellement_completee') { %>↩️ <strong>Réponse partielle reçue</strong> — demande envoyée le <%= (d.envoyee_le || '').slice(0, 10) %>.
+        <% } else if (d.statut === 'completee') { %>✅ <strong>Demande complétée le <%= (d.completee_le || '').slice(0, 10) %></strong> — toutes les questions ont reçu une réponse.
+        <% } %>
+        <% if (d.parent_id) { %><span class="petit">(relance de la demande #<%= d.parent_id %>)</span><% } %>
+      </p>
+      <p class="petit" style="margin:4px 0;">
+        <%= d.nbRepondues %>/<%= d.questions.length %> question(s) répondue(s)
+        <% if (d.nbRestantes > 0 && d.statut !== 'brouillon') { %> — <strong><%= d.nbRestantes %> question(s) restante(s)</strong> en évidence ci-dessous.<% } %>
+      </p>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        <a class="btn btn-petit btn-secondaire" href="/demandes-infos/<%= d.id %>"><%= d.statut === 'brouillon' ? 'Préparer / envoyer' : 'Voir la demande' %></a>
+        <% if (['envoyee','partiellement_completee'].includes(d.statut) && d.nbRestantes > 0) { %>
+          <form method="post" action="/demandes-infos/<%= d.id %>/relancer" class="inline">
+            <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+            <button class="btn btn-petit" type="submit">🔁 Relancer</button>
+          </form>
+        <% } %>
+      </div>
+    </div>
+  <% }); %>
+
+  <% if (!sectionDemandes.manques.length) { %>
+    <p>✅ <strong>Dossier complet</strong> — aucune information manquante détectée pour les assureurs.</p>
+  <% } else { %>
+    <% const groupesManques = []; const indexGroupes = {}; %>
+    <% sectionDemandes.manques.forEach(function (m) { %>
+      <% const g = m.element ? m.element.libelle : ({ entete: 'Votre dossier', garanties: 'Garanties souhaitées', antecedents: 'Antécédents', liste: 'Précisions demandées' })[m.niveau] || 'Précisions demandées'; %>
+      <% if (!(g in indexGroupes)) { indexGroupes[g] = groupesManques.length; groupesManques.push({ nom: g, items: [] }); } %>
+      <% groupesManques[indexGroupes[g]].items.push(m); %>
+    <% }); %>
+    <% groupesManques.forEach(function (g) { %>
+      <h4 style="margin-bottom:4px;"><%= g.nom.charAt(0).toUpperCase() + g.nom.slice(1) %></h4>
+      <ul style="margin-top:4px;">
+        <% g.items.forEach(function (m) { %>
+          <li><strong><%= m.libelle %></strong> — <span class="petit"><%= m.question %></span></li>
+        <% }); %>
+      </ul>
+    <% }); %>
+    <% if (sectionDemandes.brouillon) { %>
+      <p><a class="btn" href="/demandes-infos/<%= sectionDemandes.brouillon.id %>">✉️ Voir le brouillon de demande au client</a></p>
+    <% } else { %>
+      <p><a class="btn" href="/demandes-infos/preparer/<%= sectionDemandes.produit %>/<%= sectionDemandes.soumissionId %>">✉️ Demander au client</a></p>
+    <% } %>
+  <% } %>
+</div>
+<% } %>

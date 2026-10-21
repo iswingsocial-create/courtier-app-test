@@ -1,0 +1,77 @@
+<% /* Préparation et suivi d'une demande d'informations au client (boucle courriel).
+     Brouillon : destinataire, sujet et corps entièrement modifiables ; l'envoi
+     n'a lieu qu'au clic explicite sur « Envoyer ». */ %>
+<%- include('../partials/haut', { titre: 'Demande d\u2019informations #' + d.id }) %>
+<div class="entete-page">
+  <h1>✉️ Demande d'informations #<%= d.id %></h1>
+  <div><a class="btn btn-secondaire btn-petit" href="/<%= d.produit %>/<%= d.soumission_id %>">← Retour à la soumission</a></div>
+</div>
+
+<div class="carte">
+  <p>
+    <strong>Produit :</strong> <%= NOMS_PRODUITS[d.produit] || d.produit %> ·
+    <strong>Soumission :</strong> <a href="/<%= d.produit %>/<%= d.soumission_id %>">#<%= d.soumission_id %></a> ·
+    <strong>Statut :</strong> <%= { brouillon: '📝 Brouillon — rien n\u2019est parti', envoyee: '📤 Envoyée — en attente de réponse', partiellement_completee: '↩️ Partiellement complétée', completee: '✅ Complétée' }[d.statut] || d.statut %>
+    <% if (d.parent_id) { %> · <strong>Relance de :</strong> la demande #<%= d.parent_id %><% } %>
+  </p>
+  <% if (d.envoyee_le) { %><p class="petit">Envoyée le <%= d.envoyee_le.slice(0, 16).replace('T', ' ') %> à <%= d.destinataire %><%= d.mode_envoi === 'simule' ? ' — MODE SIMULÉ (aucun compte d\u2019envoi configuré : aucun courriel réel n\u2019est parti)' : '' %>.</p><% } %>
+  <% if (d.completee_le) { %><p class="petit">Complétée le <%= d.completee_le.slice(0, 16).replace('T', ' ') %>.</p><% } %>
+  <% if (typeof envoye !== 'undefined' && envoye) { %><p class="alerte" style="background:#e6f7e6;">✅ Demande envoyée<%= modeEnvoi === 'simule' ? ' (mode simulé : aucun compte d\u2019envoi configuré, aucun courriel réel n\u2019est parti)' : '' %>.</p><% } %>
+</div>
+
+<div class="carte">
+  <h3>Questions posées (<%= d.nbRepondues %>/<%= d.questions.length %> répondue(s))</h3>
+  <ol>
+    <% d.questions.forEach(function (q) { %>
+      <li>
+        <% if (q.statut === 'repondue') { %>✅ <s><%= q.question %></s> <span class="petit">(répondue le <%= (q.repondu_le || '').slice(0, 10) %>)</span>
+        <% } else { %>⏳ <%= q.question %><% } %>
+      </li>
+    <% }); %>
+  </ol>
+  <% if (['envoyee','partiellement_completee'].includes(d.statut) && d.nbRestantes > 0) { %>
+    <form method="post" action="/demandes-infos/<%= d.id %>/relancer" class="inline">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+      <button class="btn" type="submit">🔁 Relancer (nouveau brouillon, questions restantes seulement)</button>
+    </form>
+  <% } %>
+</div>
+
+<% if (d.statut === 'brouillon') { %>
+<div class="carte">
+  <h3>✍️ Préparation du courriel — révisez avant l'envoi</h3>
+  <% if (!compteEnvoi) { %>
+    <p class="alerte">ℹ️ Aucun compte d'envoi courriel n'est configuré pour ce cabinet : au clic sur « Envoyer », l'envoi sera <strong>SIMULÉ</strong> (journalisé, aucun courriel réel ne partira). Configurez un compte dans le module Courriels pour un envoi réel.</p>
+  <% } %>
+  <form method="post" action="/demandes-infos/<%= d.id %>">
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+    <label for="destinataire">Destinataire</label>
+    <input type="email" id="destinataire" name="destinataire" value="<%= d.destinataire || '' %>" style="width:100%;" required>
+    <label for="sujet">Sujet</label>
+    <input type="text" id="sujet" name="sujet" value="<%= d.sujet %>" style="width:100%;" required>
+    <label for="corps">Corps du message</label>
+    <textarea id="corps" name="corps" rows="22" style="width:100%;" required><%= d.corps %></textarea>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;">
+      <button class="btn btn-secondaire" type="submit">💾 Enregistrer le brouillon</button>
+    </div>
+  </form>
+  <form method="post" action="/demandes-infos/<%= d.id %>/envoyer" style="margin-top:12px;">
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+    <button class="btn" type="submit">📤 Envoyer au client</button>
+    <span class="petit">Aucun courriel ne part sans ce clic explicite.</span>
+  </form>
+</div>
+<% } else { %>
+<div class="carte">
+  <h3>Corps du courriel envoyé</h3>
+  <pre style="white-space:pre-wrap;"><%= d.corps %></pre>
+</div>
+<% } %>
+
+<div class="carte">
+  <form method="post" action="/demandes-infos/<%= d.id %>/archiver" class="inline">
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+    <button class="btn btn-secondaire btn-petit" type="submit">Archiver la demande</button>
+  </form>
+</div>
+<%- include('../partials/bas') %>

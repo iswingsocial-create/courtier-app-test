@@ -1,0 +1,8 @@
+﻿# Exemple : import cyber / cyberrisques — 1 soumission, 1 mesure de sécurité, garanties, antécédents
+# Rattachement par « Entreprise » (la soumission cyber active la plus récente est utilisée).
+# Créez d’abord l’entreprise « Clinique Dentaire Bouchard inc. » (type=entreprise).
+type;Entreprise;Courriel entreprise;Soumission (id);Date d’effet souhaitée;Statut;Notes;Type de mesure;Maturité;Détails de la mesure;Limite par sinistre;Limite agrégat;Franchise;Délai de carence;Prime;Avenant — rançongiciel;Avenant — fraude par transfert de fonds;Avenant — données et vie privée;Avenant — interruption d’activité;Assureur actuel;Police actuelle;Expiration actuelle;Années d’assurance continue;Incidents cyber 5 ans;Consentement crédit;Consentement dossier d’assurance
+soumission_cyber;Clinique Dentaire Bouchard inc.;;;2026-11-18;brouillon;Renouvellement cyber — protection des dossiers patients;;;;;;;;;;;;;;;;;;;
+mesure_cyber;Clinique Dentaire Bouchard inc.;;;;;;mfa;en_place;MFA forcée sur tous les comptes;;;;;;;;;;;;;;;;
+garanties_cyber;Clinique Dentaire Bouchard inc.;;;;;;;;;1000000;1000000;5000;8 heures;2400;oui;non;oui;non;;;;;;;
+antecedents_cyber;Clinique Dentaire Bouchard inc.;;;;;;;;;;;;;;;;;;Beneva;CYB-2024-70112;2026-11-18;3;2024-02-11|Rançongiciel|28000|non;oui;oui

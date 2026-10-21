@@ -1,0 +1,102 @@
+<%- include('../partials/haut', { titre: 'Soumission flotte #' + s.id + ' — version ' + version.version }) %>
+<div class="entete-page">
+  <h1>🕘 Soumission flotte #<%= s.id %> — version v<%= version.version %></h1>
+  <div>
+    <span class="badge badge-gris"><%= NOMS_STATUTS_SOUMISSION[version.statut] || version.statut %></span>
+    <a class="btn btn-secondaire btn-petit" href="/flotte/<%= s.id %>#versions">← Fiche soumission</a>
+  </div>
+</div>
+
+<p class="petit">Instantané figé du <%= (version.cree_le || '').slice(0, 16).replace('T', ' ') %> par <%= version.auteur || '—' %> — lecture seule, rien ne peut être modifié ici.</p>
+
+<div class="carte">
+  <dl class="dl">
+    <dt>Entreprise</dt><dd><strong><%= clientNom %></strong></dd>
+    <dt>Assureur</dt><dd><%= s.assureur || '—' %></dd>
+    <dt>Nombre de véhicules déclarés</dt><dd><%= s.nb_vehicules !== null && s.nb_vehicules !== undefined ? s.nb_vehicules : '—' %></dd>
+    <dt>Rayon d’opération principal</dt><dd><%= s.rayon_operation_km !== null && s.rayon_operation_km !== undefined ? s.rayon_operation_km + ' km' : '—' %></dd>
+    <dt>Usage dominant</dt><dd><%= s.usage_dominant ? NOMS_USAGES_DOMINANTS[s.usage_dominant] : '—' %></dd>
+    <dt>Date d’effet souhaitée</dt><dd><%= version.date_effet_souhaitee || '—' %></dd>
+    <dt>Notes</dt><dd><%= version.notes || '—' %></dd>
+  </dl>
+</div>
+
+<% const d = version.donnees || {}; %>
+<% const conducteursParIdV = {}; (d.conducteurs || []).forEach((c) => { conducteursParIdV[c.id] = c.prenom + ' ' + c.nom; }); %>
+
+<div class="carte">
+  <h2>🚚 Véhicules (<%= (d.vehicules || []).length %>)</h2>
+  <div class="tableau-deroulant"><table>
+    <thead><tr><th>Véhicule</th><th>NIV</th><th>Type</th><th>Usage</th><th>Rayon</th><th>Valeur</th><th>Conducteur principal</th></tr></thead>
+    <tbody>
+    <% (d.vehicules || []).forEach((x) => { %>
+      <tr>
+        <td><strong><%= [x.annee, x.marque, x.modele].filter(Boolean).join(' ') || '—' %></strong><% if (x.lieu_remisage) { %><br><span class="petit">Remisage : <%= x.lieu_remisage %></span><% } %><% if (x.equipements_speciaux && x.equipements_speciaux.length) { %><br><span class="petit">Équipements : <%= x.equipements_speciaux.map((e2) => e2.description).join(', ') %></span><% } %></td>
+        <td><%= x.niv || '—' %></td>
+        <td><%= x.type_vehicule ? NOMS_TYPES_VEHICULE[x.type_vehicule] : '—' %></td>
+        <td><%= x.usage ? NOMS_USAGES_VEHICULE[x.usage] : '—' %></td>
+        <td><%= x.rayon_operation_km !== null && x.rayon_operation_km !== undefined ? x.rayon_operation_km + ' km' : '—' %></td>
+        <td><%= x.valeur !== null && x.valeur !== undefined ? Number(x.valeur).toLocaleString('fr-CA') + ' $' : '—' %></td>
+        <td><%= x.conducteur_principal_id && conducteursParIdV[x.conducteur_principal_id] ? conducteursParIdV[x.conducteur_principal_id] : (x.conducteur_principal_nom || '—') %></td>
+      </tr>
+    <% }) %>
+    </tbody>
+  </table></div>
+  <% if (!(d.vehicules || []).length) { %><p class="petit">Aucun.</p><% } %>
+</div>
+
+<div class="carte">
+  <h2>🧑‍✈️ Conducteurs (<%= (d.conducteurs || []).length %>)</h2>
+  <div class="tableau-deroulant"><table>
+    <thead><tr><th>Conducteur</th><th>Permis</th><th>Expérience</th><th>Sinistres 5 ans</th><th>Infractions 3 ans</th></tr></thead>
+    <tbody>
+    <% (d.conducteurs || []).forEach((x) => { %>
+      <tr>
+        <td><strong><%= x.prenom %> <%= x.nom %></strong><% if (x.date_naissance) { %><br><span class="petit">Né(e) le <%= x.date_naissance %></span><% } else if (x.age) { %><br><span class="petit"><%= x.age %> ans</span><% } %></td>
+        <td><%= x.numero_permis || '—' %><% if (x.classe_permis) { %><br><span class="petit">Classe <%= x.classe_permis %></span><% } %></td>
+        <td><%= x.annees_experience !== null && x.annees_experience !== undefined ? x.annees_experience + ' ans' : '—' %><% if (x.annees_experience_lourds) { %><br><span class="petit">dont <%= x.annees_experience_lourds %> ans lourds</span><% } %></td>
+        <td><%= (x.sinistres_5ans || []).length ? x.sinistres_5ans.map((y) => [y.date, y.description, y.montant ? y.montant + ' $' : null].filter(Boolean).join(' — ')).join(' ; ') : 'Aucun' %></td>
+        <td><%= (x.infractions_3ans || []).length ? x.infractions_3ans.map((y) => [y.date, y.type, y.description].filter(Boolean).join(' — ')).join(' ; ') : 'Aucune' %></td>
+      </tr>
+    <% }) %>
+    </tbody>
+  </table></div>
+  <% if (!(d.conducteurs || []).length) { %><p class="petit">Aucun.</p><% } %>
+</div>
+
+<div class="carte">
+  <h2>📜 Garanties</h2>
+  <% const g = d.garanties; %>
+  <% if (g) { %>
+  <dl class="dl">
+    <dt>Limite de responsabilité civile</dt><dd><%= g.limite_rc ? Number(g.limite_rc).toLocaleString('fr-CA') + ' $' : '—' %></dd>
+    <dt>Franchise collision</dt><dd><%= g.franchise_collision !== null && g.franchise_collision !== undefined ? Number(g.franchise_collision).toLocaleString('fr-CA') + ' $' : '—' %></dd>
+    <dt>Franchise versement</dt><dd><%= g.franchise_versement !== null && g.franchise_versement !== undefined ? Number(g.franchise_versement).toLocaleString('fr-CA') + ' $' : '—' %></dd>
+    <dt>Prime</dt><dd><%= g.prime ? Number(g.prime).toLocaleString('fr-CA') + ' $' : '—' %></dd>
+    <dt>Avenants FAQ</dt><dd>
+      <% const av = g.avenants || {}; const codes = Object.keys(av).filter((k) => av[k]); %>
+      <%= codes.length ? codes.map((k) => ((AVENANTS_FAQ.find(([c]) => c === k) || [k, k])[1])).join(', ') : '—' %>
+    </dd>
+  </dl>
+  <% } else { %><p class="petit">Non renseignées.</p><% } %>
+</div>
+
+<div class="carte">
+  <h2>📋 Antécédents</h2>
+  <% const a = d.antecedents; %>
+  <% if (a) { %>
+  <dl class="dl">
+    <dt>Assureur actuel</dt><dd><%= a.assureur_actuel || '—' %></dd>
+    <dt>Police actuelle</dt><dd><%= a.numero_police_actuelle || '—' %></dd>
+    <dt>Années d’assurance flotte continue</dt><dd><%= a.annees_assurance_flotte_continue !== null && a.annees_assurance_flotte_continue !== undefined ? a.annees_assurance_flotte_continue : '—' %></dd>
+    <dt>Ratio de pertes</dt><dd><%= a.ratio_pertes !== null && a.ratio_pertes !== undefined ? a.ratio_pertes + ' %' : '—' %></dd>
+    <dt>Refus / annulation antérieur(e)</dt><dd><%= a.refus_annulation_ant ? 'Oui' : 'Non' %><% if (a.refus_annulation_details) { %> — <%= a.refus_annulation_details %><% } %></dd>
+    <dt>Sinistres flotte 5 ans</dt><dd><%= (a.sinistres_flotte_5ans || []).length ? a.sinistres_flotte_5ans.map((x) => [x.date, x.description, x.montant ? x.montant + ' $' : null].filter(Boolean).join(' — ')).join(' ; ') : 'Aucun' %></dd>
+    <dt>Consentements</dt><dd>
+      <% const co = a.consentements || {}; const coActifs = CONSENTEMENTS_FLOTTE.filter(([k]) => consentementActif(co, k)); %>
+      <%= coActifs.length ? coActifs.map(([k, lib]) => lib).join(', ') : '—' %>
+    </dd>
+  </dl>
+  <% } else { %><p class="petit">Non renseignés.</p><% } %>
+</div>
+<%- include('../partials/bas') %>

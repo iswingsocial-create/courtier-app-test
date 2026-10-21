@@ -1,0 +1,71 @@
+<%- include('../partials/haut', { titre: 'Rapport de vérification — police ' + police.numero_police }) %>
+<div class="entete-page">
+  <h1>🔍 Vérification de l'avenant</h1>
+  <div class="actions" style="margin-top:0">
+    <a class="btn btn-secondaire btn-petit" href="/echeances/police/<%= police.id %>">← Fiche de la police</a>
+  </div>
+</div>
+
+<% if (ok === 'verifiee') { %>
+<div class="alerte alerte-ok">✅ Rapport accepté : cette vérification est marquée comme vérifiée.</div>
+<% } else if (ok === 'correction-smtp') { %>
+<div class="alerte alerte-ok">✉️ Demande de correction envoyée à l'assureur.</div>
+<% } else if (ok === 'correction-simule') { %>
+<div class="alerte alerte-avert">✉️ Demande de correction enregistrée en mode <strong>SIMULÉ</strong> : aucun compte d'envoi n'est configuré, aucun courriel réel n'est parti.</div>
+<% } %>
+
+<div class="carte">
+  <h3><%= clientNom %> — police <%= police.numero_police %> (<%= produitNom %>)</h3>
+  <dl class="dl">
+    <dt>Assureur</dt><dd><%= police.assureur %></dd>
+    <dt>Document comparé</dt><dd><%= v.source_type === 'piece_jointe_courriel' ? 'Pièce jointe d\'un courriel lié à la police' : 'Document déposé sur la fiche' %><% if (v.analyse_id) { %> · <a href="/analyses/<%= v.analyse_id %>">voir l'analyse du document</a><% } %></dd>
+    <dt>Vérification faite le</dt><dd><%= (v.cree_le || '').slice(0, 16).replace('T', ' ') %></dd>
+    <dt>Résultat global</dt><dd><span class="badge <%= v.statut === 'conforme' ? 'badge-ok' : (v.statut === 'ecarts' ? 'badge-echu' : 'badge-j') %>"><%= NOMS_STATUTS_VERIF[v.statut] || v.statut %></span>
+      <% const c = (v.rapport && v.rapport.compteurs) || {}; %>
+      <span class="petit"><%= c.conforme || 0 %> conforme(s) · <%= c.ecart || 0 %> écart(s) · <%= c.absent || 0 %> absent(s) · <%= c.surplus || 0 %> non demandé(s) · <%= c.a_confirmer || 0 %> à confirmer</span></dd>
+    <% if (v.rapport && v.rapport.produit_document && v.rapport.produit_document !== v.produit) { %>
+    <dt>⚠️ Produit du document</dt><dd>Le moteur a lu ce document comme un produit « <%= v.rapport.produit_document %> » alors que la police est « <%= v.produit %> » — comparez avec prudence.</dd>
+    <% } %>
+    <dt>Rapport accepté</dt><dd><%= v.verifiee_le ? 'Oui, le ' + v.verifiee_le.slice(0, 16).replace('T', ' ') : 'Non — relisez les écarts, puis marquez la vérification comme faite.' %></dd>
+    <% if (v.correction_envoyee_le) { %>
+    <dt>Correction demandée</dt><dd>Le <%= v.correction_envoyee_le.slice(0, 16).replace('T', ' ') %> à <%= v.correction_destinataire %> (mode <%= v.correction_mode_envoi === 'simule' ? 'SIMULÉ — aucun courriel réel' : 'SMTP' %>)</dd>
+    <% } %>
+  </dl>
+  <p class="petit">L'« état demandé » est l'état courant de la fiche de la police au moment de la vérification. Les verdicts « à confirmer » signalent une extraction incertaine ou des formats non comparables : les deux valeurs sont affichées côte à côte, à vous de trancher.</p>
+</div>
+
+<div class="carte">
+  <h3>Rapport de comparaison</h3>
+  <% if (lignes.length) { %>
+  <div class="tableau-deroulant"><table>
+    <thead><tr><th>Champ</th><th>Demandé</th><th>Appliqué par l'assureur</th><th>Verdict</th><th>Extrait du document</th></tr></thead>
+    <tbody><% lignes.forEach((l) => { %>
+      <tr>
+        <td><strong><%= l.libelle %></strong><% if (l.contexte) { %><br><span class="petit"><%= l.contexte %></span><% } %></td>
+        <td><%= l.demandeAffiche %></td>
+        <td><%= l.appliqueAffiche %></td>
+        <td><span class="badge <%= l.verdict === 'conforme' ? 'badge-ok' : (l.verdict === 'ecart' || l.verdict === 'absent' ? 'badge-echu' : (l.verdict === 'surplus' ? 'badge-violet' : 'badge-j')) %>"><%= NOMS_VERDICTS[l.verdict] || l.verdict %></span></td>
+        <td class="petit"><%= l.extrait || '—' %></td>
+      </tr>
+    <% }) %></tbody>
+  </table></div>
+  <% } else { %>
+  <p class="petit">Aucun champ comparable : la fiche ne contient pas encore de valeur demandée à comparer, ou le document n'a rien permis d'extraire.</p>
+  <% } %>
+
+  <div class="actions">
+    <% if (aDesEcarts && !v.correction_envoyee_le) { %>
+    <a class="btn" href="/echeances/police/<%= police.id %>/verifications/<%= v.id %>/correction">✉️ Demander la correction à l'assureur</a>
+    <% } %>
+    <% if (!v.verifiee_le) { %>
+    <form method="post" action="/echeances/police/<%= police.id %>/verifications/<%= v.id %>/marquer-verifiee" class="inline">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+      <button class="btn btn-secondaire" type="submit">✔ Marquer comme vérifiée</button>
+    </form>
+    <% } %>
+  </div>
+  <% if (aDesEcarts && v.correction_envoyee_le) { %>
+  <p class="petit">Une demande de correction a déjà été envoyée pour cette vérification. Si l'assureur renvoie un document révisé, lancez une nouvelle vérification depuis la fiche de la police.</p>
+  <% } %>
+</div>
+<%- include('../partials/bas') %>

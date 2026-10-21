@@ -1,0 +1,75 @@
+<%- include('../partials/haut', { titre: 'Analyser un document' }) %>
+<div class="entete-page"><h1>📥 Analyser un document</h1></div>
+
+<div class="carte">
+  <h3>Téléverser un document à analyser</h3>
+  <p class="petit">Polices d'assureur, propositions déjà remplies, scans ou photos :
+    le texte est extrait (texte natif du PDF ou <strong>OCR 100 % local</strong> pour les images —
+    rien ne sort du serveur), le moteur propose les champs, puis <strong>vous révisez avant
+    toute insertion</strong>. Moteur actif : <strong><%= moteur.mode === 'cohere' ? 'Cohere (Canada)' : 'local (règles)' %></strong>
+    (choix du cabinet : <%= moteur.choix %><%= moteur.clePresente ? ', clé présente' : ', aucune clé Cohere' %>).</p>
+  <% if (ok === 'echec') { %><p class="alerte">⚠️ Le dernier document n'a pas pu être analysé (voir son statut dans la liste).</p><% } %>
+  <form method="post" action="/analyses" enctype="multipart/form-data" id="form-analyse">
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+    <div id="zone-depot" style="border:2px dashed #888;border-radius:10px;padding:28px;text-align:center;margin:10px 0;">
+      <p style="margin:0 0 10px;">📄 Glissez-déposez votre fichier ici, ou</p>
+      <input type="file" id="fichier-analyse" name="document" accept=".pdf,.png,.jpg,.jpeg,.doc,.docx,.xls,.xlsx" required>
+      <p class="petit" id="nom-fichier" style="margin:10px 0 0;"></p>
+    </div>
+    <button type="submit">🔍 Analyser le document</button>
+  </form>
+  <script>
+    (function () {
+      var zone = document.getElementById('zone-depot');
+      var input = document.getElementById('fichier-analyse');
+      var nom = document.getElementById('nom-fichier');
+      function montrer() { if (input.files && input.files[0]) nom.textContent = 'Fichier choisi : ' + input.files[0].name; }
+      input.addEventListener('change', montrer);
+      ['dragover', 'dragenter'].forEach(function (e) { zone.addEventListener(e, function (ev) { ev.preventDefault(); zone.style.background = '#eef4ff'; }); });
+      ['dragleave', 'drop'].forEach(function (e) { zone.addEventListener(e, function (ev) { ev.preventDefault(); zone.style.background = ''; }); });
+      zone.addEventListener('drop', function (ev) {
+        if (ev.dataTransfer && ev.dataTransfer.files && ev.dataTransfer.files[0]) {
+          input.files = ev.dataTransfer.files; montrer();
+        }
+      });
+    })();
+  </script>
+</div>
+
+<div class="carte">
+  <h3>Documents analysés</h3>
+  <p class="petit">
+    <% if (avecArchives) { %><a href="/analyses">Masquer les archivés</a><% } else { %><a href="/analyses?archives=1">Afficher aussi les archivés</a><% } %>
+    — règle d'or : rien n'est supprimé, l'archivage est restorable.
+  </p>
+  <% if (!analyses.length) { %>
+    <p class="petit">Aucun document analysé pour le moment.</p>
+  <% } else { %>
+  <table class="tableau">
+    <thead><tr><th>Document</th><th>Statut</th><th>Produit détecté</th><th>Confiance</th><th>Champs</th><th>Téléversé par</th><th>Date</th><th></th></tr></thead>
+    <tbody>
+    <% analyses.forEach(function (a) { %>
+      <tr>
+        <td><a href="/analyses/<%= a.id %>"><%= a.nom_origine %></a><% if (a.archive) { %> <em>(archivé)</em><% } %></td>
+        <td><%= NOMS_STATUTS[a.statut] || a.statut %></td>
+        <td><%= a.produit_detecte ? (NOMS_PRODUITS[a.produit_detecte] || a.produit_detecte) : '—' %></td>
+        <td><%= a.confiance_globale != null ? Math.round(a.confiance_globale * 100) + ' %' : '—' %></td>
+        <td><%= a.champs_proposes ? (JSON.parse(a.champs_proposes).length) : 0 %></td>
+        <td><%= a.utilisateur_nom || '—' %></td>
+        <td><%= a.cree_le %></td>
+        <td>
+          <% if (!a.archive) { %>
+          <form method="post" action="/analyses/<%= a.id %>/archiver" class="inline">
+            <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+            <button class="lien" type="submit">Archiver</button>
+          </form>
+          <% } %>
+        </td>
+      </tr>
+    <% }); %>
+    </tbody>
+  </table>
+  <% } %>
+</div>
+
+<%- include('../partials/bas') %>

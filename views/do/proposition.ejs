@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Proposition d’assurance responsabilité des administrateurs et dirigeants — Soumission D&O #<%= p.soumissionId %></title>
+<link rel="stylesheet" href="/proposition.css">
+</head>
+<body>
+<div class="actions noprint">
+  <button class="btn" type="button" data-action="imprimer">🖨️ Imprimer</button>
+  <a class="btn" href="/do/<%= p.soumissionId %>/proposition.pdf<%= vParam ? '?v=' + vParam : '' %>">⬇️ Télécharger PDF</a>
+  <a class="btn btn-secondaire" href="/do/<%= p.soumissionId %>">← Retour à la soumission</a>
+</div>
+<script src="/proposition.js"></script>
+<div class="page">
+  <p class="cabinet"><%= p.cabinetNom %></p>
+  <h1>Proposition d’assurance responsabilité des administrateurs et dirigeants</h1>
+  <p class="sous-titre">Formulaire de proposition — Administrateurs et dirigeants (D&O, Québec)</p>
+  <p class="ref">Soumission D&O #<%= p.soumissionId %> — version v<%= p.versionNumero %><%= p.versionFigee ? ' (figée)' : '' %>
+    <% if (p.dateEffet) { %> · Date d’effet souhaitée : <%= p.dateEffet %><% } %></p>
+
+  <h2>1. Proposant / assuré</h2>
+  <dl>
+    <dt>Nom</dt><dd><strong><%= p.client ? p.client.raison_sociale : '—' %></strong></dd>
+    <% if (p.client && (p.client.adresse || p.client.ville || p.client.code_postal)) { %>
+    <dt>Adresse</dt><dd><%= [p.client.adresse, p.client.ville, p.client.code_postal].filter(Boolean).join(', ') %></dd>
+    <% } %>
+    <% if (p.client && p.client.telephone) { %><dt>Téléphone</dt><dd><%= p.client.telephone %></dd><% } %>
+    <% if (p.client && p.client.courriel) { %><dt>Courriel</dt><dd><%= p.client.courriel %></dd><% } %>
+    <% if (p.client && (p.client.prenom || p.client.nom)) { %><dt>Personne-contact</dt><dd><%= [p.client.prenom, p.client.nom].filter(Boolean).join(' ') %><% if (p.client.titre_contact) { %> (<%= p.client.titre_contact %>)<% } %></dd><% } %>
+    <% if (p.courtierNom) { %><dt>Courtier responsable</dt><dd><%= p.courtierNom %></dd><% } %>
+    <% if (p.notes) { %><dt>Notes</dt><dd><%= p.notes %></dd><% } %>
+  </dl>
+
+  <h2>2. Dirigeants (<%= p.dirigeants.length %>)</h2>
+  <% p.dirigeants.forEach((x, i) => { %>
+    <h3>Dirigeant <%= i + 1 %> — <%= x.nom || '—' %></h3>
+    <dl>
+      <dt>Fonction</dt><dd><strong><%= x.fonction || '—' %></strong></dd>
+      <dt>Années d’expérience</dt><dd><strong><%= x.annees_experience_libelle %></strong></dd>
+      <% if (x.antecedents_personnels) { %><dt>Antécédents personnels</dt><dd><%= x.antecedents_personnels %></dd><% } %>
+    </dl>
+  <% }) %>
+  <% if (!p.dirigeants.length) { %><p>Aucun dirigeant saisi.</p><% } %>
+
+  <h2>3. Garanties demandées</h2>
+  <% const g = p.garanties; %>
+  <% if (g) { %>
+  <dl>
+    <dt>Limite par sinistre</dt><dd><strong><%= g.limite_par_sinistre_libelle %></strong></dd>
+    <dt>Agrégat annuel</dt><dd><strong><%= g.limite_agregat_libelle %></strong></dd>
+    <dt>Franchise</dt><dd><%= g.franchise_libelle %></dd>
+    <dt>Base de garantie</dt><dd><strong><%= g.base_libelle %></strong></dd>
+    <% if (g.prime && g.prime_libelle !== '—') { %><dt>Prime</dt><dd><%= g.prime_libelle %></dd><% } %>
+    <% if (g.avenants_libelles.length) { %><dt>Avenants</dt><dd><%= g.avenants_libelles.join(', ') %></dd><% } %>
+  </dl>
+  <% if (g.base === 'reclamations_presentees') { %>
+  <p><em><strong>Base réclamations-présentées : la date de déclaration compte — maintenir la continuité d’assurance.</strong></em></p>
+  <% } %>
+  <% } else { %><p>Non définies.</p><% } %>
+
+  <h2>4. Antécédents d’assurance</h2>
+  <% const a = p.antecedents; %>
+  <% if (a) { %>
+  <dl>
+    <dt>Assureur actuel</dt><dd><%= a.assureur_actuel || '—' %></dd>
+    <dt>Police actuelle</dt><dd><%= a.numero_police_actuelle || '—' %><% if (a.date_expiration_actuelle) { %> (expire le <%= a.date_expiration_actuelle %>)<% } %></dd>
+    <dt>Années d’assurance continue</dt><dd><%= a.annees_assurance_continue || '—' %></dd>
+    <dt>Réclamations D&O (5 ans)</dt><dd><%= (a.reclamations_libelles || []).length ? a.reclamations_libelles.join(' ; ') : 'Aucune' %></dd>
+    <% if (a.poursuites_en_cours) { %><dt>Poursuites ou actions en justice en cours ou envisagées</dt><dd><%= a.poursuites_en_cours %></dd><% } %>
+  </dl>
+  <% } else { %><p>Non renseignés.</p><% } %>
+
+  <h2>5. Consentements</h2>
+  <% if (p.consentementsLibelles.length) { %>
+  <p><% p.consentementsLibelles.forEach((l, i) => { %>☑ <%= l %><% if (i < p.consentementsLibelles.length - 1) { %><br><% } %><% }) %></p>
+  <% } else { %><p>Aucun consentement enregistré.</p><% } %>
+
+  <p class="pied">Document généré le <%= p.genereLe %> à partir de la soumission D&O #<%= p.soumissionId %> (version v<%= p.versionNumero %><%= p.versionFigee ? ', figée' : '' %>) — proposition conforme à la version figée, vérifiez avant envoi à l’assureur.</p>
+
+  <div class="signatures">
+    <div><div class="ligne">Signature du proposant</div><p>Date : _______________</p></div>
+    <div><div class="ligne">Signature du courtier</div><p>Date : _______________</p></div>
+  </div>
+</div>
+<div class="actions noprint"><a class="btn btn-secondaire" href="/do/<%= p.soumissionId %>">← Retour à la soumission</a></div>
+</body>
+</html>

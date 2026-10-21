@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Proposition de cautionnement — Soumission cautionnement #<%= p.soumissionId %></title>
+<link rel="stylesheet" href="/proposition.css">
+</head>
+<body>
+<div class="actions noprint">
+  <button class="btn" type="button" data-action="imprimer">🖨️ Imprimer</button>
+  <a class="btn" href="/cautionnement/<%= p.soumissionId %>/proposition.pdf<%= vParam ? '?v=' + vParam : '' %>">⬇️ Télécharger PDF</a>
+  <a class="btn btn-secondaire" href="/cautionnement/<%= p.soumissionId %>">← Retour à la soumission</a>
+</div>
+<script src="/proposition.js"></script>
+<div class="page">
+  <p class="cabinet"><%= p.cabinetNom %></p>
+  <h1>Proposition de cautionnement</h1>
+  <p class="sous-titre">Formulaire de proposition — Cautionnement / sûreté (Québec)</p>
+  <p class="ref">Soumission cautionnement #<%= p.soumissionId %> — version v<%= p.versionNumero %><%= p.versionFigee ? ' (figée)' : '' %>
+    <% if (p.dateEffet) { %> · Date d’effet souhaitée : <%= p.dateEffet %><% } %></p>
+
+  <h2>1. Principal (débiteur) / proposant</h2>
+  <dl>
+    <dt>Nom</dt><dd><strong><%= p.client ? p.client.raison_sociale : '—' %></strong></dd>
+    <% if (p.client && (p.client.adresse || p.client.ville || p.client.code_postal)) { %>
+    <dt>Adresse</dt><dd><%= [p.client.adresse, p.client.ville, p.client.code_postal].filter(Boolean).join(', ') %></dd>
+    <% } %>
+    <% if (p.client && p.client.telephone) { %><dt>Téléphone</dt><dd><%= p.client.telephone %></dd><% } %>
+    <% if (p.client && p.client.courriel) { %><dt>Courriel</dt><dd><%= p.client.courriel %></dd><% } %>
+    <% if (p.client && (p.client.prenom || p.client.nom)) { %><dt>Personne-contact</dt><dd><%= [p.client.prenom, p.client.nom].filter(Boolean).join(' ') %><% if (p.client.titre_contact) { %> (<%= p.client.titre_contact %>)<% } %></dd><% } %>
+    <% if (p.courtierNom) { %><dt>Courtier responsable</dt><dd><%= p.courtierNom %></dd><% } %>
+    <% if (p.entete.secteur_activite) { %><dt>Secteur d’activité</dt><dd><%= p.entete.secteur_activite %></dd><% } %>
+    <% if (p.entete.annee_fondation) { %><dt>Année de fondation</dt><dd><%= p.entete.annee_fondation %></dd><% } %>
+    <dt>Chiffre d’affaires annuel</dt><dd><%= p.entete.chiffre_affaires_libelle %></dd>
+    <% if (p.entete.nb_employes !== null && p.entete.nb_employes !== undefined) { %><dt>Nombre d’employés</dt><dd><%= p.entete.nb_employes %></dd><% } %>
+    <% if (p.entete.assureur) { %><dt>Caution visée</dt><dd><%= p.entete.assureur %></dd><% } %>
+    <% if (p.entete.date_echeance_visee) { %><dt>Date d’échéance visée</dt><dd><%= p.entete.date_echeance_visee %></dd><% } %>
+    <% if (p.notes) { %><dt>Notes</dt><dd><%= p.notes %></dd><% } %>
+  </dl>
+
+  <h2>2. Résumé des cautionnements demandés</h2>
+  <dl>
+    <dt>Obligations détaillées</dt><dd><strong><%= p.resume.nbObligations %></strong></dd>
+    <dt>Somme des cautionnements</dt><dd><strong><%= p.resume.sommeCautionnements_libelle %></strong></dd>
+    <% if (p.resume.typesLibelles.length) { %><dt>Types demandés</dt><dd><%= p.resume.typesLibelles.join(', ') %></dd><% } %>
+    <dt>Utilisation de la capacité</dt><dd><%= p.resume.utilisation_libelle %></dd>
+  </dl>
+
+  <h2>3. Obligations — cautionnements demandés (<%= p.obligations.length %>)</h2>
+  <% if (p.obligations.length) { %>
+  <table>
+    <thead><tr><th>Type</th><th>Bénéficiaire</th><th>Projet</th><th>Contrat</th><th>Cautionnement</th><th>Prime estimée</th></tr></thead>
+    <tbody>
+    <% p.obligations.forEach((x) => { %>
+      <tr>
+        <td><strong><%= x.type_libelle %></strong><% if (x.part_contrat_libelle) { %><br><%= x.part_contrat_libelle %><% } %></td>
+        <td><%= x.beneficiaire || '—' %></td>
+        <td><%= x.description_projet || '—' %><% if (x.date_debut) { %><br>Début : <%= x.date_debut %><% } %><% if (x.duree_libelle !== '—') { %><br>Durée : <%= x.duree_libelle %><% } %></td>
+        <td><%= x.montant_contrat_libelle %></td>
+        <td><%= x.montant_cautionnement_libelle %><% if (x.taux_libelle !== '—') { %><br>Taux : <%= x.taux_libelle %><% } %></td>
+        <td><%= x.prime_estimee_libelle %></td>
+      </tr>
+    <% }) %>
+    </tbody>
+  </table>
+  <% } else { %><p>Aucune obligation saisie.</p><% } %>
+
+  <h2>4. Ligne de cautionnement (capacité)</h2>
+  <% const g = p.ligne; %>
+  <% if (g) { %>
+  <dl>
+    <dt>Limite globale (capacité totale)</dt><dd><strong><%= g.limite_globale_libelle %></strong></dd>
+    <dt>Limite par projet</dt><dd><%= g.limite_par_projet_libelle %></dd>
+    <dt>Fonds de roulement</dt><dd><%= g.fonds_roulement_libelle %></dd>
+    <dt>Valeur nette</dt><dd><%= g.valeur_nette_libelle %></dd>
+    <% if (g.prime && g.prime_libelle !== '—') { %><dt>Prime de la ligne</dt><dd><%= g.prime_libelle %></dd><% } %>
+  </dl>
+  <% } else { %><p>Non définie.</p><% } %>
+  <p><em><strong><%= p.mentionMetier %></strong></em></p>
+
+  <h2>5. Antécédents de cautionnement</h2>
+  <% const a = p.antecedents; %>
+  <% if (a) { %>
+  <dl>
+    <dt>Caution actuelle</dt><dd><%= a.assureur_actuel || '—' %></dd>
+    <dt>Ligne actuelle</dt><dd><%= a.numero_ligne_actuelle || '—' %><% if (a.date_expiration_actuelle) { %> (expire le <%= a.date_expiration_actuelle %>)<% } %></dd>
+    <dt>Années de cautionnement continu</dt><dd><%= a.annees_cautionnement_continu || '—' %></dd>
+    <dt>Réclamations contre cautionnements (5 ans)</dt><dd><%= (a.reclamations_libelles || []).length ? a.reclamations_libelles.join(' ; ') : 'Aucune' %></dd>
+    <% if (a.refus_resiliation_ant) { %><dt>Refus ou résiliation antérieur</dt><dd><%= a.refus_resiliation_details || 'Oui' %></dd><% } %>
+  </dl>
+  <% } else { %><p>Non renseignés.</p><% } %>
+
+  <h2>6. Consentements</h2>
+  <% if (p.consentementsLibelles.length) { %>
+  <p><% p.consentementsLibelles.forEach((l, i) => { %>☑ <%= l %><% if (i < p.consentementsLibelles.length - 1) { %><br><% } %><% }) %></p>
+  <% } else { %><p>Aucun consentement enregistré.</p><% } %>
+
+  <p class="pied">Document généré le <%= p.genereLe %> à partir de la soumission cautionnement #<%= p.soumissionId %> (version v<%= p.versionNumero %><%= p.versionFigee ? ', figée' : '' %>) — proposition conforme à la version figée, vérifiez avant envoi à la caution.</p>
+
+  <div class="signatures">
+    <div><div class="ligne">Signature du principal</div><p>Date : _______________</p></div>
+    <div><div class="ligne">Signature du courtier</div><p>Date : _______________</p></div>
+  </div>
+</div>
+<div class="actions noprint"><a class="btn btn-secondaire" href="/cautionnement/<%= p.soumissionId %>">← Retour à la soumission</a></div>
+</body>
+</html>

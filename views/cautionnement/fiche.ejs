@@ -1,0 +1,266 @@
+<%- include('../partials/haut', { titre: 'Soumission cautionnement #' + s.id }) %>
+<div class="entete-page">
+  <h1>📜 Soumission cautionnement #<%= s.id %></h1>
+  <div>
+    <span class="badge <%= s.statut === 'convertie_police' ? 'badge-ok' : (s.statut === 'soumise' ? 'badge-j' : 'badge-gris') %>"><%= NOMS_STATUTS_SOUMISSION[s.statut] %></span>
+    <a class="btn btn-secondaire btn-petit" href="/cautionnement">← Soumissions</a>
+  </div>
+
+</div>
+<%- include('../partials/manques', { sectionDemandes }) %>
+
+
+<div class="carte" id="entete">
+  <dl class="dl">
+    <dt>Entreprise (principal)</dt><dd><strong><%= clientNom %></strong></dd>
+    <dt>Caution visée</dt><dd><%= s.assureur || '—' %></dd>
+    <dt>N° de police / ligne (si connu)</dt><dd><%= s.numero_police || '—' %></dd>
+    <dt>Secteur d’activité</dt><dd><%= s.secteur_activite || '—' %></dd>
+    <dt>Année de fondation</dt><dd><%= s.annee_fondation !== null && s.annee_fondation !== undefined ? s.annee_fondation : '—' %></dd>
+    <dt>Chiffre d’affaires annuel</dt><dd><%= s.chiffre_affaires !== null && s.chiffre_affaires !== undefined ? Number(s.chiffre_affaires).toLocaleString('fr-CA') + ' $' : '—' %></dd>
+    <dt>Nombre d’employés</dt><dd><%= s.nb_employes !== null && s.nb_employes !== undefined ? s.nb_employes : '—' %></dd>
+    <dt>Date d’effet souhaitée</dt><dd><%= s.date_effet_souhaitee || '—' %></dd>
+    <dt>Date d’échéance visée</dt><dd><%= s.date_echeance_visee || '—' %></dd>
+    <dt>Notes</dt><dd><%= s.notes || '—' %></dd>
+    <dt>Créée le</dt><dd><%= (s.cree_le || '').slice(0, 16).replace('T', ' ') %></dd>
+  </dl>
+  <div class="actions">
+    <% Object.keys(NOMS_STATUTS_SOUMISSION).filter((k) => k !== s.statut).forEach((k) => { %>
+    <form method="post" action="/cautionnement/<%= s.id %>/statut" class="inline">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+      <input type="hidden" name="statut" value="<%= k %>">
+      <button class="btn btn-petit btn-secondaire" type="submit">→ <%= NOMS_STATUTS_SOUMISSION[k] %></button>
+    </form>
+    <% }) %>
+    <form method="post" action="/cautionnement/<%= s.id %>/<%= s.archive ? 'desarchiver' : 'archiver' %>" class="inline" data-confirm="<%= s.archive ? 'Désarchiver cette soumission ?' : 'Archiver cette soumission ?' %>">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+      <button class="btn btn-petit btn-secondaire" type="submit"><%= s.archive ? 'Désarchiver' : 'Archiver' %></button>
+    </form>
+    <button type="button" class="btn btn-petit btn-secondaire" data-toggle-cible="form-entete">Modifier l’en-tête</button>
+    <% if (s.obligations.length && s.garanties) { %>
+    <a class="btn btn-petit" href="/cautionnement/<%= s.id %>/proposition" target="_blank" rel="noopener">📄 Proposition</a>
+    <a class="btn btn-petit btn-secondaire" href="/cautionnement/<%= s.id %>/proposition.pdf">⬇️ PDF</a>
+    <% } %>
+  </div>
+  <div id="form-entete" hidden>
+    <form method="post" action="/cautionnement/<%= s.id %>/entete" class="grille-form">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+      <div><label>Entreprise cliente (le principal) *</label>
+        <select name="client_id" required>
+          <% entreprises.forEach((e) => { %><option value="<%= e.id %>"<%= s.client_id === e.id ? ' selected' : '' %>><%= e.raison_sociale %></option><% }) %>
+        </select></div>
+      <div><label>Caution visée (si connue)</label>
+        <input type="text" name="assureur" maxlength="120" value="<%= s.assureur || '' %>"></div>
+      <div><label>N° de police / ligne (si connu)</label>
+        <input type="text" name="numero_police" maxlength="60" value="<%= s.numero_police || '' %>"></div>
+      <div><label>Secteur d’activité</label>
+        <input type="text" name="secteur_activite" maxlength="160" value="<%= s.secteur_activite || '' %>"></div>
+      <div><label>Année de fondation</label>
+        <input type="number" name="annee_fondation" min="1800" max="2100" step="1" value="<%= s.annee_fondation !== null && s.annee_fondation !== undefined ? s.annee_fondation : '' %>"></div>
+      <div><label>Chiffre d’affaires annuel ($)</label>
+        <input type="number" name="chiffre_affaires" min="0" step="0.01" value="<%= s.chiffre_affaires !== null && s.chiffre_affaires !== undefined ? s.chiffre_affaires : '' %>"></div>
+      <div><label>Nombre d’employés</label>
+        <input type="number" name="nb_employes" min="0" step="1" value="<%= s.nb_employes !== null && s.nb_employes !== undefined ? s.nb_employes : '' %>"></div>
+      <div><label>Date d’effet souhaitée</label>
+        <input type="date" name="date_effet_souhaitee" value="<%= s.date_effet_souhaitee || '' %>"></div>
+      <div><label>Date d’échéance visée</label>
+        <input type="date" name="date_echeance_visee" value="<%= s.date_echeance_visee || '' %>"></div>
+      <div style="grid-column:1/-1"><label>Notes</label>
+        <textarea name="notes" rows="3"><%= s.notes || '' %></textarea></div>
+      <div class="actions" style="grid-column:1/-1"><button class="btn btn-petit" type="submit">Enregistrer l’en-tête</button></div>
+    </form>
+  </div>
+</div>
+
+<% if (policeLiee) { %>
+<div class="carte">
+  <h3>🏛️ Police liée</h3>
+  <p>Cette soumission est convertie en <strong>police <%= policeLiee.numero_police %></strong>
+    (<%= policeLiee.assureur %>, effet <%= policeLiee.date_effet %> → échéance <%= policeLiee.date_echeance %>).</p>
+  <div class="actions"><a class="btn btn-petit" href="/echeances/police/<%= policeLiee.id %>">Ouvrir la fiche de gestion</a></div>
+</div>
+<% } else if (s.statut !== 'convertie_police') { %>
+<div class="carte" id="conversion">
+  <h3>🏛️ Convertir en police</h3>
+  <p class="petit">Crée la police cautionnement à gérer : les données de la soumission sont figées en référence, puis chaque avenant en cours de terme créera une nouvelle version de la police.</p>
+  <form method="post" action="/cautionnement/<%= s.id %>/convertir" class="grille-form">
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+    <div><label for="numero_police">Numéro de police *</label><input type="text" id="numero_police" name="numero_police" required maxlength="60"></div>
+    <div><label for="assureur_id">Assureur (caution) *</label>
+      <select id="assureur_id" name="assureur_id" required>
+        <option value="">— Choisir —</option>
+        <% assureurs.forEach((a) => { %><option value="<%= a.id %>"><%= a.nom %></option><% }) %>
+      </select></div>
+    <div><label for="date_effet">Date d’effet *</label><input type="date" id="date_effet" name="date_effet" required value="<%= s.date_effet_souhaitee || '' %>"></div>
+    <div><label for="date_echeance">Date d’échéance *</label><input type="date" id="date_echeance" name="date_echeance" required value="<%= s.date_echeance_visee || '' %>"></div>
+    <div><label for="franchise">Franchise ($)</label><input type="number" id="franchise" name="franchise" step="0.01" min="0" value="0"></div>
+    <div class="actions"><button class="btn" type="submit">Convertir en police</button></div>
+  </form>
+  <% if (policesDispo.length) { %>
+  <h4>Ou lier une police existante</h4>
+  <form method="post" action="/cautionnement/<%= s.id %>/lier-police" class="grille-form">
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+    <div><label for="police_id">Police cautionnement de <%= clientNom %></label>
+      <select id="police_id" name="police_id" required>
+        <% policesDispo.forEach((p) => { %><option value="<%= p.id %>"><%= p.numero_police %></option><% }) %>
+      </select></div>
+    <div class="actions"><button class="btn btn-secondaire" type="submit">Lier cette police</button></div>
+  </form>
+  <% } %>
+</div>
+<% } %>
+
+<% const obligationsActives = s.obligations.filter((o) => !o.archive); %>
+
+<div class="carte" id="obligations">
+  <div class="entete-page"><h2>📜 Obligations — cautionnements demandés (<%= obligationsActives.length %>)</h2>
+    <div><button type="button" class="btn btn-petit" data-toggle-cible="form-obligation">+ Ajouter une obligation</button></div></div>
+
+  <div id="form-obligation" hidden>
+    <form method="post" action="/cautionnement/<%= s.id %>/obligation" class="grille-form">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+      <div><label>Type de cautionnement</label>
+        <select name="type">
+          <option value="">— Choisir —</option>
+          <% Object.keys(NOMS_TYPES_OBLIGATION).forEach((k) => { %><option value="<%= k %>"><%= NOMS_TYPES_OBLIGATION[k] %></option><% }) %>
+        </select></div>
+      <div><label>Bénéficiaire (donneur d’ouvrage)</label>
+        <input type="text" name="beneficiaire" maxlength="200" placeholder="Ex. : Centre de services scolaire des Mille-Îles"></div>
+      <div><label>Montant du contrat ($)</label>
+        <input type="number" name="montant_contrat" min="0" step="0.01"></div>
+      <div><label>Montant du cautionnement ($)</label>
+        <input type="number" name="montant_cautionnement" min="0" step="0.01" placeholder="Ex. : 1 100 000 (50 % du contrat)"></div>
+      <div><label>Taux de prime (%)</label>
+        <input type="number" name="taux_pct" min="0" step="0.01"></div>
+      <div><label>Prime estimée ($)</label>
+        <input type="number" name="prime_estimee" min="0" step="0.01"></div>
+      <div><label>Date de début visée</label>
+        <input type="date" name="date_debut"></div>
+      <div><label>Durée (mois)</label>
+        <input type="number" name="duree_mois" min="0" step="1"></div>
+      <div style="grid-column:1/-1"><label>Description du projet / des travaux</label>
+        <textarea name="description_projet" rows="3" placeholder="Ex. : Agrandissement de l’école primaire Saint-Paul, Laval"></textarea></div>
+      <div class="actions" style="grid-column:1/-1"><button class="btn btn-petit" type="submit">Ajouter cette obligation</button></div>
+    </form>
+  </div>
+
+  <div class="tableau-deroulant"><table>
+    <thead><tr><th>Type</th><th>Bénéficiaire</th><th>Projet</th><th>Contrat</th><th>Cautionnement</th><th>Prime estimée</th><th></th></tr></thead>
+    <tbody>
+    <% obligationsActives.forEach((o) => { %>
+      <tr>
+        <td><strong><%= o.type ? NOMS_TYPES_OBLIGATION[o.type] : '—' %></strong><% if (o.date_debut) { %><br><span class="petit">Début : <%= o.date_debut %><% if (o.duree_mois) { %> · <%= o.duree_mois %> mois<% } %></span><% } %></td>
+        <td><%= o.beneficiaire || '—' %></td>
+        <td><%= o.description_projet || '—' %></td>
+        <td><%= o.montant_contrat !== null && o.montant_contrat !== undefined ? Number(o.montant_contrat).toLocaleString('fr-CA') + ' $' : '—' %></td>
+        <td><%= o.montant_cautionnement !== null && o.montant_cautionnement !== undefined ? Number(o.montant_cautionnement).toLocaleString('fr-CA') + ' $' : '—' %><% if (o.taux_pct !== null && o.taux_pct !== undefined) { %><br><span class="petit">taux <%= o.taux_pct %> %</span><% } %></td>
+        <td><%= o.prime_estimee !== null && o.prime_estimee !== undefined ? Number(o.prime_estimee).toLocaleString('fr-CA') + ' $' : '—' %></td>
+        <td style="white-space:nowrap">
+          <button type="button" class="btn btn-petit btn-secondaire" data-toggle-cible="modif-obligation-<%= o.id %>">Modifier</button>
+          <form method="post" action="/cautionnement/obligation/<%= o.id %>/archiver" class="inline" data-confirm="Archiver cette obligation ?">
+            <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+            <button class="btn btn-petit btn-secondaire" type="submit">Archiver</button></form>
+        </td>
+      </tr>
+      <tr id="modif-obligation-<%= o.id %>" hidden><td colspan="7">
+        <form method="post" action="/cautionnement/obligation/<%= o.id %>" class="grille-form">
+          <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+          <div><label>Type de cautionnement</label>
+            <select name="type">
+              <option value="">— Choisir —</option>
+              <% Object.keys(NOMS_TYPES_OBLIGATION).forEach((k) => { %><option value="<%= k %>"<%= o.type === k ? ' selected' : '' %>><%= NOMS_TYPES_OBLIGATION[k] %></option><% }) %>
+            </select></div>
+          <div><label>Bénéficiaire (donneur d’ouvrage)</label>
+            <input type="text" name="beneficiaire" maxlength="200" value="<%= o.beneficiaire || '' %>"></div>
+          <div><label>Montant du contrat ($)</label>
+            <input type="number" name="montant_contrat" min="0" step="0.01" value="<%= o.montant_contrat !== null && o.montant_contrat !== undefined ? o.montant_contrat : '' %>"></div>
+          <div><label>Montant du cautionnement ($)</label>
+            <input type="number" name="montant_cautionnement" min="0" step="0.01" value="<%= o.montant_cautionnement !== null && o.montant_cautionnement !== undefined ? o.montant_cautionnement : '' %>"></div>
+          <div><label>Taux de prime (%)</label>
+            <input type="number" name="taux_pct" min="0" step="0.01" value="<%= o.taux_pct !== null && o.taux_pct !== undefined ? o.taux_pct : '' %>"></div>
+          <div><label>Prime estimée ($)</label>
+            <input type="number" name="prime_estimee" min="0" step="0.01" value="<%= o.prime_estimee !== null && o.prime_estimee !== undefined ? o.prime_estimee : '' %>"></div>
+          <div><label>Date de début visée</label>
+            <input type="date" name="date_debut" value="<%= o.date_debut || '' %>"></div>
+          <div><label>Durée (mois)</label>
+            <input type="number" name="duree_mois" min="0" step="1" value="<%= o.duree_mois !== null && o.duree_mois !== undefined ? o.duree_mois : '' %>"></div>
+          <div style="grid-column:1/-1"><label>Description du projet / des travaux</label>
+            <textarea name="description_projet" rows="3"><%= o.description_projet || '' %></textarea></div>
+          <div class="actions" style="grid-column:1/-1"><button class="btn btn-petit" type="submit">Enregistrer</button></div>
+        </form>
+      </td></tr>
+    <% }) %>
+    </tbody>
+  </table></div>
+  <% if (!obligationsActives.length) { %><p class="petit">Aucune obligation pour l’instant.</p><% } %>
+  <% const oblArch = s.obligations.filter((o) => o.archive); %>
+  <% if (oblArch.length) { %><p class="petit">Archivées : <% oblArch.forEach((o, i) => { %><%= i ? ', ' : '' %><%= (o.type ? NOMS_TYPES_OBLIGATION[o.type] : 'Obligation') + ' — ' + (o.beneficiaire || '') %> <form method="post" action="/cautionnement/obligation/<%= o.id %>/desarchiver" class="inline"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button class="lien" type="submit">restaurer</button></form><% }) %></p><% } %>
+</div>
+
+<div class="carte" id="garanties">
+  <h2>🏦 Ligne de cautionnement</h2>
+  <% const g = s.garanties; %>
+  <% if (g) { %><p class="petit">Actuel : limite globale <%= g.limite_globale ? Number(g.limite_globale).toLocaleString('fr-CA') + ' $' : '—' %> · limite par projet <%= g.limite_par_projet ? Number(g.limite_par_projet).toLocaleString('fr-CA') + ' $' : '—' %> · fonds de roulement <%= g.fonds_roulement ? Number(g.fonds_roulement).toLocaleString('fr-CA') + ' $' : '—' %></p><% } %>
+  <form method="post" action="/cautionnement/<%= s.id %>/garanties" class="grille-form">
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+    <div><label for="limite-globale">Limite globale — capacité totale ($)</label>
+      <input type="number" id="limite-globale" name="limite_globale" min="0" step="0.01" value="<%= g && g.limite_globale !== null && g.limite_globale !== undefined ? g.limite_globale : '' %>"></div>
+    <div><label for="limite-projet">Limite par projet ($)</label>
+      <input type="number" id="limite-projet" name="limite_par_projet" min="0" step="0.01" value="<%= g && g.limite_par_projet !== null && g.limite_par_projet !== undefined ? g.limite_par_projet : '' %>"></div>
+    <div><label for="fonds-roulement">Fonds de roulement ($)</label>
+      <input type="number" id="fonds-roulement" name="fonds_roulement" min="0" step="0.01" value="<%= g && g.fonds_roulement !== null && g.fonds_roulement !== undefined ? g.fonds_roulement : '' %>"></div>
+    <div><label for="valeur-nette">Valeur nette / avoir des actionnaires ($)</label>
+      <input type="number" id="valeur-nette" name="valeur_nette" min="0" step="0.01" value="<%= g && g.valeur_nette !== null && g.valeur_nette !== undefined ? g.valeur_nette : '' %>"></div>
+    <div><label for="prime">Prime de la ligne ($, si connue)</label>
+      <input type="number" id="prime" name="prime" min="0" step="0.01" value="<%= g && g.prime !== null && g.prime !== undefined ? g.prime : '' %>"></div>
+    <div class="actions" style="grid-column:1/-1"><button class="btn btn-petit btn-secondaire" type="submit">Enregistrer la ligne</button></div>
+  </form>
+  <p class="petit">La ligne est la capacité accordée par la caution après analyse des états financiers du principal ; la limite par projet ne peut pas dépasser la limite globale.</p>
+</div>
+
+<div class="carte" id="antecedents">
+  <h2>📋 Antécédents de cautionnement</h2>
+  <% const a = s.antecedents; %>
+  <form method="post" action="/cautionnement/<%= s.id %>/antecedents" class="grille-form">
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+    <div><label for="ass-actuel">Caution actuelle</label>
+      <input type="text" id="ass-actuel" name="assureur_actuel" maxlength="120" value="<%= a && a.assureur_actuel ? a.assureur_actuel : '' %>"></div>
+    <div><label for="ligne-actuelle">N° de ligne actuelle</label>
+      <input type="text" id="ligne-actuelle" name="numero_ligne_actuelle" maxlength="60" value="<%= a && a.numero_ligne_actuelle ? a.numero_ligne_actuelle : '' %>"></div>
+    <div><label for="exp-actuelle">Expiration</label>
+      <input type="date" id="exp-actuelle" name="date_expiration_actuelle" value="<%= a && a.date_expiration_actuelle ? a.date_expiration_actuelle : '' %>"></div>
+    <div><label for="annees-cont">Années de cautionnement continu</label>
+      <input type="number" id="annees-cont" name="annees_cautionnement_continu" min="0" max="80" value="<%= a && a.annees_cautionnement_continu !== null && a.annees_cautionnement_continu !== undefined ? a.annees_cautionnement_continu : '' %>"></div>
+    <div style="grid-column:1/-1"><label for="reclamations">Réclamations contre des cautionnements — 5 dernières années</label>
+      <textarea id="reclamations" name="reclamations_5ans" rows="4" placeholder="Une réclamation par ligne : AAAA-MM-JJ | cautionnement visé | montant $ | statut&#10;Ex. : 2022-05-14 | Exécution — Ville de Terrebonne | 48000 | réglée"><%= reclamationsTexte %></textarea>
+      <span class="petit">Format : date | cautionnement | montant | statut. Laissez vide s’il n’y a eu aucune réclamation.</span></div>
+    <div style="grid-column:1/-1"><span class="case" style="display:inline-flex"><input type="checkbox" id="refus" name="refus_resiliation_ant"<%= a && a.refus_resiliation_ant ? ' checked' : '' %>><label for="refus">Refus ou résiliation de cautionnement dans le passé</label></span></div>
+    <div style="grid-column:1/-1"><label for="refus-details">Détails du refus / de la résiliation</label>
+      <textarea id="refus-details" name="refus_resiliation_details" rows="2"><%= a && a.refus_resiliation_details ? a.refus_resiliation_details : '' %></textarea></div>
+    <div style="grid-column:1/-1"><span class="petit">Consentements</span><br>
+      <% CONSENTEMENTS_CAUT.forEach(([code, libelle], i) => { %>
+      <span class="case" style="display:inline-flex;margin-right:12px"><input type="checkbox" id="cons-<%= i %>" name="consentement_<%= code %>"<%= a && consentementActif(a.consentements, code) ? ' checked' : '' %>><label for="cons-<%= i %>"><%= libelle %></label></span>
+      <% }) %></div>
+    <div class="actions" style="grid-column:1/-1"><button class="btn btn-petit btn-secondaire" type="submit">Enregistrer les antécédents</button></div>
+  </form>
+</div>
+
+<div class="carte" id="versions">
+  <h2>🕘 Historique des versions</h2>
+  <p class="petit">Chaque enregistrement fige une version : rien n’est jamais modifié ni effacé.</p>
+  <div class="tableau-deroulant"><table>
+    <thead><tr><th>Version</th><th>Statut</th><th>Créée le</th><th>Par</th><th></th></tr></thead>
+    <tbody>
+    <% versions.forEach((v) => { %>
+      <tr>
+        <td><strong>v<%= v.version %></strong></td>
+        <td><%= NOMS_STATUTS_SOUMISSION[v.statut] || v.statut %></td>
+        <td><%= (v.cree_le || '').slice(0, 16).replace('T', ' ') %></td>
+        <td><%= v.auteur || '—' %></td>
+        <td><a class="btn btn-petit btn-secondaire" href="/cautionnement/<%= s.id %>/versions/<%= v.version %>">Voir</a></td>
+      </tr>
+    <% }) %>
+    </tbody>
+  </table></div>
+</div>
+<%- include('../partials/bas') %>

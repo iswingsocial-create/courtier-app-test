@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Proposition d’assurance responsabilité civile — Soumission #<%= p.soumissionId %></title>
+<link rel="stylesheet" href="/proposition.css">
+</head>
+<body>
+<div class="actions noprint">
+  <button class="btn" type="button" data-action="imprimer">🖨️ Imprimer</button>
+  <a class="btn" href="/rc/<%= p.soumissionId %>/proposition.pdf<%= vParam ? '?v=' + vParam : '' %>">⬇️ Télécharger PDF</a>
+  <a class="btn btn-secondaire" href="/rc/<%= p.soumissionId %>">← Retour à la soumission</a>
+</div>
+<script src="/proposition.js"></script>
+<div class="page">
+  <p class="cabinet"><%= p.cabinetNom %></p>
+  <h1>Proposition d’assurance responsabilité civile</h1>
+  <p class="sous-titre">Formulaire de proposition — Responsabilité civile générale (Québec)</p>
+  <p class="ref">Soumission #<%= p.soumissionId %> — version v<%= p.versionNumero %><%= p.versionFigee ? ' (figée)' : '' %>
+    <% if (p.dateEffet) { %> · Date d’effet souhaitée : <%= p.dateEffet %><% } %></p>
+
+  <h2>1. Proposant / assuré</h2>
+  <dl>
+    <dt>Nom</dt><dd><strong><%= p.client ? p.client.raison_sociale : '—' %></strong></dd>
+    <% if (p.client && (p.client.adresse || p.client.ville || p.client.code_postal)) { %>
+    <dt>Adresse</dt><dd><%= [p.client.adresse, p.client.ville, p.client.code_postal].filter(Boolean).join(', ') %></dd>
+    <% } %>
+    <% if (p.client && p.client.telephone) { %><dt>Téléphone</dt><dd><%= p.client.telephone %></dd><% } %>
+    <% if (p.client && p.client.courriel) { %><dt>Courriel</dt><dd><%= p.client.courriel %></dd><% } %>
+    <% if (p.client && (p.client.prenom || p.client.nom)) { %><dt>Personne-contact</dt><dd><%= [p.client.prenom, p.client.nom].filter(Boolean).join(' ') %><% if (p.client.titre_contact) { %> (<%= p.client.titre_contact %>)<% } %></dd><% } %>
+    <% if (p.courtierNom) { %><dt>Courtier responsable</dt><dd><%= p.courtierNom %></dd><% } %>
+    <% if (p.notes) { %><dt>Notes</dt><dd><%= p.notes %></dd><% } %>
+  </dl>
+
+  <h2>2. Lieux d’exploitation (<%= p.exploitations.length %>)</h2>
+  <% p.exploitations.forEach((e, i) => { %>
+    <h3>Lieu <%= i + 1 %> — <%= [e.adresse, e.ville, e.code_postal].filter(Boolean).join(', ') || '—' %></h3>
+    <dl>
+      <dt>Activité</dt><dd><%= e.type_activite || '—' %><% if (e.code_classification) { %> · classification : <%= e.code_classification %><% } %></dd>
+      <% if (e.description_activites) { %><dt>Description</dt><dd><%= e.description_activites %></dd><% } %>
+      <dt>Chiffre d’affaires</dt><dd><%= e.chiffre_affaires_libelle %></dd>
+      <dt>Masse salariale</dt><dd><%= e.masse_salariale_libelle %></dd>
+      <dt>Employés</dt><dd><%= e.nb_employes || '—' %></dd>
+      <dt>Superficie</dt><dd><%= e.superficie_pi2 ? Number(e.superficie_pi2).toLocaleString('fr-CA') + ' pi²' : '—' %></dd>
+      <dt>Sous-traitants</dt><dd><%= e.sous_traitants_libelle %></dd>
+      <% if (e.notes) { %><dt>Notes</dt><dd><%= e.notes %></dd><% } %>
+      <% if (e.garanties) { %>
+      <dt>Formule</dt><dd><strong><%= e.garanties.formule_libelle %></strong></dd>
+      <dt>Limite par sinistre</dt><dd><%= e.garanties.limite_par_sinistre_libelle %></dd>
+      <dt>Agrégat général</dt><dd><%= e.garanties.limite_agregat_libelle %></dd>
+      <dt>Franchise</dt><dd><%= e.garanties.franchise_libelle %></dd>
+      <% if (e.garanties.prime && e.garanties.prime !== '—') { %><dt>Prime</dt><dd><%= e.garanties.prime_libelle %></dd><% } %>
+      <% if (e.garanties.avenants_libelles.length) { %><dt>Avenants</dt><dd><%= e.garanties.avenants_libelles.join(', ') %></dd><% } %>
+      <% } else { %><dt>Garanties</dt><dd>Non définies</dd><% } %>
+    </dl>
+  <% }) %>
+  <% if (!p.exploitations.length) { %><p>Aucun lieu d’exploitation saisi.</p><% } %>
+
+  <h2>3. Antécédents d’assurance</h2>
+  <% const a = p.antecedents; %>
+  <% if (a) { %>
+  <dl>
+    <dt>Assureur actuel</dt><dd><%= a.assureur_actuel || '—' %></dd>
+    <dt>Police actuelle</dt><dd><%= a.numero_police_actuelle || '—' %><% if (a.date_expiration_actuelle) { %> (expire le <%= a.date_expiration_actuelle %>)<% } %></dd>
+    <dt>Années d’assurance continue</dt><dd><%= a.annees_assurance_continue || '—' %></dd>
+    <dt>Sinistres (5 ans)</dt><dd><%= (a.sinistres_5ans || []).length ? a.sinistres_5ans.map((x) => [x.date, x.type, x.montant ? x.montant + ' $' : null].filter(Boolean).join(' — ')).join(' ; ') : 'Aucun' %></dd>
+  </dl>
+  <% } else { %><p>Non renseignés.</p><% } %>
+
+  <h2>4. Consentements</h2>
+  <% if (p.consentementsLibelles.length) { %>
+  <p><% p.consentementsLibelles.forEach((l, i) => { %>☑ <%= l %><% if (i < p.consentementsLibelles.length - 1) { %><br><% } %><% }) %></p>
+  <% } else { %><p>Aucun consentement enregistré.</p><% } %>
+
+  <p class="pied">Document généré le <%= p.genereLe %> à partir de la soumission RC #<%= p.soumissionId %> (version v<%= p.versionNumero %><%= p.versionFigee ? ', figée' : '' %>) — vérifiez avant envoi à l’assureur.</p>
+
+  <div class="signatures">
+    <div><div class="ligne">Signature du proposant</div><p>Date : _______________</p></div>
+    <div><div class="ligne">Signature du courtier</div><p>Date : _______________</p></div>
+  </div>
+</div>
+<div class="actions noprint"><a class="btn btn-secondaire" href="/rc/<%= p.soumissionId %>">← Retour à la soumission</a></div>
+</body>
+</html>

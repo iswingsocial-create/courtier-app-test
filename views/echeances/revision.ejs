@@ -23,8 +23,465 @@
   </dl>
 </div>
 
-  <h3>Historique des versions</h3>
+<% if (fpq1Donnees) { %>
+<div class="carte">
+  <h3>🚗 Données FPQ1</h3>
+  <p class="petit">Figées à la conversion (soumission auto
+    <a href="/auto/<%= police.auto_soumission_id %>">#<%= police.auto_soumission_id %></a>,
+    version <%= police.auto_soumission_version ? 'v' + police.auto_soumission_version : '—' %>
+    <% if (police.auto_soumission_version) { %>(<a href="/auto/<%= police.auto_soumission_id %>/versions/<%= police.auto_soumission_version %>">voir le snapshot</a>)<% } %>).
+    Les avenants en cours de terme se font sur la soumission et créent automatiquement une nouvelle version de cette police.</p>
+  <% const fig = (fpq1Donnees.versionFige && fpq1Donnees.versionFige.donnees) || { conducteurs: [], vehicules: [] }; %>
+  <h4>Conducteurs (<%= fig.conducteurs.length %>)</h4>
+  <% if (fig.conducteurs.length) { %>
   <div class="tableau-deroulant"><table>
+    <thead><tr><th>Nom</th><th>Permis</th><th>Principal</th></tr></thead>
+    <tbody><% fig.conducteurs.forEach((c) => { %>
+      <tr><td><%= c.prenom %> <%= c.nom %></td><td><%= c.numero_permis || '—' %> (<%= c.province_permis || 'QC' %>)</td>
+      <td><%= c.conducteur_principal ? 'Oui' : '—' %></td></tr>
+    <% }) %></tbody>
+  </table></div>
+  <% } else { %><p class="petit">Aucun conducteur au snapshot de conversion.</p><% } %>
+  <h4>Véhicules (<%= fig.vehicules.length %>)</h4>
+  <% if (fig.vehicules.length) { %>
+  <div class="tableau-deroulant"><table>
+    <thead><tr><th>Véhicule</th><th>VIN</th><th>RC</th><th>Protection B</th><th>Franchise</th><th>Avenants</th></tr></thead>
+    <tbody><% fig.vehicules.forEach((v) => { %>
+      <tr><td><%= v.annee || '' %> <%= v.marque || '' %> <%= v.modele || '' %></td>
+      <td><%= v.vin || '—' %></td>
+      <td><%= v.garanties && v.garanties.rc_montant ? Number(v.garanties.rc_montant).toLocaleString('fr-CA') + ' $' : '—' %></td>
+      <td><%= v.garanties && v.garanties.protection_b ? (fpq1Donnees.NOMS_PROTECTION_B[v.garanties.protection_b] || v.garanties.protection_b) : '—' %></td>
+      <td><%= v.garanties && v.garanties.franchise_b != null ? Number(v.garanties.franchise_b).toFixed(2) + ' $' : '—' %></td>
+      <td><% const av = (v.garanties && v.garanties.avenants) || {}; const codes = Object.keys(av);
+        %><%= codes.length ? codes.map((c) => { const f = fpq1Donnees.AVENANTS_FAQ.find(([code]) => code === c); return f ? f[1].split(' — ')[0] : c; }).join(', ') : '—' %></td></tr>
+    <% }) %></tbody>
+  </table></div>
+  <% } else { %><p class="petit">Aucun véhicule au snapshot de conversion.</p><% } %>
+  <% const live = fpq1Donnees.live; %>
+  <% if (live && live.vehicules && live.vehicules.filter((v) => !v.archive).length) { %>
+  <h4>🖨️ Attestations d’assurance (carte rose)</h4>
+  <ul><% live.vehicules.filter((v) => !v.archive).forEach((v) => { %>
+    <li><%= v.annee || '' %> <%= v.marque || '' %> <%= v.modele || '' %> (<%= v.vin || 'sans VIN' %>)
+      — <a href="/polices/<%= police.id %>/attestation/<%= v.id %>" target="_blank" rel="noopener">Imprimer l’attestation</a></li>
+  <% }) %></ul>
+  <% } %>
+</div>
+<% } %>
+
+<% if (biensDonnees) { %>
+<div class="carte">
+  <h3>🏢 Données biens</h3>
+  <p class="petit">Figées à la conversion (soumission biens
+    <a href="/biens/<%= police.biens_soumission_id %>">#<%= police.biens_soumission_id %></a>,
+    version <%= police.biens_soumission_version ? 'v' + police.biens_soumission_version : '—' %>
+    <% if (police.biens_soumission_version) { %>(<a href="/biens/<%= police.biens_soumission_id %>/versions/<%= police.biens_soumission_version %>">voir le snapshot</a>)<% } %>).
+    Les avenants en cours de terme se font sur la soumission et créent automatiquement une nouvelle version de cette police.</p>
+  <% const bfig = (biensDonnees.versionFige && biensDonnees.versionFige.donnees) || { batiments: [], contenus_generaux: [] }; %>
+  <h4>Bâtiments (<%= bfig.batiments.length %>)</h4>
+  <% if (bfig.batiments.length) { %>
+  <div class="tableau-deroulant"><table>
+    <thead><tr><th>Adresse</th><th>Construction</th><th>Année</th><th>Superficie</th><th>Occupation</th><th>Valeur</th><th>Garanties</th></tr></thead>
+    <tbody><% bfig.batiments.forEach((b) => { %>
+      <tr><td><%= b.adresse || '—' %><%= b.ville ? ', ' + b.ville : '' %></td>
+      <td><%= (biensDonnees.NOMS_TYPE_CONSTRUCTION[b.type_construction] || b.type_construction || '—') %></td>
+      <td><%= b.annee_construction || '—' %></td>
+      <td><%= b.superficie_pi2 != null ? Number(b.superficie_pi2).toLocaleString('fr-CA') + ' pi²' : '—' %></td>
+      <td><%= b.occupation || '—' %></td>
+      <td><%= b.valeur_batiment != null ? Number(b.valeur_batiment).toLocaleString('fr-CA') + ' $' : '—' %></td>
+      <td><% const g = b.garanties || {};
+        %><%= g.formule ? (biensDonnees.NOMS_FORMULE[g.formule] || g.formule) : '—' %><%= g.franchise != null ? ' · fr. ' + Number(g.franchise).toLocaleString('fr-CA') + ' $' : '' %><%= g.montant_assurance != null ? ' · ' + Number(g.montant_assurance).toLocaleString('fr-CA') + ' $' : '' %><% const avb = g.avenants || {}; const codesb = Object.keys(avb);
+        %><%= codesb.length ? ' · ' + codesb.map((c) => { const f = biensDonnees.AVENANTS_BIENS.find(([code]) => code === c); return f ? f[1] : c; }).join(', ') : '' %></td></tr>
+    <% }) %></tbody>
+  </table></div>
+  <% } else { %><p class="petit">Aucun bâtiment au snapshot de conversion.</p><% } %>
+  <h4>Contenus</h4>
+  <% const tousContenus = [];
+     bfig.batiments.forEach((b) => { (b.contenus || []).forEach((c) => { tousContenus.push({ ...c, batiment: b.adresse }); }); });
+     (bfig.contenus_generaux || []).forEach((c) => { tousContenus.push({ ...c, batiment: '—' }); }); %>
+  <% if (tousContenus.length) { %>
+  <div class="tableau-deroulant"><table>
+    <thead><tr><th>Description</th><th>Type</th><th>Valeur</th><th>Bâtiment</th></tr></thead>
+    <tbody><% tousContenus.forEach((c) => { %>
+      <tr><td><%= c.description || '—' %></td>
+      <td><%= biensDonnees.NOMS_TYPE_CONTENU[c.type_contenu] || c.type_contenu || '—' %></td>
+      <td><%= c.valeur != null ? Number(c.valeur).toLocaleString('fr-CA') + ' $' : '—' %></td>
+      <td><%= c.batiment || '—' %></td></tr>
+    <% }) %></tbody>
+  </table></div>
+  <% } else { %><p class="petit">Aucun contenu au snapshot de conversion.</p><% } %>
+  <% const ant = bfig.antecedents || null; %>
+  <% if (ant) { %>
+  <h4>Antécédents d’assurance</h4>
+  <dl class="dl">
+    <dt>Assureur actuel</dt><dd><%= ant.assureur_actuel || '—' %></dd>
+    <dt>Police actuelle</dt><dd><%= ant.numero_police_actuelle || '—' %></dd>
+    <dt>Années d’assurance continue</dt><dd><%= ant.annees_assurance_continue != null ? ant.annees_assurance_continue : '—' %></dd>
+    <dt>Sinistres (5 ans)</dt><dd><% const sin = ant.sinistres_5ans || []; %><%= sin.length ? sin.map((x) => [x.date, x.type, x.montant != null ? Number(x.montant).toLocaleString('fr-CA') + ' $' : null].filter(Boolean).join(' — ')).join(' ; ') : 'Aucun' %></dd>
+  </dl>
+  <% } %>
+</div>
+<% } %>
+
+<% if (rcDonnees) { %>
+<div class="carte">
+  <h3>⚖️ Données RC</h3>
+  <p class="petit">Figées à la conversion (soumission RC
+    <a href="/rc/<%= police.rc_soumission_id %>">#<%= police.rc_soumission_id %></a>,
+    version <%= police.rc_soumission_version ? 'v' + police.rc_soumission_version : '—' %>
+    <% if (police.rc_soumission_version) { %>(<a href="/rc/<%= police.rc_soumission_id %>/versions/<%= police.rc_soumission_version %>">voir le snapshot</a>)<% } %>).
+    Les avenants en cours de terme se font sur la soumission et créent automatiquement une nouvelle version de cette police.</p>
+  <% const efig = (rcDonnees.versionFige && rcDonnees.versionFige.donnees) || { exploitations: [], antecedents: null }; %>
+  <h4>Lieux d'exploitation (<%= (efig.exploitations || []).length %>)</h4>
+  <% if ((efig.exploitations || []).length) { %>
+  <div class="tableau-deroulant"><table>
+    <thead><tr><th>Adresse</th><th>Activité</th><th>Chiffre d’affaires</th><th>Employés</th><th>Superficie</th><th>Sous-traitants</th><th>Garanties</th></tr></thead>
+    <tbody><% efig.exploitations.forEach((e) => { %>
+      <tr><td><%= e.adresse || '—' %><%= e.ville ? ', ' + e.ville : '' %></td>
+      <td><%= e.type_activite || '—' %><%= e.code_classification ? ' (' + e.code_classification + ')' : '' %></td>
+      <td><%= e.chiffre_affaires != null ? Number(e.chiffre_affaires).toLocaleString('fr-CA') + ' $' : '—' %></td>
+      <td><%= e.nb_employes != null ? e.nb_employes : '—' %></td>
+      <td><%= e.superficie_pi2 != null ? Number(e.superficie_pi2).toLocaleString('fr-CA') + ' pi²' : '—' %></td>
+      <td><%= rcDonnees.NOMS_SOUS_TRAITANT[e.sous_traitants] || e.sous_traitants || '—' %></td>
+      <td><% const g = e.garanties || {};
+        %><%= g.formule ? (rcDonnees.NOMS_FORMULE_RC[g.formule] || g.formule) : '—' %><%= g.limite_par_sinistre != null ? ' · ' + Number(g.limite_par_sinistre).toLocaleString('fr-CA') + ' $/sin.' : '' %><%= g.limite_agregat != null ? ' · agr. ' + Number(g.limite_agregat).toLocaleString('fr-CA') + ' $' : '' %><%= g.franchise != null ? ' · fr. ' + Number(g.franchise).toLocaleString('fr-CA') + ' $' : '' %><% const avr = g.avenants || {}; const codesr = Object.keys(avr);
+        %><%= codesr.length ? ' · ' + codesr.map((c) => { const f = rcDonnees.AVENANTS_RC.find(([code]) => code === c); return f ? f[1] : c; }).join(', ') : '' %></td></tr>
+    <% }) %></tbody>
+  </table></div>
+  <% } else { %><p class="petit">Aucun lieu d’exploitation au snapshot de conversion.</p><% } %>
+  <% const antrc = efig.antecedents || null; %>
+  <% if (antrc) { %>
+  <h4>Antécédents d’assurance</h4>
+  <dl class="dl">
+    <dt>Assureur actuel</dt><dd><%= antrc.assureur_actuel || '—' %></dd>
+    <dt>Police actuelle</dt><dd><%= antrc.numero_police_actuelle || '—' %></dd>
+    <dt>Années d’assurance continue</dt><dd><%= antrc.annees_assurance_continue != null ? antrc.annees_assurance_continue : '—' %></dd>
+    <dt>Sinistres (5 ans)</dt><dd><% const sinr = antrc.sinistres_5ans || []; %><%= sinr.length ? sinr.map((x) => [x.date, x.type, x.montant != null ? Number(x.montant).toLocaleString('fr-CA') + ' $' : null].filter(Boolean).join(' — ')).join(' ; ') : 'Aucun' %></dd>
+  </dl>
+  <% } %>
+</div>
+<% } %>
+
+<% if (cyberDonnees) { %>
+<div class="carte">
+  <h3>🛡️ Données cyber</h3>
+  <p class="petit">Figées à la conversion (soumission cyber
+    <a href="/cyber/<%= police.cyber_soumission_id %>">#<%= police.cyber_soumission_id %></a>,
+    version <%= police.cyber_soumission_version ? 'v' + police.cyber_soumission_version : '—' %>
+    <% if (police.cyber_soumission_version) { %>(<a href="/cyber/<%= police.cyber_soumission_id %>/versions/<%= police.cyber_soumission_version %>">voir le snapshot</a>)<% } %>).
+    Les avenants en cours de terme se font sur la soumission et créent automatiquement une nouvelle version de cette police.</p>
+  <% const cfig = (cyberDonnees.versionFige && cyberDonnees.versionFige.donnees) || { mesures: [], garanties: null, antecedents: null }; %>
+  <h4>Mesures de sécurité (<%= (cfig.mesures || []).length %>)</h4>
+  <% if ((cfig.mesures || []).length) { %>
+  <div class="tableau-deroulant"><table>
+    <thead><tr><th>Type</th><th>Niveau de maturité</th><th>Détails</th><th>Notes</th></tr></thead>
+    <tbody><% cfig.mesures.forEach((m) => { %>
+      <tr><td><%= cyberDonnees.NOMS_TYPE_MESURE[m.type_mesure] || m.type_mesure || '—' %></td>
+      <td><%= cyberDonnees.NOMS_STATUT_MESURE[m.statut] || m.statut || '—' %></td>
+      <td><%= m.details || '—' %></td>
+      <td><%= m.notes || '—' %></td></tr>
+    <% }) %></tbody>
+  </table></div>
+  <% } else { %><p class="petit">Aucune mesure de sécurité au snapshot de conversion.</p><% } %>
+  <% const gc = cfig.garanties || null; %>
+  <% if (gc) { %>
+  <h4>Garanties</h4>
+  <dl class="dl">
+    <dt>Limite par sinistre</dt><dd><%= gc.limite_par_sinistre != null ? Number(gc.limite_par_sinistre).toLocaleString('fr-CA') + ' $' : '—' %></dd>
+    <dt>Limite agrégat annuel</dt><dd><%= gc.limite_agregat != null ? Number(gc.limite_agregat).toLocaleString('fr-CA') + ' $' : '—' %></dd>
+    <dt>Franchise</dt><dd><%= gc.franchise != null ? Number(gc.franchise).toLocaleString('fr-CA') + ' $' : '—' %></dd>
+    <dt>Délai de carence</dt><dd><%= gc.delai_carence || '—' %></dd>
+    <dt>Avenants</dt><dd><% const avc = gc.avenants || {}; const codesc = Object.keys(avc); %><%= codesc.length ? codesc.map((x) => { const f = cyberDonnees.AVENANTS_CYBER.find(([code]) => code === x); return f ? f[1] : x; }).join(', ') : '—' %></dd>
+    <dt>Prime</dt><dd><%= gc.prime != null ? Number(gc.prime).toLocaleString('fr-CA') + ' $' : '—' %></dd>
+  </dl>
+  <% } %>
+  <% const antc = cfig.antecedents || null; %>
+  <% if (antc) { %>
+  <h4>Antécédents d’assurance</h4>
+  <dl class="dl">
+    <dt>Assureur actuel</dt><dd><%= antc.assureur_actuel || '—' %></dd>
+    <dt>Police actuelle</dt><dd><%= antc.numero_police_actuelle || '—' %></dd>
+    <dt>Années d’assurance continue</dt><dd><%= antc.annees_assurance_continue != null ? antc.annees_assurance_continue : '—' %></dd>
+    <dt>Incidents cyber (5 ans)</dt><dd><% const inc = antc.incidents_5ans || []; %><%= inc.length ? inc.map((x) => [x.date, x.type, x.montant != null ? Number(x.montant).toLocaleString('fr-CA') + ' $' : null, x.reclame ? 'réclamé' : 'non réclamé'].filter(Boolean).join(' — ')).join(' ; ') : 'Aucun' %></dd>
+  </dl>
+  <% } %>
+</div>
+<% } %>
+
+<% if (eoDonnees) { %>
+<div class="carte">
+  <h3>💼 Données E&O</h3>
+  <p class="petit">Figées à la conversion (soumission E&O
+    <a href="/eo/<%= police.eo_soumission_id %>">#<%= police.eo_soumission_id %></a>,
+    version <%= police.eo_soumission_version ? 'v' + police.eo_soumission_version : '—' %>
+    <% if (police.eo_soumission_version) { %>(<a href="/eo/<%= police.eo_soumission_id %>/versions/<%= police.eo_soumission_version %>">voir le snapshot</a>)<% } %>).
+    Les avenants en cours de terme se font sur la soumission et créent automatiquement une nouvelle version de cette police.</p>
+  <% const efig = (eoDonnees.versionFige && eoDonnees.versionFige.donnees) || { activites: [], garanties: null, antecedents: null }; %>
+  <h4>Activités professionnelles (<%= (efig.activites || []).length %>)</h4>
+  <% if ((efig.activites || []).length) { %>
+  <div class="tableau-deroulant"><table>
+    <thead><tr><th>Activité</th><th>Chiffre d’affaires</th><th>Professionnels</th><th>Notes</th></tr></thead>
+    <tbody><% efig.activites.forEach((a) => { %>
+      <tr><td><%= a.description_activite || '—' %></td>
+      <td><%= a.chiffre_affaires != null ? Number(a.chiffre_affaires).toLocaleString('fr-CA') + ' $' : '—' %></td>
+      <td><%= a.nb_professionnels != null ? a.nb_professionnels : '—' %></td>
+      <td><%= a.notes || '—' %></td></tr>
+    <% }) %></tbody>
+  </table></div>
+  <% } else { %><p class="petit">Aucune activité professionnelle au snapshot de conversion.</p><% } %>
+  <% const ge = efig.garanties || null; %>
+  <% if (ge) { %>
+  <h4>Garanties</h4>
+  <dl class="dl">
+    <dt>Limite par sinistre</dt><dd><%= ge.limite_par_sinistre != null ? Number(ge.limite_par_sinistre).toLocaleString('fr-CA') + ' $' : '—' %></dd>
+    <dt>Limite agrégat annuel</dt><dd><%= ge.limite_agregat != null ? Number(ge.limite_agregat).toLocaleString('fr-CA') + ' $' : '—' %></dd>
+    <dt>Franchise</dt><dd><%= ge.franchise != null ? Number(ge.franchise).toLocaleString('fr-CA') + ' $' : '—' %></dd>
+    <dt>Base de garantie</dt><dd><%= eoDonnees.NOMS_BASE_GARANTIE[ge.base] || ge.base || '—' %></dd>
+    <dt>Avenants</dt><dd><% const ave = ge.avenants || {}; const codese = Object.keys(ave); %><%= codese.length ? codese.map((x) => { const f = eoDonnees.AVENANTS_EO.find(([code]) => code === x); return f ? f[1] : x; }).join(', ') : '—' %></dd>
+    <dt>Prime</dt><dd><%= ge.prime != null ? Number(ge.prime).toLocaleString('fr-CA') + ' $' : '—' %></dd>
+  </dl>
+  <% } %>
+  <% const ante = efig.antecedents || null; %>
+  <% if (ante) { %>
+  <h4>Antécédents d’assurance</h4>
+  <dl class="dl">
+    <dt>Assureur actuel</dt><dd><%= ante.assureur_actuel || '—' %></dd>
+    <dt>Police actuelle</dt><dd><%= ante.numero_police_actuelle || '—' %></dd>
+    <dt>Années d’assurance continue</dt><dd><%= ante.annees_assurance_continue != null ? ante.annees_assurance_continue : '—' %></dd>
+    <dt>Réclamations E&O (5 ans)</dt><dd><% const rec = ante.reclamations_5ans || []; %><%= rec.length ? rec.map((x) => [x.date, x.nature, x.montant ? x.montant + ' $' : null, x.sinistre ? (x.sinistre === 'oui' ? 'réclamée' : 'non réclamée') : null].filter(Boolean).join(' — ')).join(' ; ') : 'Aucune' %></dd>
+    <dt>Circonstances pouvant donner lieu à réclamation</dt><dd><%= ante.circonstances || '—' %></dd>
+  </dl>
+  <% } %>
+</div>
+<% } %>
+
+<% if (doDonnees) { %>
+<div class="carte">
+  <h3>🛡️ Données D&O</h3>
+  <p class="petit">Figées à la conversion (soumission D&O
+    <a href="/do/<%= police.do_soumission_id %>">#<%= police.do_soumission_id %></a>,
+    version <%= police.do_soumission_version ? 'v' + police.do_soumission_version : '—' %>
+    <% if (police.do_soumission_version) { %>(<a href="/do/<%= police.do_soumission_id %>/versions/<%= police.do_soumission_version %>">voir le snapshot</a>)<% } %>).
+    Les avenants en cours de terme se font sur la soumission et créent automatiquement une nouvelle version de cette police.</p>
+  <% const dfig = (doDonnees.versionFige && doDonnees.versionFige.donnees) || { dirigeants: [], garanties: null, antecedents: null }; %>
+  <h4>Dirigeants (<%= (dfig.dirigeants || []).length %>)</h4>
+  <% if ((dfig.dirigeants || []).length) { %>
+  <div class="tableau-deroulant"><table>
+    <thead><tr><th>Nom</th><th>Fonction</th><th>Expérience</th><th>Antécédents personnels</th></tr></thead>
+    <tbody><% dfig.dirigeants.forEach((dd) => { %>
+      <tr><td><%= dd.nom || '—' %></td>
+      <td><%= dd.fonction || '—' %></td>
+      <td><%= dd.annees_experience != null ? dd.annees_experience + ' ans' : '—' %></td>
+      <td><%= dd.antecedents_personnels || '—' %></td></tr>
+    <% }) %></tbody>
+  </table></div>
+  <% } else { %><p class="petit">Aucun dirigeant au snapshot de conversion.</p><% } %>
+  <% const gd = dfig.garanties || null; %>
+  <% if (gd) { %>
+  <h4>Garanties</h4>
+  <dl class="dl">
+    <dt>Limite par sinistre</dt><dd><%= gd.limite_par_sinistre != null ? Number(gd.limite_par_sinistre).toLocaleString('fr-CA') + ' $' : '—' %></dd>
+    <dt>Limite agrégat annuel</dt><dd><%= gd.limite_agregat != null ? Number(gd.limite_agregat).toLocaleString('fr-CA') + ' $' : '—' %></dd>
+    <dt>Franchise</dt><dd><%= gd.franchise != null ? Number(gd.franchise).toLocaleString('fr-CA') + ' $' : '—' %></dd>
+    <dt>Base de garantie</dt><dd><%= doDonnees.NOMS_BASE_GARANTIE[gd.base] || gd.base || '—' %></dd>
+    <dt>Avenants</dt><dd><% const avd = gd.avenants || {}; const codesd = Object.keys(avd); %><%= codesd.length ? codesd.map((x) => { const f = doDonnees.AVENANTS_DO.find(([code]) => code === x); return f ? f[1] : x; }).join(', ') : '—' %></dd>
+    <dt>Prime</dt><dd><%= gd.prime != null ? Number(gd.prime).toLocaleString('fr-CA') + ' $' : '—' %></dd>
+  </dl>
+  <% } %>
+  <% const antd = dfig.antecedents || null; %>
+  <% if (antd) { %>
+  <h4>Antécédents d’assurance</h4>
+  <dl class="dl">
+    <dt>Assureur actuel</dt><dd><%= antd.assureur_actuel || '—' %></dd>
+    <dt>Police actuelle</dt><dd><%= antd.numero_police_actuelle || '—' %></dd>
+    <dt>Années d’assurance continue</dt><dd><%= antd.annees_assurance_continue != null ? antd.annees_assurance_continue : '—' %></dd>
+    <dt>Réclamations D&O (5 ans)</dt><dd><% const recd = antd.reclamations_5ans || []; %><%= recd.length ? recd.map((x) => [x.date, x.nature, x.montant ? x.montant + ' $' : null, x.sinistre ? (x.sinistre === 'oui' ? 'réclamée' : 'non réclamée') : null].filter(Boolean).join(' — ')).join(' ; ') : 'Aucune' %></dd>
+    <dt>Poursuites ou actions en justice en cours ou envisagées</dt><dd><%= antd.poursuites_en_cours || '—' %></dd>
+  </dl>
+  <% } %>
+</div>
+<% } %>
+
+<% if (peDonnees) { %>
+<div class="carte">
+  <h3>📉 Données perte d’exploitation</h3>
+  <p class="petit">Figées à la conversion (soumission perte d'exploitation
+    <a href="/pe/<%= police.pe_soumission_id %>">#<%= police.pe_soumission_id %></a>,
+    version <%= police.pe_soumission_version ? 'v' + police.pe_soumission_version : '—' %>
+    <% if (police.pe_soumission_version) { %>(<a href="/pe/<%= police.pe_soumission_id %>/versions/<%= police.pe_soumission_version %>">voir le snapshot</a>)<% } %>).
+    Les avenants en cours de terme se font sur la soumission et créent automatiquement une nouvelle version de cette police.</p>
+  <% const pfig = (peDonnees.versionFige && peDonnees.versionFige.donnees) || { etablissements: [], garanties: null, antecedents: null }; %>
+  <h4>Établissements assurés (<%= (pfig.etablissements || []).length %>)</h4>
+  <% if ((pfig.etablissements || []).length) { %>
+  <div class="tableau-deroulant"><table>
+    <thead><tr><th>Lieu</th><th>Occupation</th><th>Chiffre d’affaires</th><th>Superficie</th></tr></thead>
+    <tbody><% pfig.etablissements.forEach((et) => { %>
+      <tr><td><strong><%= et.nom_lieu || '—' %></strong><% if (et.adresse) { %><br><span class="petit"><%= et.adresse %></span><% } %></td>
+      <td><%= et.occupation || '—' %></td>
+      <td><%= et.chiffre_affaires != null ? Number(et.chiffre_affaires).toLocaleString('fr-CA') + ' $' : '—' %></td>
+      <td><%= et.superficie != null ? et.superficie + ' m²' : '—' %></td></tr>
+    <% }) %></tbody>
+  </table></div>
+  <% } else { %><p class="petit">Aucun établissement au snapshot de conversion.</p><% } %>
+  <% const gp = pfig.garanties || null; %>
+  <% if (gp) { %>
+  <h4>Garanties</h4>
+  <dl class="dl">
+    <dt>Limite</dt><dd><%= gp.limite != null ? Number(gp.limite).toLocaleString('fr-CA') + ' $' : '—' %></dd>
+    <dt>Période d’indemnité</dt><dd><%= peDonnees.NOMS_PERIODE_INDEMNITE[gp.periode_indemnite_mois] || (gp.periode_indemnite_mois != null ? gp.periode_indemnite_mois + ' mois' : '—') %></dd>
+    <dt>Franchise (délai de carence)</dt><dd><%= gp.franchise_jours != null ? gp.franchise_jours + ' jours' : '—' %></dd>
+    <dt>Base d’indemnité</dt><dd><%= peDonnees.NOMS_BASE_MONTANT[gp.base_montant] || gp.base_montant || '—' %></dd>
+    <dt>Avenants</dt><dd><% const avp = gp.avenants || {}; const codesp = Object.keys(avp); %><%= codesp.length ? codesp.map((x) => { const f = peDonnees.AVENANTS_PE.find(([code]) => code === x); return f ? f[1] : x; }).join(', ') : '—' %></dd>
+    <dt>Prime</dt><dd><%= gp.prime != null ? Number(gp.prime).toLocaleString('fr-CA') + ' $' : '—' %></dd>
+  </dl>
+  <% } %>
+  <% const antp = pfig.antecedents || null; %>
+  <% if (antp) { %>
+  <h4>Antécédents d’assurance</h4>
+  <dl class="dl">
+    <dt>Assureur actuel</dt><dd><%= antp.assureur_actuel || '—' %></dd>
+    <dt>Police actuelle</dt><dd><%= antp.numero_police_actuelle || '—' %></dd>
+    <dt>Années d’assurance continue</dt><dd><%= antp.annees_assurance_continue != null ? antp.annees_assurance_continue : '—' %></dd>
+    <dt>Interruptions (5 ans)</dt><dd><% const intp = antp.interruptions_5ans || []; %><%= intp.length ? intp.map((x) => [x.date, x.cause, x.duree_jours ? x.duree_jours + ' jours' : null, x.montant ? x.montant + ' $' : null].filter(Boolean).join(' — ')).join(' ; ') : 'Aucune' %></dd>
+  </dl>
+  <% } %>
+</div>
+<% } %>
+
+<% if (flotteDonnees) { %>
+<div class="carte">
+  <h3>🚚 Données flotte automobile</h3>
+  <p class="petit">Figées à la conversion (soumission flotte
+    <a href="/flotte/<%= police.flotte_soumission_id %>">#<%= police.flotte_soumission_id %></a>,
+    version <%= police.flotte_soumission_version ? 'v' + police.flotte_soumission_version : '—' %>
+    <% if (police.flotte_soumission_version) { %>(<a href="/flotte/<%= police.flotte_soumission_id %>/versions/<%= police.flotte_soumission_version %>">voir le snapshot</a>)<% } %>).
+    Les avenants en cours de terme se font sur la soumission et créent automatiquement une nouvelle version de cette police.</p>
+  <% const ffig = (flotteDonnees.versionFige && flotteDonnees.versionFige.donnees) || { entete: null, vehicules: [], conducteurs: [], garanties: null, antecedents: null }; %>
+  <% const fent = ffig.entete || {}; %>
+  <h4>En-tête de la flotte</h4>
+  <dl class="dl">
+    <dt>Nombre de véhicules déclarés</dt><dd><%= fent.nb_vehicules != null ? fent.nb_vehicules : '—' %></dd>
+    <dt>Rayon d’opération principal</dt><dd><%= fent.rayon_operation_km != null ? fent.rayon_operation_km + ' km' : '—' %></dd>
+    <dt>Usage dominant</dt><dd><%= flotteDonnees.NOMS_USAGES_DOMINANTS[fent.usage_dominant] || fent.usage_dominant || '—' %></dd>
+    <dt>Assureur (soumission)</dt><dd><%= fent.assureur || '—' %></dd>
+  </dl>
+  <h4>Véhicules assurés (<%= (ffig.vehicules || []).length %>)</h4>
+  <% if ((ffig.vehicules || []).length) { %>
+  <% const condParId = {}; (ffig.conducteurs || []).forEach((c) => { condParId[c.id] = (c.prenom || '') + ' ' + (c.nom || ''); }); %>
+  <div class="tableau-deroulant"><table>
+    <thead><tr><th>Véhicule</th><th>Type</th><th>Usage</th><th>Conducteur principal</th><th>Valeur</th></tr></thead>
+    <tbody><% ffig.vehicules.forEach((v) => { %>
+      <tr><td><strong><%= [v.annee, v.marque, v.modele].filter(Boolean).join(' ') || '—' %></strong><% if (v.niv) { %><br><span class="petit">NIV <%= v.niv %></span><% } %></td>
+      <td><%= flotteDonnees.NOMS_TYPES_VEHICULE[v.type_vehicule] || v.type_vehicule || '—' %></td>
+      <td><%= flotteDonnees.NOMS_USAGES_VEHICULE[v.usage] || v.usage || '—' %></td>
+      <td><%= v.conducteur_principal_nom || (v.conducteur_principal_id ? (condParId[v.conducteur_principal_id] || '—') : '—') %></td>
+      <td><%= v.valeur != null ? Number(v.valeur).toLocaleString('fr-CA') + ' $' : '—' %></td></tr>
+    <% }) %></tbody>
+  </table></div>
+  <% } else { %><p class="petit">Aucun véhicule au snapshot de conversion.</p><% } %>
+  <h4>Conducteurs (<%= (ffig.conducteurs || []).length %>)</h4>
+  <% if ((ffig.conducteurs || []).length) { %>
+  <div class="tableau-deroulant"><table>
+    <thead><tr><th>Conducteur</th><th>Permis</th><th>Expérience</th></tr></thead>
+    <tbody><% ffig.conducteurs.forEach((c) => { %>
+      <tr><td><strong><%= [c.prenom, c.nom].filter(Boolean).join(' ') || '—' %></strong></td>
+      <td><%= c.numero_permis || '—' %><% if (c.classe_permis) { %> (classe <%= c.classe_permis %>)<% } %></td>
+      <td><%= c.annees_experience != null ? c.annees_experience + ' ans' : '—' %><% if (c.annees_experience_lourds) { %> · <%= c.annees_experience_lourds %> ans véhicules lourds<% } %></td></tr>
+    <% }) %></tbody>
+  </table></div>
+  <% } else { %><p class="petit">Aucun conducteur au snapshot de conversion.</p><% } %>
+  <% const gf = ffig.garanties || null; %>
+  <% if (gf) { %>
+  <h4>Garanties</h4>
+  <dl class="dl">
+    <dt>Limite de responsabilité civile</dt><dd><%= gf.limite_rc != null ? Number(gf.limite_rc).toLocaleString('fr-CA') + ' $' : '—' %></dd>
+    <dt>Franchise collision</dt><dd><%= gf.franchise_collision != null ? Number(gf.franchise_collision).toLocaleString('fr-CA') + ' $' : '—' %></dd>
+    <dt>Franchise versement</dt><dd><%= gf.franchise_versement != null ? Number(gf.franchise_versement).toLocaleString('fr-CA') + ' $' : '—' %></dd>
+    <dt>Avenants FAQ</dt><dd><% const avf = gf.avenants || {}; const codesf = Object.keys(avf); %><%= codesf.length ? codesf.map((x) => { const f = flotteDonnees.AVENANTS_FAQ.find(([code]) => code === x); return f ? f[1] : x; }).join(', ') : '—' %></dd>
+    <dt>Prime</dt><dd><%= gf.prime != null ? Number(gf.prime).toLocaleString('fr-CA') + ' $' : '—' %></dd>
+  </dl>
+  <% } %>
+  <% const antf = ffig.antecedents || null; %>
+  <% if (antf) { %>
+  <h4>Antécédents d’assurance</h4>
+  <dl class="dl">
+    <dt>Assureur actuel</dt><dd><%= antf.assureur_actuel || '—' %></dd>
+    <dt>Police actuelle</dt><dd><%= antf.numero_police_actuelle || '—' %></dd>
+    <dt>Années d’assurance flotte continue</dt><dd><%= antf.annees_assurance_flotte_continue != null ? antf.annees_assurance_flotte_continue : '—' %></dd>
+    <dt>Ratio de pertes</dt><dd><%= antf.ratio_pertes != null ? antf.ratio_pertes + ' %' : '—' %></dd>
+    <dt>Sinistres de la flotte (5 ans)</dt><dd><% const sinf = antf.sinistres_flotte_5ans || []; %><%= sinf.length ? sinf.map((x) => [x.date, x.description, x.montant ? x.montant + ' $' : null].filter(Boolean).join(' — ')).join(' ; ') : 'Aucun' %></dd>
+  </dl>
+  <% } %>
+  <% if (flotteDonnees.faqManquants && flotteDonnees.faqManquants.length) { %>
+  <h4>⚠️ Avenants FAQ usuels non souscrits</h4>
+  <div class="alerte alerte-avert">Ces avenants FAQ sont usuels pour une flotte mais ne figurent pas dans les garanties figées de cette police :</div>
+  <ul><% flotteDonnees.faqManquants.forEach((m) => { %><li><strong><%= m.libelle %></strong> — <%= m.raison %></li><% }) %></ul>
+  <% } %>
+</div>
+<% } %>
+
+<% if (cautDonnees) { %>
+<div class="carte">
+  <h3>📜 Données cautionnement</h3>
+  <p class="petit">Figées à la conversion (soumission cautionnement
+    <a href="/cautionnement/<%= police.caut_soumission_id %>">#<%= police.caut_soumission_id %></a>,
+    version <%= police.caut_soumission_version ? 'v' + police.caut_soumission_version : '—' %>
+    <% if (police.caut_soumission_version) { %>(<a href="/cautionnement/<%= police.caut_soumission_id %>/versions/<%= police.caut_soumission_version %>">voir le snapshot</a>)<% } %>).
+    Les avenants en cours de terme se font sur la soumission et créent automatiquement une nouvelle version de cette police.</p>
+  <% const cfig = (cautDonnees.versionFige && cautDonnees.versionFige.donnees) || { entete: null, obligations: [], garanties: null, antecedents: null }; %>
+  <% const cent = cfig.entete || {}; %>
+  <h4>Profil du principal</h4>
+  <dl class="dl">
+    <dt>Secteur d’activité</dt><dd><%= cent.secteur_activite || '—' %></dd>
+    <dt>Année de fondation</dt><dd><%= cent.annee_fondation != null ? cent.annee_fondation : '—' %></dd>
+    <dt>Chiffre d’affaires annuel</dt><dd><%= cent.chiffre_affaires != null ? Number(cent.chiffre_affaires).toLocaleString('fr-CA') + ' $' : '—' %></dd>
+    <dt>Nombre d’employés</dt><dd><%= cent.nb_employes != null ? cent.nb_employes : '—' %></dd>
+    <dt>Caution (soumission)</dt><dd><%= cent.assureur || '—' %></dd>
+  </dl>
+  <h4>Obligations — cautionnements émis (<%= (cfig.obligations || []).length %>)</h4>
+  <% if ((cfig.obligations || []).length) { %>
+  <div class="tableau-deroulant"><table>
+    <thead><tr><th>Type</th><th>Bénéficiaire</th><th>Projet</th><th>Contrat</th><th>Cautionnement</th><th>Prime estimée</th></tr></thead>
+    <tbody><% cfig.obligations.forEach((o) => { %>
+      <tr><td><strong><%= cautDonnees.NOMS_TYPES_OBLIGATION[o.type] || o.type || '—' %></strong></td>
+      <td><%= o.beneficiaire || '—' %></td>
+      <td><%= o.description_projet || '—' %></td>
+      <td><%= o.montant_contrat != null ? Number(o.montant_contrat).toLocaleString('fr-CA') + ' $' : '—' %></td>
+      <td><%= o.montant_cautionnement != null ? Number(o.montant_cautionnement).toLocaleString('fr-CA') + ' $' : '—' %></td>
+      <td><%= o.prime_estimee != null ? Number(o.prime_estimee).toLocaleString('fr-CA') + ' $' : '—' %></td></tr>
+    <% }) %></tbody>
+  </table></div>
+  <% } else { %><p class="petit">Aucune obligation au snapshot de conversion.</p><% } %>
+  <% const gc = cfig.garanties || null; %>
+  <% if (gc) { %>
+  <h4>Ligne de cautionnement</h4>
+  <dl class="dl">
+    <dt>Limite globale (capacité)</dt><dd><%= gc.limite_globale != null ? Number(gc.limite_globale).toLocaleString('fr-CA') + ' $' : '—' %></dd>
+    <dt>Limite par projet</dt><dd><%= gc.limite_par_projet != null ? Number(gc.limite_par_projet).toLocaleString('fr-CA') + ' $' : '—' %></dd>
+    <dt>Fonds de roulement</dt><dd><%= gc.fonds_roulement != null ? Number(gc.fonds_roulement).toLocaleString('fr-CA') + ' $' : '—' %></dd>
+    <dt>Valeur nette</dt><dd><%= gc.valeur_nette != null ? Number(gc.valeur_nette).toLocaleString('fr-CA') + ' $' : '—' %></dd>
+    <dt>Prime de la ligne</dt><dd><%= gc.prime != null ? Number(gc.prime).toLocaleString('fr-CA') + ' $' : '—' %></dd>
+  </dl>
+  <% } %>
+  <% const ac = cfig.antecedents || null; %>
+  <% if (ac) { %>
+  <h4>Antécédents de cautionnement</h4>
+  <dl class="dl">
+    <dt>Caution actuelle</dt><dd><%= ac.assureur_actuel || '—' %></dd>
+    <dt>Ligne actuelle</dt><dd><%= ac.numero_ligne_actuelle || '—' %></dd>
+    <dt>Années de cautionnement continu</dt><dd><%= ac.annees_cautionnement_continu != null ? ac.annees_cautionnement_continu : '—' %></dd>
+    <dt>Refus / résiliation antérieur(e)</dt><dd><%= ac.refus_resiliation_ant ? 'Oui' : 'Non' %><% if (ac.refus_resiliation_details) { %> — <%= ac.refus_resiliation_details %><% } %></dd>
+    <dt>Réclamations contre cautionnements (5 ans)</dt><dd><% const recc = ac.reclamations_5ans || []; %><%= recc.length ? recc.map((x) => [x.date, x.cautionnement, x.montant ? x.montant + ' $' : null, x.statut].filter(Boolean).join(' — ')).join(' ; ') : 'Aucune' %></dd>
+  </dl>
+  <% } %>
+  <% if (cautDonnees.manqueTypes && cautDonnees.manqueTypes.length) { %>
+  <h4>⚠️ Protections usuelles non souscrites</h4>
+  <div class="alerte alerte-avert">Ces protections sont usuelles pour une ligne de cautionnement mais ne figurent pas dans les obligations figées de cette police :</div>
+  <ul><% cautDonnees.manqueTypes.forEach((m) => { %><li><strong><%= m.libelle %></strong> — <%= m.raison %></li><% }) %></ul>
+  <% } %>
+</div>
+<% } %>
+
+  <h3>Historique des versions</h3>  <div class="tableau-deroulant"><table>
     <thead><tr><th>Version</th><th>Effet</th><th>Échéance</th><th>Franchise</th><th>Créée le</th><th>Par</th><th></th></tr></thead>
     <tbody>
     <% versions.forEach((v) => { %>
@@ -124,6 +581,64 @@
         <button class="lien" type="submit">désarchiver</button>
       </form></li>
   <% }) %></ul>
+  <% } %>
+</div>
+
+<div class="carte">
+  <h3>✉️ Courriels liés (<%= courrielsLies.length %>)</h3>
+  <% if (courrielsLies.length) { %>
+  <div class="tableau-deroulant"><table>
+    <thead><tr><th>Date</th><th>De / À</th><th>Sujet</th><th></th></tr></thead>
+    <tbody><% courrielsLies.forEach((cm) => { %>
+      <tr>
+        <td class="petit"><%= (cm.date_courriel || cm.cree_le || '').slice(0, 16).replace('T', ' ') %></td>
+        <td><%= cm.dossier === 'envoyes' ? 'À : ' + (cm.destinataires || '') : cm.expediteur %></td>
+        <td><a href="/courriels/<%= cm.id %>"><%= cm.sujet %></a></td>
+        <td><a class="btn btn-petit btn-secondaire" href="/courriels/<%= cm.id %>">Ouvrir</a></td>
+      </tr>
+    <% }) %></tbody>
+  </table></div>
+  <% } else { %>
+  <p class="petit">Aucun courriel n’est encore rattaché à cette police. Les courriels reçus qui mentionnent le numéro de police <strong><%= police.numero_police %></strong> (avis d’assureur, note de couverture, certificat…) se classent ici automatiquement ; vous pouvez aussi lier un message à cette police depuis le module Courriels.</p>
+  <% } %>
+</div>
+
+<div class="carte">
+  <h3>🔍 Vérification de l'avenant (<%= verificationsPolice.length %>)</h3>
+  <p class="petit">Quand l'assureur retourne son document (avenant, note de couverture), faites-le comparer automatiquement à ce qui lui avait été demandé — l'état courant de cette fiche. Le rapport signale les <strong>écarts</strong>, les éléments <strong>absents</strong> et ceux <strong>à confirmer</strong> ; rien n'est décidé sans vous.</p>
+  <% if (verificationsPolice.length) { %>
+  <div class="tableau-deroulant"><table>
+    <thead><tr><th>Date</th><th>Source</th><th>Résultat</th><th>Vérifiée</th><th></th></tr></thead>
+    <tbody><% verificationsPolice.forEach((v) => { const c = (v.rapport && v.rapport.compteurs) || {}; %>
+      <tr>
+        <td class="petit"><%= (v.cree_le || '').slice(0, 16).replace('T', ' ') %></td>
+        <td><%= v.source_type === 'piece_jointe_courriel' ? 'Pièce jointe de courriel' : 'Document déposé' %></td>
+        <td><span class="badge <%= v.statut === 'conforme' ? 'badge-ok' : (v.statut === 'ecarts' ? 'badge-echu' : 'badge-j') %>"><%= NOMS_STATUTS_VERIF[v.statut] || v.statut %></span>
+          <span class="petit"><%= (c.ecart || 0) + (c.absent || 0) + (c.surplus || 0) %> écart(s), <%= c.a_confirmer || 0 %> à confirmer</span></td>
+        <td class="petit"><%= v.verifiee_le ? 'Oui, le ' + v.verifiee_le.slice(0, 10) + (v.verifiee_par_nom ? ' par ' + v.verifiee_par_nom : '') : 'Non' %></td>
+        <td><a class="btn btn-petit btn-secondaire" href="/echeances/police/<%= police.id %>/verifications/<%= v.id %>">Rapport</a></td>
+      </tr>
+    <% }) %></tbody>
+  </table></div>
+  <% } %>
+  <h4>Vérifier le document de l'assureur</h4>
+  <form method="post" action="/echeances/police/<%= police.id %>/verifier-document" enctype="multipart/form-data">
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+    <label for="docav">Déposer le document retourné (PDF, image, Word, Excel — max 15 Mo)</label>
+    <input type="file" id="docav" name="document" required>
+    <div class="actions"><button class="btn btn-petit" type="submit">🔍 Analyser et comparer</button></div>
+  </form>
+  <% if (piecesJointesPolice.length) { %>
+  <form method="post" action="/echeances/police/<%= police.id %>/verifier-piece-jointe">
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+    <label for="pjverif">…ou vérifier une pièce jointe d'un courriel lié à cette police</label>
+    <select id="pjverif" name="piece_jointe_id">
+      <% piecesJointesPolice.forEach((pj) => { %>
+        <option value="<%= pj.id %>"><%= pj.nom %> — courriel « <%= pj.sujet || 'sans objet' %> »</option>
+      <% }) %>
+    </select>
+    <div class="actions"><button class="btn btn-petit btn-secondaire" type="submit">🔍 Vérifier cette pièce jointe</button></div>
+  </form>
   <% } %>
 </div>
 

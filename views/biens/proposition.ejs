@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Proposition d’assurance biens commerciaux — Soumission #<%= p.soumissionId %></title>
+<link rel="stylesheet" href="/proposition.css">
+</head>
+<body>
+<div class="actions noprint">
+  <button class="btn" type="button" data-action="imprimer">🖨️ Imprimer</button>
+  <a class="btn" href="/biens/<%= p.soumissionId %>/proposition.pdf<%= vParam ? '?v=' + vParam : '' %>">⬇️ Télécharger PDF</a>
+  <a class="btn btn-secondaire" href="/biens/<%= p.soumissionId %>">← Retour à la soumission</a>
+</div>
+<script src="/proposition.js"></script>
+<div class="page">
+  <p class="cabinet"><%= p.cabinetNom %></p>
+  <h1>Proposition d’assurance biens commerciaux</h1>
+  <p class="sous-titre">Formulaire de proposition — Biens commerciaux (Québec)</p>
+  <p class="ref">Soumission #<%= p.soumissionId %> — version v<%= p.versionNumero %><%= p.versionFigee ? ' (figée)' : '' %>
+    <% if (p.dateEffet) { %> · Date d’effet souhaitée : <%= p.dateEffet %><% } %></p>
+
+  <h2>1. Proposant / assuré</h2>
+  <dl>
+    <dt>Nom</dt><dd><strong><%= p.client ? p.client.raison_sociale : '—' %></strong></dd>
+    <% if (p.client && (p.client.adresse || p.client.ville || p.client.code_postal)) { %>
+    <dt>Adresse</dt><dd><%= [p.client.adresse, p.client.ville, p.client.code_postal].filter(Boolean).join(', ') %></dd>
+    <% } %>
+    <% if (p.client && p.client.telephone) { %><dt>Téléphone</dt><dd><%= p.client.telephone %></dd><% } %>
+    <% if (p.client && p.client.courriel) { %><dt>Courriel</dt><dd><%= p.client.courriel %></dd><% } %>
+    <% if (p.client && (p.client.prenom || p.client.nom)) { %><dt>Personne-contact</dt><dd><%= [p.client.prenom, p.client.nom].filter(Boolean).join(' ') %><% if (p.client.titre_contact) { %> (<%= p.client.titre_contact %>)<% } %></dd><% } %>
+    <% if (p.courtierNom) { %><dt>Courtier responsable</dt><dd><%= p.courtierNom %></dd><% } %>
+    <% if (p.notes) { %><dt>Notes</dt><dd><%= p.notes %></dd><% } %>
+  </dl>
+
+  <h2>2. Bâtiments (<%= p.batiments.length %>)</h2>
+  <% p.batiments.forEach((b, i) => { %>
+    <h3>Bâtiment <%= i + 1 %> — <%= [b.adresse, b.ville, b.code_postal].filter(Boolean).join(', ') || '—' %></h3>
+    <dl>
+      <dt>Construction</dt><dd><%= b.type_construction_libelle %><% if (b.annee_construction) { %> · construit en <%= b.annee_construction %><% } %></dd>
+      <dt>Superficie</dt><dd><%= b.superficie_pi2 ? Number(b.superficie_pi2).toLocaleString('fr-CA') + ' pi²' : '—' %><% if (b.nb_etages) { %> · <%= b.nb_etages %> étage(s)<% } %></dd>
+      <dt>Occupation</dt><dd><%= b.occupation || '—' %></dd>
+      <dt>Valeur du bâtiment</dt><dd><%= b.valeur_batiment_libelle %></dd>
+      <dt>Protection incendie</dt><dd>Gicleurs : <%= b.gicleurs_libelle %><% if (b.distance_caserne_km) { %> · caserne à <%= b.distance_caserne_km %> km<% } %></dd>
+      <dt>Chauffage / toiture</dt><dd><%= [b.chauffage || null, b.annee_toiture ? 'toiture ' + b.annee_toiture : null].filter(Boolean).join(' · ') || '—' %></dd>
+      <% if (b.notes) { %><dt>Notes</dt><dd><%= b.notes %></dd><% } %>
+      <% if (b.garanties) { %>
+      <dt>Formule</dt><dd><strong><%= b.garanties.formule_libelle %></strong></dd>
+      <dt>Montant / franchise</dt><dd><%= b.garanties.montant_assurance_libelle %> · franchise <%= b.garanties.franchise_libelle %><% if (b.garanties.prime && b.garanties.prime !== '—') { %> · prime <%= b.garanties.prime_libelle %><% } %></dd>
+      <% if (b.garanties.avenants_libelles.length) { %><dt>Avenants</dt><dd><%= b.garanties.avenants_libelles.join(', ') %></dd><% } %>
+      <% } else { %><dt>Garanties</dt><dd>Non définies</dd><% } %>
+    </dl>
+    <% if (b.contenus && b.contenus.length) { %>
+    <table>
+      <thead><tr><th>Contenu du bâtiment</th><th>Type</th><th>Valeur</th><th>Notes</th></tr></thead>
+      <tbody>
+      <% b.contenus.forEach((x) => { %>
+        <tr><td><strong><%= x.description || '—' %></strong></td><td><%= x.type_contenu_libelle %></td><td><%= x.valeur_libelle %></td><td><%= x.notes || '—' %></td></tr>
+      <% }) %>
+      </tbody>
+    </table>
+    <% } %>
+  <% }) %>
+  <% if (!p.batiments.length) { %><p>Aucun bâtiment saisi.</p><% } %>
+
+  <% if (p.contenusGeneraux.length) { %>
+  <h2>3. Contenus généraux (<%= p.contenusGeneraux.length %>)</h2>
+  <table>
+    <thead><tr><th>Description</th><th>Type</th><th>Valeur</th><th>Notes</th></tr></thead>
+    <tbody>
+    <% p.contenusGeneraux.forEach((x) => { %>
+      <tr><td><strong><%= x.description || '—' %></strong></td><td><%= x.type_contenu_libelle %></td><td><%= x.valeur_libelle %></td><td><%= x.notes || '—' %></td></tr>
+    <% }) %>
+    </tbody>
+  </table>
+  <% } %>
+
+  <h2><%= p.contenusGeneraux.length ? '4' : '3' %>. Antécédents d’assurance</h2>
+  <% const a = p.antecedents; %>
+  <% if (a) { %>
+  <dl>
+    <dt>Assureur actuel</dt><dd><%= a.assureur_actuel || '—' %></dd>
+    <dt>Police actuelle</dt><dd><%= a.numero_police_actuelle || '—' %><% if (a.date_expiration_actuelle) { %> (expire le <%= a.date_expiration_actuelle %>)<% } %></dd>
+    <dt>Années d’assurance continue</dt><dd><%= a.annees_assurance_continue || '—' %></dd>
+    <dt>Sinistres (5 ans)</dt><dd><%= (a.sinistres_5ans || []).length ? a.sinistres_5ans.map((x) => [x.date, x.type, x.montant ? x.montant + ' $' : null].filter(Boolean).join(' — ')).join(' ; ') : 'Aucun' %></dd>
+  </dl>
+  <% } else { %><p>Non renseignés.</p><% } %>
+
+  <h2><%= p.contenusGeneraux.length ? '5' : '4' %>. Consentements</h2>
+  <% if (p.consentementsLibelles.length) { %>
+  <p><% p.consentementsLibelles.forEach((l, i) => { %>☑ <%= l %><% if (i < p.consentementsLibelles.length - 1) { %><br><% } %><% }) %></p>
+  <% } else { %><p>Aucun consentement enregistré.</p><% } %>
+
+  <p class="pied">Document généré le <%= p.genereLe %> à partir de la soumission biens #<%= p.soumissionId %> (version v<%= p.versionNumero %><%= p.versionFigee ? ', figée' : '' %>) — vérifiez avant envoi à l’assureur.</p>
+
+  <div class="signatures">
+    <div><div class="ligne">Signature du proposant</div><p>Date : _______________</p></div>
+    <div><div class="ligne">Signature du courtier</div><p>Date : _______________</p></div>
+  </div>
+</div>
+<div class="actions noprint"><a class="btn btn-secondaire" href="/biens/<%= p.soumissionId %>">← Retour à la soumission</a></div>
+</body>
+</html>

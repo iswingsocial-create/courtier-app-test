@@ -1,0 +1,216 @@
+<%- include('../partials/haut', { titre: 'Soumission D&O #' + s.id }) %>
+<div class="entete-page">
+  <h1>🏢 Soumission D&O #<%= s.id %></h1>
+  <div>
+    <span class="badge <%= s.statut === 'convertie_police' ? 'badge-ok' : (s.statut === 'soumise' ? 'badge-j' : 'badge-gris') %>"><%= NOMS_STATUTS_SOUMISSION[s.statut] %></span>
+    <a class="btn btn-secondaire btn-petit" href="/do">← Soumissions</a>
+  </div>
+
+</div>
+<%- include('../partials/manques', { sectionDemandes }) %>
+
+
+<div class="carte">
+  <dl class="dl">
+    <dt>Entreprise</dt><dd><strong><%= clientNom %></strong></dd>
+    <dt>Date d’effet souhaitée</dt><dd><%= s.date_effet_souhaitee || '—' %></dd>
+    <dt>Notes</dt><dd><%= s.notes || '—' %></dd>
+    <dt>Créée le</dt><dd><%= (s.cree_le || '').slice(0, 16).replace('T', ' ') %></dd>
+  </dl>
+  <div class="actions">
+    <% Object.keys(NOMS_STATUTS_SOUMISSION).filter((k) => k !== s.statut).forEach((k) => { %>
+    <form method="post" action="/do/<%= s.id %>/statut" class="inline">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+      <input type="hidden" name="statut" value="<%= k %>">
+      <button class="btn btn-petit btn-secondaire" type="submit">→ <%= NOMS_STATUTS_SOUMISSION[k] %></button>
+    </form>
+    <% }) %>
+    <form method="post" action="/do/<%= s.id %>/<%= s.archive ? 'desarchiver' : 'archiver' %>" class="inline" data-confirm="<%= s.archive ? 'Désarchiver cette soumission ?' : 'Archiver cette soumission ?' %>">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+      <button class="btn btn-petit btn-secondaire" type="submit"><%= s.archive ? 'Désarchiver' : 'Archiver' %></button>
+    </form>
+    <a class="btn btn-petit" href="/do/<%= s.id %>/proposition">📄 Proposition</a>
+  </div>
+</div>
+
+<% if (policeLiee) { %>
+<div class="carte">
+  <h3>🏛️ Police liée</h3>
+  <p>Cette soumission est convertie en <strong>police <%= policeLiee.numero_police %></strong>
+    (<%= policeLiee.assureur %>, effet <%= policeLiee.date_effet %> → échéance <%= policeLiee.date_echeance %>).</p>
+  <div class="actions"><a class="btn btn-petit" href="/echeances/police/<%= policeLiee.id %>">Ouvrir la fiche de gestion</a></div>
+</div>
+<% } else if (s.statut !== 'convertie_police') { %>
+<div class="carte" id="conversion">
+  <h3>🏛️ Convertir en police</h3>
+  <p class="petit">Crée la police D&O à gérer : les données de la soumission sont figées en référence, puis chaque avenant en cours de terme créera une nouvelle version de la police.</p>
+  <form method="post" action="/do/<%= s.id %>/convertir" class="grille-form">
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+    <div><label for="numero_police">Numéro de police *</label><input type="text" id="numero_police" name="numero_police" required maxlength="60"></div>
+    <div><label for="assureur_id">Assureur *</label>
+      <select id="assureur_id" name="assureur_id" required>
+        <option value="">— Choisir —</option>
+        <% assureurs.forEach((a) => { %><option value="<%= a.id %>"><%= a.nom %></option><% }) %>
+      </select></div>
+    <div><label for="date_effet">Date d’effet *</label><input type="date" id="date_effet" name="date_effet" required value="<%= s.date_effet_souhaitee || '' %>"></div>
+    <div><label for="date_echeance">Date d’échéance *</label><input type="date" id="date_echeance" name="date_echeance" required></div>
+    <div><label for="franchise">Franchise ($)</label><input type="number" id="franchise" name="franchise" step="0.01" min="0" value="0"></div>
+    <div class="actions"><button class="btn" type="submit">Convertir en police</button></div>
+  </form>
+  <% if (policesDispo.length) { %>
+  <h4>Ou lier une police existante</h4>
+  <form method="post" action="/do/<%= s.id %>/lier-police" class="grille-form">
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+    <div><label for="police_id">Police D&O de <%= clientNom %></label>
+      <select id="police_id" name="police_id" required>
+        <% policesDispo.forEach((p) => { %><option value="<%= p.id %>"><%= p.numero_police %></option><% }) %>
+      </select></div>
+    <div class="actions"><button class="btn btn-secondaire" type="submit">Lier cette police</button></div>
+  </form>
+  <% } %>
+</div>
+<% } %>
+
+<div class="carte" id="dirigeants">
+  <div class="entete-page"><h2>👔 Dirigeants (<%= s.dirigeants.filter((d) => !d.archive).length %>)</h2>
+    <div><button type="button" class="btn btn-petit" data-toggle-cible="form-dirigeant">+ Ajouter un dirigeant</button></div></div>
+
+  <div id="form-dirigeant" hidden>
+    <form method="post" action="/do/<%= s.id %>/dirigeant" class="grille-form">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+      <div><label>Nom *</label>
+        <input type="text" name="nom" required maxlength="120" placeholder="Ex. : Marie Tremblay"></div>
+      <div><label>Fonction / titre</label>
+        <input type="text" name="fonction" maxlength="120" placeholder="Ex. : Présidente, trésorier, administrateur"></div>
+      <div><label>Années d’expérience</label>
+        <input type="number" name="annees_experience" min="0" max="80" step="1"></div>
+      <div style="grid-column:1/-1"><label>Antécédents personnels</label>
+        <textarea name="antecedents_personnels" rows="2" placeholder="Ex. : aucune réclamation ou poursuite personnelle"></textarea></div>
+      <div class="actions" style="grid-column:1/-1"><button class="btn btn-petit" type="submit">Ajouter ce dirigeant</button></div>
+    </form>
+  </div>
+
+  <div class="tableau-deroulant"><table>
+    <thead><tr><th>Nom</th><th>Fonction</th><th>Expérience</th><th></th></tr></thead>
+    <tbody>
+    <% s.dirigeants.filter((d) => !d.archive).forEach((d) => { %>
+      <tr>
+        <td><strong><%= d.nom %></strong><% if (d.antecedents_personnels) { %><br><span class="petit"><%= d.antecedents_personnels %></span><% } %></td>
+        <td><%= d.fonction || '—' %></td>
+        <td><%= d.annees_experience !== null && d.annees_experience !== undefined ? d.annees_experience + ' ans' : '—' %></td>
+        <td style="white-space:nowrap">
+          <button type="button" class="btn btn-petit btn-secondaire" data-toggle-cible="modif-dirigeant-<%= d.id %>">Modifier</button>
+          <form method="post" action="/do/dirigeant/<%= d.id %>/archiver" class="inline" data-confirm="Archiver ce dirigeant ?">
+            <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+            <button class="btn btn-petit btn-secondaire" type="submit">Archiver</button></form>
+        </td>
+      </tr>
+      <tr id="modif-dirigeant-<%= d.id %>" hidden><td colspan="4">
+        <form method="post" action="/do/dirigeant/<%= d.id %>" class="grille-form">
+          <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+          <div><label>Nom *</label>
+            <input type="text" name="nom" required maxlength="120" value="<%= d.nom %>"></div>
+          <div><label>Fonction / titre</label>
+            <input type="text" name="fonction" maxlength="120" value="<%= d.fonction || '' %>"></div>
+          <div><label>Années d’expérience</label>
+            <input type="number" name="annees_experience" min="0" max="80" step="1" value="<%= d.annees_experience !== null && d.annees_experience !== undefined ? d.annees_experience : '' %>"></div>
+          <div style="grid-column:1/-1"><label>Antécédents personnels</label>
+            <textarea name="antecedents_personnels" rows="2"><%= d.antecedents_personnels || '' %></textarea></div>
+          <div class="actions" style="grid-column:1/-1"><button class="btn btn-petit" type="submit">Enregistrer</button></div>
+        </form>
+      </td></tr>
+    <% }) %>
+    </tbody>
+  </table></div>
+  <% if (!s.dirigeants.filter((d) => !d.archive).length) { %><p class="petit">Aucun dirigeant pour l’instant.</p><% } %>
+  <% const dirArch = s.dirigeants.filter((d) => d.archive); %>
+  <% if (dirArch.length) { %><p class="petit">Archivés : <% dirArch.forEach((d, i) => { %><%= i ? ', ' : '' %><%= d.nom %> <form method="post" action="/do/dirigeant/<%= d.id %>/desarchiver" class="inline"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button class="lien" type="submit">restaurer</button></form><% }) %></p><% } %>
+</div>
+
+<div class="carte" id="garanties">
+  <h2>📜 Garanties</h2>
+  <% const g = s.garanties; %>
+  <% if (g) { %><p class="petit">Actuel : limite/sinistre <%= g.limite_par_sinistre ? Number(g.limite_par_sinistre).toLocaleString('fr-CA') + ' $' : '—' %> · agrégat annuel <%= g.limite_agregat ? Number(g.limite_agregat).toLocaleString('fr-CA') + ' $' : '—' %> · franchise <%= g.franchise ? Number(g.franchise).toLocaleString('fr-CA') + ' $' : '—' %> · base <%= g.base ? NOMS_BASE_GARANTIE[g.base] : '—' %></p><% } %>
+  <form method="post" action="/do/<%= s.id %>/garanties" class="grille-form">
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+    <div><label for="lim-sin">Limite par sinistre ($)</label>
+      <input type="number" id="lim-sin" name="limite_par_sinistre" min="0" step="0.01" value="<%= g && g.limite_par_sinistre !== null ? g.limite_par_sinistre : '' %>"></div>
+    <div><label for="lim-ag">Limite agrégat annuel ($)</label>
+      <input type="number" id="lim-ag" name="limite_agregat" min="0" step="0.01" value="<%= g && g.limite_agregat !== null ? g.limite_agregat : '' %>"></div>
+    <div><label for="fr">Franchise ($)</label>
+      <input type="number" id="fr" name="franchise" min="0" step="0.01" value="<%= g && g.franchise !== null ? g.franchise : '' %>"></div>
+    <div><label for="prime">Prime ($, si connue)</label>
+      <input type="number" id="prime" name="prime" min="0" step="0.01" value="<%= g && g.prime !== null ? g.prime : '' %>"></div>
+    <div style="grid-column:1/-1"><span class="petit">Base de garantie</span><br>
+      <% BASES_GARANTIE.forEach((b, i) => { %>
+      <span class="case" style="display:inline-flex;margin-right:12px"><input type="radio" id="base-<%= i %>" name="base" value="<%= b %>"<%= g && g.base === b ? ' checked' : '' %>><label for="base-<%= i %>"><%= NOMS_BASE_GARANTIE[b] %></label></span>
+      <% }) %></div>
+    <div style="grid-column:1/-1"><span class="petit">Avenants</span><br>
+      <% AVENANTS_DO.forEach(([code, libelle], i) => { %>
+      <span class="case" style="display:inline-flex;margin-right:12px"><input type="checkbox" id="av-<%= i %>" name="avenants" value="<%= code %>"<%= g && g.avenants && g.avenants[code] ? ' checked' : '' %>><label for="av-<%= i %>"><%= libelle %></label></span>
+      <% }) %></div>
+    <div class="actions" style="grid-column:1/-1"><button class="btn btn-petit btn-secondaire" type="submit">Enregistrer les garanties</button></div>
+  </form>
+</div>
+
+<div class="carte" id="antecedents">
+  <h2>📋 Antécédents d’assurance</h2>
+  <% const a = s.antecedents; %>
+  <form method="post" action="/do/<%= s.id %>/antecedents" class="grille-form">
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+    <div><label for="ass-actuel">Assureur actuel</label>
+      <input type="text" id="ass-actuel" name="assureur_actuel" maxlength="120" value="<%= a && a.assureur_actuel ? a.assureur_actuel : '' %>"></div>
+    <div><label for="pol-actuelle">N° de police actuelle</label>
+      <input type="text" id="pol-actuelle" name="numero_police_actuelle" maxlength="60" value="<%= a && a.numero_police_actuelle ? a.numero_police_actuelle : '' %>"></div>
+    <div><label for="exp-actuelle">Expiration</label>
+      <input type="date" id="exp-actuelle" name="date_expiration_actuelle" value="<%= a && a.date_expiration_actuelle ? a.date_expiration_actuelle : '' %>"></div>
+    <div><label for="annees-cont">Années d’assurance continue</label>
+      <input type="number" id="annees-cont" name="annees_assurance_continue" min="0" max="80" value="<%= a && a.annees_assurance_continue !== null && a.annees_assurance_continue !== undefined ? a.annees_assurance_continue : '' %>"></div>
+    <div style="grid-column:1/-1">
+      <span class="petit">Réclamations D&O des 5 dernières années (date, nature, montant $, réclamé ou non)</span>
+      <div data-lignes-dynamiques data-existant='<%= a && a.reclamations_5ans ? JSON.stringify(a.reclamations_5ans).replace(/'/g, "&#39;") : "[]" %>'>
+        <div class="lignes"></div>
+        <template><div class="ligne-dynamique" style="display:flex;gap:8px;margin:6px 0">
+          <input data-col="date" type="date" aria-label="Date">
+          <input data-col="nature" type="text" placeholder="Nature (ex. poursuite d’un actionnaire)" maxlength="120">
+          <input data-col="montant" type="number" min="0" step="0.01" placeholder="Montant $" style="width:120px">
+          <select data-col="sinistre" aria-label="Réclamé">
+            <option value="">Réclamé ?</option>
+            <option value="oui">Oui</option>
+            <option value="non">Non</option>
+          </select>
+          <button type="button" class="btn btn-petit btn-secondaire retirer-ligne">✕</button>
+        </div></template>
+        <button type="button" class="btn btn-petit btn-secondaire ajouter-ligne">+ Ajouter une réclamation</button>
+        <input type="hidden" name="reclamations_json" value="[]">
+      </div>
+    </div>
+    <div style="grid-column:1/-1"><label for="poursuites">Poursuites ou actions en justice en cours ou envisagées</label>
+      <textarea id="poursuites" name="poursuites_en_cours" rows="3" placeholder="Ex. : aucune poursuite ou action en justice en cours ou envisagée à la date de la soumission"><%= a && a.poursuites_en_cours ? a.poursuites_en_cours : '' %></textarea></div>
+    <div style="grid-column:1/-1"><span class="petit">Consentements</span><br>
+      <% CONSENTEMENTS_DO.forEach(([code, libelle], i) => { %>
+      <span class="case" style="display:inline-flex;margin-right:12px"><input type="checkbox" id="cons-<%= i %>" name="consentement_<%= code %>"<%= a && a.consentements && a.consentements[code] ? ' checked' : '' %>><label for="cons-<%= i %>"><%= libelle %></label></span>
+      <% }) %></div>
+    <div class="actions" style="grid-column:1/-1"><button class="btn btn-petit btn-secondaire" type="submit">Enregistrer les antécédents</button></div>
+  </form>
+</div>
+
+<div class="carte" id="versions">
+  <h2>🕘 Historique des versions</h2>
+  <p class="petit">Chaque enregistrement fige une version : rien n’est jamais modifié ni effacé.</p>
+  <div class="tableau-deroulant"><table>
+    <thead><tr><th>Version</th><th>Statut</th><th>Créée le</th><th>Par</th><th></th></tr></thead>
+    <tbody>
+    <% versions.forEach((v) => { %>
+      <tr>
+        <td><strong>v<%= v.version %></strong></td>
+        <td><%= NOMS_STATUTS_SOUMISSION[v.statut] || v.statut %></td>
+        <td><%= (v.cree_le || '').slice(0, 16).replace('T', ' ') %></td>
+        <td><%= v.auteur || '—' %></td>
+        <td><a class="btn btn-petit btn-secondaire" href="/do/<%= s.id %>/versions/<%= v.version %>">Voir</a></td>
+      </tr>
+    <% }) %>
+    </tbody>
+  </table></div>
+</div>
+<%- include('../partials/bas') %>

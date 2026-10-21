@@ -1,0 +1,38 @@
+<%- include('../partials/haut', { titre: 'Demande de correction — police ' + police.numero_police }) %>
+<div class="entete-page">
+  <h1>✉️ Demander la correction à l'assureur</h1>
+  <div class="actions" style="margin-top:0">
+    <a class="btn btn-secondaire btn-petit" href="/echeances/police/<%= police.id %>/verifications/<%= v.id %>">← Retour au rapport</a>
+  </div>
+</div>
+
+<div class="carte">
+  <h3><%= clientNom %> — police <%= police.numero_police %></h3>
+  <p class="petit">Ce brouillon cite chaque écart du rapport. Modifiez-le librement : <strong>rien ne part sans votre clic sur « Envoyer »</strong>. Sans compte d'envoi configuré, l'envoi est simulé et journalisé comme tel.</p>
+  <h4>Écarts qui seront cités (<%= ecarts.length %>)</h4>
+  <ul><% ecarts.forEach((l) => { %>
+    <li><span class="badge <%= l.verdict === 'surplus' ? 'badge-violet' : 'badge-echu' %>"><%= NOMS_VERDICTS[l.verdict] || l.verdict %></span>
+      <%= l.resume %></li>
+  <% }) %></ul>
+
+  <form method="post" action="/echeances/police/<%= police.id %>/verifications/<%= v.id %>/correction/envoyer" class="grille-form">
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+    <div>
+      <label for="destinataire">Destinataire (service des modifications de l'assureur)</label>
+      <input type="email" id="destinataire" name="destinataire" value="<%= brouillon.destinataire %>" required>
+    </div>
+    <div>
+      <label for="sujet">Sujet</label>
+      <input type="text" id="sujet" name="sujet" value="<%= brouillon.sujet %>" required>
+    </div>
+    <div class="pleine-largeur">
+      <label for="corps">Message</label>
+      <textarea id="corps" name="corps" rows="14" required><%= brouillon.corps %></textarea>
+    </div>
+    <div class="actions pleine-largeur">
+      <button class="btn" type="submit">✉️ Envoyer la demande de correction</button>
+      <a class="btn btn-secondaire" href="/echeances/police/<%= police.id %>/verifications/<%= v.id %>">Annuler</a>
+    </div>
+  </form>
+</div>
+<%- include('../partials/bas') %>

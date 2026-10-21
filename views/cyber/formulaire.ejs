@@ -1,0 +1,27 @@
+<%- include('../partials/haut', { titre: 'Nouvelle soumission Cyber' }) %>
+<div class="entete-page">
+  <h1>🔐 Nouvelle soumission Cyber</h1>
+  <div><a class="btn btn-secondaire btn-petit" href="/cyber">← Soumissions</a></div>
+</div>
+
+<% if (erreur) { %><div class="alerte alerte-erreur"><%= erreur %></div><% } %>
+
+<div class="carte">
+  <form method="post" action="/cyber" class="grille-form">
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+    <div><label for="client_id">Entreprise cliente *</label>
+      <select id="client_id" name="client_id" required>
+        <option value="">— Choisir —</option>
+        <% entreprises.forEach((e) => { %>
+          <option value="<%= e.id %>"<%= String(valeurs.client_id || '') === String(e.id) ? ' selected' : '' %>><%= e.raison_sociale %></option>
+        <% }) %>
+      </select></div>
+    <div><label for="date_effet_souhaitee">Date d’effet souhaitée</label>
+      <input type="date" id="date_effet_souhaitee" name="date_effet_souhaitee" value="<%= valeurs.date_effet_souhaitee || '' %>"></div>
+    <div style="grid-column:1/-1"><label for="notes">Notes</label>
+      <textarea id="notes" name="notes" rows="3"><%= valeurs.notes || '' %></textarea></div>
+    <div class="actions" style="grid-column:1/-1"><button class="btn" type="submit">Créer la soumission</button></div>
+  </form>
+  <p class="petit">Les mesures de sécurité, garanties et antécédents s’ajoutent ensuite sur la fiche, en nombre illimité.</p>
+</div>
+<%- include('../partials/bas') %>

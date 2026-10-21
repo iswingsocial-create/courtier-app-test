@@ -1,0 +1,42 @@
+<%- include('../partials/haut', { titre: 'Exports' }) %>
+<div class="entete-page"><h1>📤 Exports (sauvegarde / BMS)</h1></div>
+
+<div class="carte">
+  <h3>Exporter un module</h3>
+  <p class="petit">Formats standards pour vos sauvegardes et comme pont vers les plateformes BMS.
+  Les archivés sont exclus par défaut. Périmètre :
+  <strong><%= perimetre %></strong>.</p>
+  <form method="post" action="/exports">
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+    <label for="module">Module</label>
+    <select id="module" name="module" required>
+      <% modules.forEach((m) => { %>
+        <option value="<%= m.cle %>"><%= m.titre %> — <%= m.description %></option>
+      <% }) %>
+    </select>
+    <label>Format</label>
+    <div class="radio-ligne">
+      <label><input type="radio" name="format" value="csv" checked> CSV (Excel, séparateur ;)</label>
+      <label><input type="radio" name="format" value="json"> JSON (structuré)</label>
+    </div>
+    <div class="radio-ligne">
+      <label><input type="checkbox" name="archives" value="1"> Inclure les archivés</label>
+    </div>
+    <div class="actions"><button class="btn" type="submit">Exporter</button></div>
+  </form>
+  <p class="petit">⚠️ Les exports sont journalisés. Aucun mot de passe ni secret n’est jamais exporté.</p>
+</div>
+
+<div class="carte">
+  <h3>Modules exportables</h3>
+  <div class="tableau-deroulant"><table>
+    <thead><tr><th>Module</th><th>Contenu</th></tr></thead>
+    <tbody>
+    <% modules.forEach((m) => { %>
+      <tr><td><strong><%= m.titre %></strong></td><td><%= m.description %></td></tr>
+    <% }) %>
+    </tbody>
+  </table></div>
+</div>
+
+<%- include('../partials/bas') %>

@@ -1,0 +1,35 @@
+<%- include('../partials/haut', { titre: 'Ouvrir un dossier' }) %>
+<div class="entete-page">
+  <h1>🎙️ Ouvrir un dossier</h1>
+</div>
+
+<div class="carte">
+  <p>Chez le client, <strong>dictez</strong> (ou tapez) ce que vous savez déjà ; le système prépare
+    l'entreprise, le contact, la soumission et ses premiers éléments. <strong>Rien n'est créé</strong>
+    avant votre révision et votre clic « Créer le dossier ».</p>
+  <p class="petit">Exemple : « Nouveau dossier : Plomberie Saint-Laurent inc., contact Mario Tremblay,
+    situé au 450 rue des Érables, Montréal. Commence une soumission biens. Bâtiment : construction béton,
+    1998, 12 000 pieds carrés, gicleurs oui. »</p>
+  <form method="post" action="/ouverture/analyser">
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+    <label for="texte-dicte">Votre note (voix ou texte)</label>
+    <div style="display:flex;gap:8px;align-items:flex-start;">
+      <button type="button" id="btn-micro" class="btn btn-secondaire" title="Dicter (voix)">🎤</button>
+      <textarea id="texte-dicte" name="texte" rows="7" style="flex:1;" maxlength="8000"
+        placeholder="Dictez ou tapez : entreprise, contact, produit, bâtiment, véhicules, conducteurs…"></textarea>
+    </div>
+    <p class="petit" id="micro-etat"></p>
+    <button type="submit">🔎 Analyser la note</button>
+  </form>
+  <% if (googleConfiguree) { %>
+    <p class="petit">🗺️ Google Maps est configuré : l'entreprise sera recherchée automatiquement à la révision
+      pour pré-remplir adresse, code postal, téléphone et site web.</p>
+  <% } else { %>
+    <p class="petit">🗺️ Clé Google Maps non configurée — l'ouverture fonctionne sans l'enrichissement
+      (un administrateur peut ajouter la clé dans Admin → Clé IA (Cohere), section Google Maps).</p>
+  <% } %>
+</div>
+
+<script src="/dictee.js" defer></script>
+<script src="/ouverture.js" defer></script>
+<%- include('../partials/bas') %>

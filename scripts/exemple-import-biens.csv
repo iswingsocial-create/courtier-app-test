@@ -1,0 +1,11 @@
+﻿# Exemple : import biens commerciaux — 1 soumission, 2 bâtiments, 2 contenus (1 général), garanties, antécédents
+# Rattachement par « Entreprise » (la soumission biens active la plus récente est utilisée).
+# Créez d’abord l’entreprise « Immeubles Rigaud inc. » (type=entreprise).
+type;Entreprise;Courriel entreprise;Soumission (id);Date d’effet souhaitée;Statut;Notes;Adresse;Ville;Code postal;Type de construction;Année de construction;Superficie (pi²);Nb d’étages;Occupation;Valeur du bâtiment;Gicleurs;Distance caserne (km);Chauffage;Année de la toiture;Bâtiment (id);Adresse du bâtiment;Description;Type de contenu;Valeur;Formule;Franchise;Montant d’assurance;Prime;Avenant — tremblement de terre;Avenant — inondation;Avenant — refoulement d’égout;Avenant — bris de machines;Avenant — perte d’exploitation liée;Assureur actuel;Police actuelle;Expiration actuelle;Années d’assurance continue;Sinistres 5 ans;Consentement crédit;Consentement dossier d’assurance
+soumission_biens;Immeubles Rigaud inc.;;;2026-09-01;brouillon;Soumission immeuble commercial;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+batiment;Immeubles Rigaud inc.;;;;;Toit refait en 2015;4500 boul. Saint-Laurent;Montréal;H2T 1R5;beton;1985;25000;3;bureaux;1800000;oui;2,5;électrique;2015;;;;;;;;;;;;;;;;;;;;;
+batiment;Immeubles Rigaud inc.;;;;;;120 rue Principale;Laval;H7N 2B4;bois;1960;8000;1;restaurant;450000;non;5;gaz;2008;;;;;;;;;;;;;;;;;;;;;
+contenu;Immeubles Rigaud inc.;;;;;;;;;;;;;;;;;;;;4500 boul. Saint-Laurent;Mobilier de bureau;equipements;85000;;;;;;;;;;;;;;;;
+contenu;Immeubles Rigaud inc.;;;;;Contenu général;;;;;;;;;;;;;;;;Améliorations locatives;ameliorations;50000;;;;;;;;;;;;;;;;
+garanties_biens;Immeubles Rigaud inc.;;;;;;;;;;;;;;;;;;;;4500 boul. Saint-Laurent;;;;tous_risques;2500;1800000;;oui;oui;non;non;non;;;;;;;
+antecedents_biens;Immeubles Rigaud inc.;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;Assurance Exemple inc.;BIEN-2024-777;2026-09-01;6;2023-02-14|Dégât d’eau|12000;oui;oui

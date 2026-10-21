@@ -1,0 +1,295 @@
+<%- include('../partials/haut', { titre: 'Soumission auto #' + s.id }) %>
+<div class="entete-page">
+  <h1>🚗 Soumission auto #<%= s.id %></h1>
+  <div>
+    <span class="badge <%= s.statut === 'convertie_police' ? 'badge-ok' : (s.statut === 'soumise' ? 'badge-j' : 'badge-gris') %>"><%= NOMS_STATUTS_SOUMISSION[s.statut] %></span>
+    <a class="btn btn-secondaire btn-petit" href="/auto">← Soumissions</a>
+  </div>
+
+</div>
+<%- include('../partials/manques', { sectionDemandes }) %>
+
+
+<div class="carte">
+  <dl class="dl">
+    <dt>Entreprise</dt><dd><strong><%= clientNom %></strong></dd>
+    <dt>Date d’effet souhaitée</dt><dd><%= s.date_effet_souhaitee || '—' %></dd>
+    <dt>Notes</dt><dd><%= s.notes || '—' %></dd>
+    <dt>Créée le</dt><dd><%= (s.cree_le || '').slice(0, 16).replace('T', ' ') %></dd>
+  </dl>
+  <div class="actions">
+    <a class="btn btn-petit" href="/auto/<%= s.id %>/proposition">📄 Proposition</a>
+    <% Object.keys(NOMS_STATUTS_SOUMISSION).filter((k) => k !== s.statut).forEach((k) => { %>
+    <form method="post" action="/auto/<%= s.id %>/statut" class="inline">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+      <input type="hidden" name="statut" value="<%= k %>">
+      <button class="btn btn-petit btn-secondaire" type="submit">→ <%= NOMS_STATUTS_SOUMISSION[k] %></button>
+    </form>
+    <% }) %>
+    <form method="post" action="/auto/<%= s.id %>/<%= s.archive ? 'desarchiver' : 'archiver' %>" class="inline" data-confirm="<%= s.archive ? 'Désarchiver cette soumission ?' : 'Archiver cette soumission ?' %>">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+      <button class="btn btn-petit btn-secondaire" type="submit"><%= s.archive ? 'Désarchiver' : 'Archiver' %></button>
+    </form>
+  </div>
+</div>
+
+<% if (policeLiee) { %>
+<div class="carte">
+  <h3>🏛️ Police liée</h3>
+  <p>Cette soumission est convertie en <strong>police <%= policeLiee.numero_police %></strong>
+    (<%= policeLiee.assureur %>, effet <%= policeLiee.date_effet %> → échéance <%= policeLiee.date_echeance %>).</p>
+  <div class="actions"><a class="btn btn-petit" href="/echeances/police/<%= policeLiee.id %>">Ouvrir la fiche de gestion</a></div>
+</div>
+<% } else if (s.statut !== 'convertie_police') { %>
+<div class="carte" id="conversion">
+  <h3>🏛️ Convertir en police</h3>
+  <p class="petit">Crée la police automobile (FPQ1) à gérer : les données de la soumission sont figées en référence, puis chaque avenant en cours de terme créera une nouvelle version de la police.</p>
+  <form method="post" action="/auto/<%= s.id %>/convertir" class="grille-form">
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+    <div><label for="numero_police">Numéro de police *</label><input type="text" id="numero_police" name="numero_police" required maxlength="60"></div>
+    <div><label for="assureur_id">Assureur *</label>
+      <select id="assureur_id" name="assureur_id" required>
+        <option value="">— Choisir —</option>
+        <% assureurs.forEach((a) => { %><option value="<%= a.id %>"><%= a.nom %></option><% }) %>
+      </select></div>
+    <div><label for="date_effet">Date d’effet *</label><input type="date" id="date_effet" name="date_effet" required value="<%= s.date_effet_souhaitee || '' %>"></div>
+    <div><label for="date_echeance">Date d’échéance *</label><input type="date" id="date_echeance" name="date_echeance" required></div>
+    <div><label for="franchise">Franchise ($)</label><input type="number" id="franchise" name="franchise" step="0.01" min="0" value="0"></div>
+    <div class="actions"><button class="btn" type="submit">Convertir en police</button></div>
+  </form>
+  <% if (policesDispo.length) { %>
+  <h4>Ou lier une police existante</h4>
+  <form method="post" action="/auto/<%= s.id %>/lier-police" class="grille-form">
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+    <div><label for="police_id">Police auto de <%= clientNom %></label>
+      <select id="police_id" name="police_id" required>
+        <% policesDispo.forEach((p) => { %><option value="<%= p.id %>"><%= p.numero_police %></option><% }) %>
+      </select></div>
+    <div class="actions"><button class="btn btn-secondaire" type="submit">Lier cette police</button></div>
+  </form>
+  <% } %>
+</div>
+<% } %>
+
+<div class="carte" id="conducteurs">
+  <div class="entete-page"><h2>👤 Conducteurs (<%= s.conducteurs.filter((c) => !c.archive).length %>)</h2>
+    <div><button type="button" class="btn btn-petit" data-toggle-cible="form-conducteur">+ Ajouter un conducteur</button></div></div>
+
+  <div id="form-conducteur" hidden>
+    <form method="post" action="/auto/<%= s.id %>/conducteur" class="grille-form">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+      <div><label>Prénom *</label><input type="text" name="prenom" required maxlength="80"></div>
+      <div><label>Nom *</label><input type="text" name="nom" required maxlength="80"></div>
+      <div><label>Date de naissance</label><input type="date" name="date_naissance"></div>
+      <div><label>Sexe</label><select name="sexe"><option value="">—</option><option value="M">M</option><option value="F">F</option></select></div>
+      <div><label>État civil</label><input type="text" name="etat_civil" maxlength="40"></div>
+      <div><label>N° de permis</label><input type="text" name="numero_permis" maxlength="40"></div>
+      <div><label>Province du permis</label><input type="text" name="province_permis" value="QC" maxlength="10"></div>
+      <div><label>Date d’obtention</label><input type="date" name="date_obtention_permis"></div>
+      <div><label>Années d’expérience (Canada)</label><input type="number" name="annees_experience_ca" min="0" max="80"></div>
+      <div><label>Années d’expérience (ailleurs)</label><input type="number" name="annees_experience_ailleurs" min="0" max="80"></div>
+      <div><label>Lien avec l’assuré</label><input type="text" name="lien_assure" maxlength="80" placeholder="Conjoint, enfant, employé…"></div>
+      <div><label>Téléphone</label><input type="tel" name="telephone" maxlength="40"></div>
+      <div><label>Courriel</label><input type="email" name="courriel" maxlength="120"></div>
+      <div><label>Profession</label><input type="text" name="profession" maxlength="80"></div>
+      <div><label>Employeur</label><input type="text" name="employeur" maxlength="120"></div>
+      <div class="case" style="grid-column:1/-1"><input type="checkbox" id="cond-princ" name="conducteur_principal"><label for="cond-princ">Conducteur principal</label></div>
+      <% if (s.vehicules.filter((v) => !v.archive).length) { %>
+      <div style="grid-column:1/-1"><span class="petit">Conduit aussi :</span><br>
+        <% s.vehicules.filter((v) => !v.archive).forEach((v) => { %>
+        <span class="case" style="display:inline-flex;margin-right:12px"><input type="checkbox" id="vc-<%= v.id %>" name="vehicules_conduits" value="<%= v.id %>"><label for="vc-<%= v.id %>"><%= v.annee || '' %> <%= v.marque || '' %> <%= v.modele || '' %></label></span>
+        <% }) %></div>
+      <% } %>
+      <div style="grid-column:1/-1">
+        <span class="petit">Infractions (date, type, points d’inaptitude)</span>
+        <div data-lignes-dynamiques>
+          <div class="lignes"></div>
+          <template><div class="ligne-dynamique" style="display:flex;gap:8px;margin:6px 0">
+            <input data-col="date" type="date" aria-label="Date">
+            <input data-col="type" type="text" placeholder="Type" maxlength="120">
+            <input data-col="points" type="number" min="0" placeholder="Points" style="width:90px">
+            <button type="button" class="btn btn-petit btn-secondaire retirer-ligne">✕</button>
+          </div></template>
+          <button type="button" class="btn btn-petit btn-secondaire ajouter-ligne">+ Ajouter une infraction</button>
+          <input type="hidden" name="infractions_json" value="[]">
+        </div>
+      </div>
+      <div style="grid-column:1/-1"><label>Suspensions (une par ligne)</label>
+        <textarea name="suspensions" rows="2"></textarea></div>
+      <div class="actions" style="grid-column:1/-1"><button class="btn btn-petit" type="submit">Ajouter ce conducteur</button></div>
+    </form>
+  </div>
+
+  <div class="tableau-deroulant"><table>
+    <thead><tr><th>Nom</th><th>Naissance</th><th>Permis</th><th>Lien</th><th>Principal</th><th></th></tr></thead>
+    <tbody>
+    <% s.conducteurs.filter((c) => !c.archive).forEach((c) => { %>
+      <tr>
+        <td><strong><%= c.prenom %> <%= c.nom %></strong>
+          <% if (c.infractions && c.infractions.length) { %><br><span class="petit">⚠ <%= c.infractions.length %> infraction(s)</span><% } %></td>
+        <td><%= c.date_naissance || '—' %></td>
+        <td><%= c.numero_permis ? c.numero_permis + ' (' + (c.province_permis || 'QC') + ')' : '—' %></td>
+        <td><%= c.lien_assure || '—' %></td>
+        <td><%= c.conducteur_principal ? 'Oui' : '—' %></td>
+        <td><form method="post" action="/auto/conducteur/<%= c.id %>/archiver" class="inline" data-confirm="Archiver ce conducteur ?">
+          <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+          <button class="btn btn-petit btn-secondaire" type="submit">Archiver</button></form></td>
+      </tr>
+    <% }) %>
+    </tbody>
+  </table></div>
+  <% if (!s.conducteurs.filter((c) => !c.archive).length) { %><p class="petit">Aucun conducteur pour l’instant.</p><% } %>
+  <% const condArch = s.conducteurs.filter((c) => c.archive); %>
+  <% if (condArch.length) { %><p class="petit">Archivés : <% condArch.forEach((c, i) => { %><%= i ? ', ' : '' %><%= c.prenom %> <%= c.nom %> <form method="post" action="/auto/conducteur/<%= c.id %>/desarchiver" class="inline"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button class="lien" type="submit">restaurer</button></form><% }) %></p><% } %>
+</div>
+<div class="carte" id="vehicules">
+  <div class="entete-page"><h2>🚙 Véhicules (<%= s.vehicules.filter((v) => !v.archive).length %>)</h2>
+    <div><button type="button" class="btn btn-petit" data-toggle-cible="form-vehicule">+ Ajouter un véhicule</button></div></div>
+
+  <div id="form-vehicule" hidden>
+    <form method="post" action="/auto/<%= s.id %>/vehicule" class="grille-form">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+      <div><label>Année</label><input type="number" name="annee" min="1950" max="2035"></div>
+      <div><label>Marque</label><input type="text" name="marque" maxlength="60"></div>
+      <div><label>Modèle</label><input type="text" name="modele" maxlength="60"></div>
+      <div><label>Version / finition</label><input type="text" name="version_finition" maxlength="80"></div>
+      <div><label>NIV (VIN)</label><input type="text" name="vin" maxlength="30"></div>
+      <div><label>Carrosserie</label><input type="text" name="carrosserie" maxlength="40"></div>
+      <div><label>Neuf / occasion</label><select name="neuf_occasion"><option value="">—</option><option value="neuf">Neuf</option><option value="occasion">Occasion</option></select></div>
+      <div><label>Date d’achat</label><input type="date" name="date_achat"></div>
+      <div><label>Prix d’achat ($)</label><input type="number" name="prix_achat" min="0" step="0.01"></div>
+      <div><label>Valeur estimée ($)</label><input type="number" name="valeur_estimee" min="0" step="0.01"></div>
+      <div><label>Financement</label><select name="financement"><option value="">—</option><option value="comptant">Comptant</option><option value="finance">Financé</option><option value="loue">Loué</option></select></div>
+      <div><label>Nom du créancier / locateur</label><input type="text" name="creancier_nom" maxlength="120"></div>
+      <div><label>Usage</label><select name="usage"><option value="">—</option><option value="promenade">Promenade</option><option value="navette">Navette travail</option><option value="affaires">Affaires</option></select></div>
+      <div><label>Km annuel</label><input type="number" name="km_annuel" min="0"></div>
+      <div><label>% hors Québec</label><input type="number" name="pct_hors_quebec" min="0" max="100"></div>
+      <div><label>Stationnement</label><input type="text" name="stationnement" maxlength="80" placeholder="Garage, entrée, rue…"></div>
+      <% if (s.conducteurs.filter((c) => !c.archive).length) { %>
+      <div><label>Conducteur principal</label><select name="conducteur_principal_id"><option value="">—</option>
+        <% s.conducteurs.filter((c) => !c.archive).forEach((c) => { %><option value="<%= c.id %>"><%= c.prenom %> <%= c.nom %></option><% }) %>
+      </select></div>
+      <% } %>
+      <div class="case"><input type="checkbox" id="v-tag" name="antivol_tag"><label for="v-tag">Antivol TAG</label></div>
+      <div class="case"><input type="checkbox" id="v-pneus" name="pneus_hiver"><label for="v-pneus">Pneus d’hiver</label></div>
+      <div class="case"><input type="checkbox" id="v-remisage" name="remisage_hiver"><label for="v-remisage">Remisage l’hiver</label></div>
+      <div class="case"><input type="checkbox" id="v-remorque" name="remorque"><label for="v-remorque">Remorque</label></div>
+      <div style="grid-column:1/-1"><label>Modifications (une par ligne)</label><textarea name="modifications" rows="2"></textarea></div>
+      <div class="actions" style="grid-column:1/-1"><button class="btn btn-petit" type="submit">Ajouter ce véhicule</button></div>
+    </form>
+  </div>
+
+  <div class="tableau-deroulant"><table>
+    <thead><tr><th>Véhicule</th><th>NIV</th><th>Usage</th><th>Financement</th><th>Garanties</th><th></th></tr></thead>
+    <tbody>
+    <% s.vehicules.filter((v) => !v.archive).forEach((v) => { %>
+      <tr>
+        <td><strong><%= [v.annee, v.marque, v.modele].filter(Boolean).join(' ') || '—' %></strong></td>
+        <td><%= v.vin || '—' %></td>
+        <td><%= v.usage || '—' %></td>
+        <td><%= v.financement || '—' %></td>
+        <td><%= v.garanties && v.garanties.protection_b ? NOMS_PROTECTION_B[v.garanties.protection_b] : '—' %></td>
+        <td><form method="post" action="/auto/vehicule/<%= v.id %>/archiver" class="inline" data-confirm="Archiver ce véhicule ?">
+          <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+          <button class="btn btn-petit btn-secondaire" type="submit">Archiver</button></form></td>
+      </tr>
+    <% }) %>
+    </tbody>
+  </table></div>
+  <% if (!s.vehicules.filter((v) => !v.archive).length) { %><p class="petit">Aucun véhicule pour l’instant.</p><% } %>
+  <% const vehArch = s.vehicules.filter((v) => v.archive); %>
+  <% if (vehArch.length) { %><p class="petit">Archivés : <% vehArch.forEach((v, i) => { %><%= i ? ', ' : '' %><%= [v.annee, v.marque, v.modele].filter(Boolean).join(' ') %> <form method="post" action="/auto/vehicule/<%= v.id %>/desarchiver" class="inline"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button class="lien" type="submit">restaurer</button></form><% }) %></p><% } %>
+</div>
+
+<div class="carte" id="garanties">
+  <h2>🛡️ Garanties par véhicule</h2>
+  <% if (!s.vehicules.filter((v) => !v.archive).length) { %><p class="petit">Ajoutez d’abord un véhicule.</p><% } %>
+  <% s.vehicules.filter((v) => !v.archive).forEach((v) => { const g = v.garanties; %>
+  <h3><%= [v.annee, v.marque, v.modele].filter(Boolean).join(' ') || ('Véhicule #' + v.id) %></h3>
+  <% if (g) { %><p class="petit">Actuel : RC <%= g.rc_montant ? Number(g.rc_montant).toLocaleString('fr-CA') + ' $' : '—' %> · <%= g.protection_b ? NOMS_PROTECTION_B[g.protection_b] : '—' %> · franchise <%= g.franchise_b ? Number(g.franchise_b).toLocaleString('fr-CA') + ' $' : '—' %></p><% } %>
+  <form method="post" action="/auto/<%= s.id %>/vehicule/<%= v.id %>/garanties" class="grille-form">
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+    <div><label for="rc-<%= v.id %>">Responsabilité civile</label>
+      <select id="rc-<%= v.id %>" name="rc_montant">
+        <option value="">—</option>
+        <% RC_MONTANTS.forEach((m) => { %><option value="<%= m %>"<%= g && String(g.rc_montant) === String(m) ? ' selected' : '' %>><%= NOMS_RC[m] %></option><% }) %>
+      </select></div>
+    <div><label for="pb-<%= v.id %>">Protection B — dommages au véhicule</label>
+      <select id="pb-<%= v.id %>" name="protection_b">
+        <option value="">— Aucune —</option>
+        <% PROTECTIONS_B.forEach((p) => { %><option value="<%= p %>"<%= g && g.protection_b === p ? ' selected' : '' %>><%= NOMS_PROTECTION_B[p] %></option><% }) %>
+      </select></div>
+    <div><label for="fr-<%= v.id %>">Franchise ($)</label>
+      <input type="number" id="fr-<%= v.id %>" name="franchise_b" min="0" step="0.01" value="<%= g && g.franchise_b !== null ? g.franchise_b : '' %>"></div>
+    <div><label for="prime-<%= v.id %>">Prime ($, si connue)</label>
+      <input type="number" id="prime-<%= v.id %>" name="prime" min="0" step="0.01" value="<%= g && g.prime !== null ? g.prime : '' %>"></div>
+    <div style="grid-column:1/-1"><span class="petit">Avenants (FAQ)</span><br>
+      <% AVENANTS_FAQ.forEach(([code, libelle], i) => { %>
+      <span class="case" style="display:inline-flex;margin-right:12px"><input type="checkbox" id="av-<%= v.id %>-<%= i %>" name="avenants" value="<%= code %>"<%= g && g.avenants && g.avenants[code] ? ' checked' : '' %>><label for="av-<%= v.id %>-<%= i %>"><%= libelle %></label></span>
+      <% }) %></div>
+    <div class="actions" style="grid-column:1/-1"><button class="btn btn-petit btn-secondaire" type="submit">Enregistrer les garanties</button></div>
+  </form>
+  <% }) %>
+</div>
+<div class="carte" id="antecedents">
+  <h2>📋 Antécédents d’assurance</h2>
+  <% const a = s.antecedents; %>
+  <form method="post" action="/auto/<%= s.id %>/antecedents" class="grille-form">
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+    <div><label for="ass-actuel">Assureur actuel</label>
+      <input type="text" id="ass-actuel" name="assureur_actuel" maxlength="120" value="<%= a && a.assureur_actuel ? a.assureur_actuel : '' %>"></div>
+    <div><label for="pol-actuelle">N° de police actuelle</label>
+      <input type="text" id="pol-actuelle" name="numero_police_actuelle" maxlength="60" value="<%= a && a.numero_police_actuelle ? a.numero_police_actuelle : '' %>"></div>
+    <div><label for="exp-actuelle">Expiration</label>
+      <input type="date" id="exp-actuelle" name="date_expiration_actuelle" value="<%= a && a.date_expiration_actuelle ? a.date_expiration_actuelle : '' %>"></div>
+    <div><label for="annees-cont">Années d’assurance continue</label>
+      <input type="number" id="annees-cont" name="annees_assurance_continue" min="0" max="80" value="<%= a && a.annees_assurance_continue !== null ? a.annees_assurance_continue : '' %>"></div>
+    <div class="case"><input type="checkbox" id="resil" name="resiliation_ant"<%= a && a.resiliation_ant ? ' checked' : '' %>><label for="resil">Résiliation par un assureur</label></div>
+    <div><label for="resil-det">Détails résiliation</label>
+      <input type="text" id="resil-det" name="resiliation_details" maxlength="200" value="<%= a && a.resiliation_details ? a.resiliation_details : '' %>"></div>
+    <div class="case"><input type="checkbox" id="nonpaye" name="non_paiement_ant"<%= a && a.non_paiement_ant ? ' checked' : '' %>><label for="nonpaye">Annulation pour non-paiement</label></div>
+    <div class="case"><input type="checkbox" id="faillite" name="faillite"<%= a && a.faillite ? ' checked' : '' %>><label for="faillite">Faillite</label></div>
+    <div class="case"><input type="checkbox" id="casier" name="casier_judiciaire"<%= a && a.casier_judiciaire ? ' checked' : '' %>><label for="casier">Casier judiciaire</label></div>
+    <div style="grid-column:1/-1">
+      <span class="petit">Sinistres des 6 dernières années (date, type, montant $, responsabilité)</span>
+      <div data-lignes-dynamiques data-existant='<%= a && a.sinistres_6ans ? JSON.stringify(a.sinistres_6ans).replace(/'/g, "&#39;") : "[]" %>'>
+        <div class="lignes"></div>
+        <template><div class="ligne-dynamique" style="display:flex;gap:8px;margin:6px 0">
+          <input data-col="date" type="date" aria-label="Date">
+          <input data-col="type" type="text" placeholder="Type" maxlength="120">
+          <input data-col="montant" type="number" min="0" step="0.01" placeholder="Montant $" style="width:120px">
+          <input data-col="responsabilite" type="text" placeholder="Responsabilité" maxlength="60">
+          <button type="button" class="btn btn-petit btn-secondaire retirer-ligne">✕</button>
+        </div></template>
+        <button type="button" class="btn btn-petit btn-secondaire ajouter-ligne">+ Ajouter un sinistre</button>
+        <input type="hidden" name="sinistres_json" value="[]">
+      </div>
+    </div>
+    <div style="grid-column:1/-1"><span class="petit">Consentements</span><br>
+      <span class="case" style="display:inline-flex;margin-right:12px"><input type="checkbox" id="cons-credit" name="consentement_credit"<%= a && a.consentements && a.consentements.credit ? ' checked' : '' %>><label for="cons-credit">Dossier de crédit</label></span>
+      <span class="case" style="display:inline-flex;margin-right:12px"><input type="checkbox" id="cons-saaq" name="consentement_dossier_saaq"<%= a && a.consentements && a.consentements.dossier_saaq ? ' checked' : '' %>><label for="cons-saaq">Dossier SAAQ</label></span>
+      <span class="case" style="display:inline-flex;margin-right:12px"><input type="checkbox" id="cons-fcsa" name="consentement_fcsa"<%= a && a.consentements && a.consentements.fcsa ? ' checked' : '' %>><label for="cons-fcsa">FCSA</label></span>
+    </div>
+    <div class="actions" style="grid-column:1/-1"><button class="btn btn-petit btn-secondaire" type="submit">Enregistrer les antécédents</button></div>
+  </form>
+</div>
+
+<div class="carte" id="versions">
+  <h2>🕘 Historique des versions</h2>
+  <p class="petit">Chaque enregistrement fige une version : rien n’est jamais modifié ni effacé.</p>
+  <div class="tableau-deroulant"><table>
+    <thead><tr><th>Version</th><th>Statut</th><th>Créée le</th><th>Par</th><th></th></tr></thead>
+    <tbody>
+    <% versions.forEach((v) => { %>
+      <tr>
+        <td><strong>v<%= v.version %></strong></td>
+        <td><%= NOMS_STATUTS_SOUMISSION[v.statut] || v.statut %></td>
+        <td><%= (v.cree_le || '').slice(0, 16).replace('T', ' ') %></td>
+        <td><%= v.auteur || '—' %></td>
+        <td><a class="btn btn-petit btn-secondaire" href="/auto/<%= s.id %>/versions/<%= v.version %>">Voir</a></td>
+      </tr>
+    <% }) %>
+    </tbody>
+  </table></div>
+</div>
+<%- include('../partials/bas') %>

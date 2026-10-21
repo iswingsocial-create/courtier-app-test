@@ -1,0 +1,39 @@
+<% /* Correspondance d'un courriel entrant avec une demande d'informations
+     (boucle courriel, étape 3) : demande détectée automatiquement (fil ou
+     objet) ou choix manuel parmi les demandes ouvertes du cabinet. */ %>
+<%- include('../partials/haut', { titre: 'Analyser la réponse' }) %>
+<div class="entete-page">
+  <h1>🤖 Analyser la réponse</h1>
+  <div><a class="btn btn-secondaire btn-petit" href="/courriels/<%= courriel.id %>">← Retour au message</a></div>
+</div>
+
+<div class="carte">
+  <p><strong>Message :</strong> <%= courriel.sujet %></p>
+  <p class="petit">De : <%= courriel.expediteur %> · Reçu le <%= (courriel.date_courriel || courriel.cree_le || '').slice(0, 16) %></p>
+  <p>Le corps du message et ses pièces jointes seront analysés (moteur local ou Cohere selon vos réglages) ; les propositions passeront par l'écran de révision habituel — <strong>rien ne sera inséré sans votre confirmation</strong>.</p>
+
+  <% if (demandeDetectee) { %>
+    <p class="alerte" style="background:#e6f7e6;">✅ Demande correspondante détectée automatiquement : <strong>demande #<%= demandeDetectee.id %></strong> — soumission <%= NOMS_PRODUITS[demandeDetectee.produit] || demandeDetectee.produit %> #<%= demandeDetectee.soumission_id %> (<%= demandeDetectee.nbRestantes %> question(s) en attente).</p>
+    <form method="post" action="/courriels/<%= courriel.id %>/analyser-reponse">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+      <input type="hidden" name="demande_id" value="<%= demandeDetectee.id %>">
+      <button class="btn" type="submit">🤖 Analyser la réponse pour cette demande</button>
+    </form>
+  <% } %>
+
+  <% if (demandesOuvertes.length) { %>
+    <h4 style="margin-top:16px;"><%= demandeDetectee ? 'Ou choisir une autre demande ouverte :' : 'Choisissez la demande à laquelle répond ce message :' %></h4>
+    <form method="post" action="/courriels/<%= courriel.id %>/analyser-reponse">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+      <select name="demande_id" style="width:100%;">
+        <% demandesOuvertes.forEach(function (d) { %>
+          <option value="<%= d.id %>">Demande #<%= d.id %> — <%= NOMS_PRODUITS[d.produit] || d.produit %> #<%= d.soumission_id %> — envoyée le <%= (d.envoyee_le || '').slice(0, 10) %> à <%= d.destinataire %> (<%= d.nbRestantes %> question(s) en attente)</option>
+        <% }); %>
+      </select>
+      <p><button class="btn" type="submit">🤖 Analyser la réponse</button></p>
+    </form>
+  <% } else if (!demandeDetectee) { %>
+    <p class="alerte">Aucune demande d'informations ouverte (envoyée ou partiellement complétée) dans ce cabinet : créez d'abord une demande depuis la fiche d'une soumission.</p>
+  <% } %>
+</div>
+<%- include('../partials/bas') %>

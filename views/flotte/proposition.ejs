@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Proposition d’assurance flotte automobile — Soumission flotte #<%= p.soumissionId %></title>
+<link rel="stylesheet" href="/proposition.css">
+</head>
+<body>
+<div class="actions noprint">
+  <button class="btn" type="button" data-action="imprimer">🖨️ Imprimer</button>
+  <a class="btn" href="/flotte/<%= p.soumissionId %>/proposition.pdf<%= vParam ? '?v=' + vParam : '' %>">⬇️ Télécharger PDF</a>
+  <a class="btn btn-secondaire" href="/flotte/<%= p.soumissionId %>">← Retour à la soumission</a>
+</div>
+<script src="/proposition.js"></script>
+<div class="page">
+  <p class="cabinet"><%= p.cabinetNom %></p>
+  <h1>Proposition d’assurance flotte automobile</h1>
+  <p class="sous-titre">Formulaire de proposition — Flotte automobile commerciale (Québec)</p>
+  <p class="ref">Soumission flotte #<%= p.soumissionId %> — version v<%= p.versionNumero %><%= p.versionFigee ? ' (figée)' : '' %>
+    <% if (p.dateEffet) { %> · Date d’effet souhaitée : <%= p.dateEffet %><% } %></p>
+
+  <h2>1. Proposant / assuré</h2>
+  <dl>
+    <dt>Nom</dt><dd><strong><%= p.client ? p.client.raison_sociale : '—' %></strong></dd>
+    <% if (p.client && (p.client.adresse || p.client.ville || p.client.code_postal)) { %>
+    <dt>Adresse</dt><dd><%= [p.client.adresse, p.client.ville, p.client.code_postal].filter(Boolean).join(', ') %></dd>
+    <% } %>
+    <% if (p.client && p.client.telephone) { %><dt>Téléphone</dt><dd><%= p.client.telephone %></dd><% } %>
+    <% if (p.client && p.client.courriel) { %><dt>Courriel</dt><dd><%= p.client.courriel %></dd><% } %>
+    <% if (p.client && (p.client.prenom || p.client.nom)) { %><dt>Personne-contact</dt><dd><%= [p.client.prenom, p.client.nom].filter(Boolean).join(' ') %><% if (p.client.titre_contact) { %> (<%= p.client.titre_contact %>)<% } %></dd><% } %>
+    <% if (p.courtierNom) { %><dt>Courtier responsable</dt><dd><%= p.courtierNom %></dd><% } %>
+    <% if (p.notes) { %><dt>Notes</dt><dd><%= p.notes %></dd><% } %>
+  </dl>
+
+  <h2>2. Résumé de la flotte</h2>
+  <dl>
+    <dt>Véhicules détaillés</dt><dd><strong><%= p.resume.nbVehicules %></strong><% if (p.resume.nbVehiculesDeclares !== null && p.resume.nbVehiculesDeclares !== p.resume.nbVehicules) { %> (<%= p.resume.nbVehiculesDeclares %> déclarés en en-tête)<% } %></dd>
+    <dt>Valeur totale des véhicules</dt><dd><strong><%= p.resume.valeurTotale_libelle %></strong></dd>
+    <dt>Usage dominant</dt><dd><%= p.resume.usageDominant_libelle %></dd>
+    <% if (p.resume.usagesLibelles.length) { %><dt>Usages des véhicules</dt><dd><%= p.resume.usagesLibelles.join(', ') %></dd><% } %>
+    <dt>Rayon d’opération principal</dt><dd><%= p.resume.rayonPrincipal_libelle %></dd>
+    <% if (p.resume.rayonMaxVehicules) { %><dt>Rayon maximal (véhicules)</dt><dd><%= Number(p.resume.rayonMaxVehicules).toLocaleString('fr-CA') %> km</dd><% } %>
+    <% if (p.entete.assureur) { %><dt>Assureur visé</dt><dd><%= p.entete.assureur %></dd><% } %>
+    <% if (p.entete.date_echeance_visee) { %><dt>Date d’échéance visée</dt><dd><%= p.entete.date_echeance_visee %></dd><% } %>
+  </dl>
+
+  <h2>3. Véhicules (<%= p.vehicules.length %>)</h2>
+  <% if (p.vehicules.length) { %>
+  <table>
+    <thead><tr><th>Véhicule</th><th>NIV</th><th>Type</th><th>Usage</th><th>Rayon</th><th>Valeur</th><th>Conducteur principal</th></tr></thead>
+    <tbody>
+    <% p.vehicules.forEach((x) => { %>
+      <tr>
+        <td><strong><%= x.designation %></strong><% if (x.lieu_remisage) { %><br>Remisage : <%= x.lieu_remisage %><% } %><% if (x.equipements_libelles.length) { %><br>Équipements : <%= x.equipements_libelles.join(', ') %><% } %></td>
+        <td><%= x.niv || '—' %></td>
+        <td><%= x.type_libelle %></td>
+        <td><%= x.usage_libelle %></td>
+        <td><%= x.rayon_libelle %></td>
+        <td><%= x.valeur_libelle %></td>
+        <td><%= x.conducteur_principal_libelle %></td>
+      </tr>
+    <% }) %>
+    </tbody>
+  </table>
+  <% } else { %><p>Aucun véhicule saisi.</p><% } %>
+
+  <h2>4. Conducteurs (<%= p.conducteurs.length %>)</h2>
+  <% if (p.conducteurs.length) { %>
+  <table>
+    <thead><tr><th>Conducteur</th><th>Permis</th><th>Expérience</th><th>Sinistres 5 ans</th><th>Infractions 3 ans</th></tr></thead>
+    <tbody>
+    <% p.conducteurs.forEach((x) => { %>
+      <tr>
+        <td><strong><%= x.nom_complet %></strong><% if (x.date_naissance) { %><br>Né(e) le <%= x.date_naissance %><% } else if (x.age) { %><br><%= x.age %> ans<% } %><% if (x.formations_libelles.length) { %><br>Formations : <%= x.formations_libelles.join(' ; ') %><% } %></td>
+        <td><%= x.numero_permis || '—' %><% if (x.classe_permis) { %><br>Classe <%= x.classe_permis %><% } %></td>
+        <td><%= x.experience_libelle %><% if (x.annees_experience_lourds) { %><br>dont <%= x.experience_lourds_libelle %> en véhicules lourds<% } %></td>
+        <td><%= x.sinistres_libelles.length ? x.sinistres_libelles.join(' ; ') : 'Aucun' %></td>
+        <td><%= x.infractions_libelles.length ? x.infractions_libelles.join(' ; ') : 'Aucune' %></td>
+      </tr>
+    <% }) %>
+    </tbody>
+  </table>
+  <% } else { %><p>Aucun conducteur saisi.</p><% } %>
+
+  <h2>5. Garanties proposées</h2>
+  <% const g = p.garanties; %>
+  <% if (g) { %>
+  <dl>
+    <dt>Limite de responsabilité civile (chapitre A)</dt><dd><strong><%= g.limite_rc_libelle %></strong></dd>
+    <dt>Franchise collision / renversement</dt><dd><%= g.franchise_collision_libelle %></dd>
+    <dt>Franchise versement</dt><dd><%= g.franchise_versement_libelle %></dd>
+    <% if (g.prime && g.prime_libelle !== '—') { %><dt>Prime</dt><dd><%= g.prime_libelle %></dd><% } %>
+    <% if (g.avenants_libelles.length) { %><dt>Avenants</dt><dd><%= g.avenants_libelles.join(', ') %></dd><% } %>
+  </dl>
+  <p><em><strong>Tout conducteur doit détenir un permis de conduire valide de la classe appropriée au véhicule conduit ; un conducteur non déclaré, ou dont le dossier de conduite n’a pas été vérifié, ne peut prendre le volant d’un véhicule de la flotte.</strong></em></p>
+  <p><em><strong>Tout véhicule ajouté, remplacé ou retiré doit être déclaré sans délai au courtier : un véhicule non déclaré n’est pas couvert, et l’usage réel de chaque véhicule doit correspondre à l’usage déclaré.</strong></em></p>
+  <% if (g.faq43) { %><p><em><strong>La FAQ 43 (valeur à neuf) est souscrite : en cas de perte totale d’un véhicule visé par l’avenant, l’indemnité est calculée sans dépréciation, sur la valeur à neuf du véhicule.</strong></em></p><% } %>
+  <% } else { %><p>Non définies.</p><% } %>
+
+  <h2>6. Antécédents d’assurance</h2>
+  <% const a = p.antecedents; %>
+  <% if (a) { %>
+  <dl>
+    <dt>Assureur actuel</dt><dd><%= a.assureur_actuel || '—' %></dd>
+    <dt>Police actuelle</dt><dd><%= a.numero_police_actuelle || '—' %><% if (a.date_expiration_actuelle) { %> (expire le <%= a.date_expiration_actuelle %>)<% } %></dd>
+    <dt>Années d’assurance flotte continue</dt><dd><%= a.annees_assurance_flotte_continue || '—' %></dd>
+    <dt>Sinistres de la flotte (5 ans)</dt><dd><%= (a.sinistres_flotte_libelles || []).length ? a.sinistres_flotte_libelles.join(' ; ') : 'Aucun' %></dd>
+    <dt>Ratio de pertes</dt><dd><%= a.ratio_pertes_libelle %></dd>
+    <% if (a.refus_annulation_ant) { %><dt>Refus ou annulation antérieur</dt><dd><%= a.refus_annulation_details || 'Oui' %></dd><% } %>
+  </dl>
+  <% } else { %><p>Non renseignés.</p><% } %>
+
+  <h2>7. Consentements</h2>
+  <% if (p.consentementsLibelles.length) { %>
+  <p><% p.consentementsLibelles.forEach((l, i) => { %>☑ <%= l %><% if (i < p.consentementsLibelles.length - 1) { %><br><% } %><% }) %></p>
+  <% } else { %><p>Aucun consentement enregistré.</p><% } %>
+
+  <p class="pied">Document généré le <%= p.genereLe %> à partir de la soumission flotte #<%= p.soumissionId %> (version v<%= p.versionNumero %><%= p.versionFigee ? ', figée' : '' %>) — proposition conforme à la version figée, vérifiez avant envoi à l’assureur.</p>
+
+  <div class="signatures">
+    <div><div class="ligne">Signature du proposant</div><p>Date : _______________</p></div>
+    <div><div class="ligne">Signature du courtier</div><p>Date : _______________</p></div>
+  </div>
+</div>
+<div class="actions noprint"><a class="btn btn-secondaire" href="/flotte/<%= p.soumissionId %>">← Retour à la soumission</a></div>
+</body>
+</html>

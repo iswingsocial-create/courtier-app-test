@@ -17,6 +17,165 @@
   </form>
 </div>
 
+<div class="carte">
+  <h3>🚗 Import auto — soumissions FPQ1</h3>
+  <p>Les en-têtes sont en français (miroir des <a href="/exports">exports</a>).
+     Rattachement : colonne <code>Soumission (id)</code>, ou <code>Entreprise</code>
+     (la soumission active la plus récente est utilisée — créez d’abord une ligne
+     <code>type=soumission</code>).</p>
+  <ul>
+    <% modelesAuto.forEach((m) => { %>
+      <li><a href="/import/modele-auto/<%= m.cle %>">Télécharger le modèle « <%= m.titre %> »</a></li>
+    <% }) %>
+  </ul>
+  <p class="petit">Types acceptés : <code>soumission</code>, <code>conducteur</code>,
+     <code>vehicule</code>, <code>antecedents</code>.
+     Chaque ligne crée une version (règle d’or : rien n’est écrasé).
+     Les lignes commençant par <code>#</code> sont des commentaires et sont ignorées.</p>
+</div>
+
+<div class="carte">
+  <h3>🏢 Import biens — soumissions commerciales</h3>
+  <p>Les en-têtes sont en français (miroir des <a href="/exports">exports</a>).
+     Rattachement : colonne <code>Soumission (id)</code>, ou <code>Entreprise</code>
+     (la soumission biens active la plus récente est utilisée — créez d’abord une ligne
+     <code>type=soumission_biens</code>).</p>
+  <ul>
+    <% modelesBiens.forEach((m) => { %>
+      <li><a href="/import/modele-biens/<%= m.cle %>">Télécharger le modèle « <%= m.titre %> »</a></li>
+    <% }) %>
+  </ul>
+  <p class="petit">Types acceptés : <code>soumission_biens</code>, <code>batiment</code>,
+     <code>contenu</code>, <code>garanties_biens</code>, <code>antecedents_biens</code>.
+     Les contenus peuvent se rattacher à un bâtiment (<code>Bâtiment (id)</code> ou
+     <code>Adresse du bâtiment</code>) ou rester généraux. Chaque ligne crée une
+     version (règle d’or : rien n’est écrasé).
+     Les lignes commençant par <code>#</code> sont des commentaires et sont ignorées.</p>
+</div>
+
+<div class="carte">
+  <h3>🛡️ Import RC — responsabilité civile</h3>
+  <p>Les en-têtes sont en français (miroir des <a href="/exports">exports</a>).
+     Rattachement : colonne <code>Soumission (id)</code>, ou <code>Entreprise</code>
+     (la soumission RC active la plus récente est utilisée — créez d’abord une ligne
+     <code>type=soumission_rc</code>).</p>
+  <ul>
+    <% modelesRc.forEach((m) => { %>
+      <li><a href="/import/modele-rc/<%= m.cle %>">Télécharger le modèle « <%= m.titre %> »</a></li>
+    <% }) %>
+  </ul>
+  <p class="petit">Types acceptés : <code>soumission_rc</code>, <code>lieu_rc</code>,
+     <code>garanties_rc</code>, <code>antecedents_rc</code>.
+     Les garanties se rattachent à un lieu (<code>Lieu (id)</code> ou
+     <code>Adresse du lieu</code>). Chaque ligne crée une
+     version (règle d’or : rien n’est écrasé).
+     Les lignes commençant par <code>#</code> sont des commentaires et sont ignorées.</p>
+</div>
+
+<div class="carte">
+  <h3>🔐 Import cyber — cyberrisques</h3>
+  <p>Les en-têtes sont en français (miroir des <a href="/exports">exports</a>).
+     Rattachement : colonne <code>Soumission (id)</code>, ou <code>Entreprise</code>
+     (la soumission cyber active la plus récente est utilisée — créez d’abord une ligne
+     <code>type=soumission_cyber</code>).</p>
+  <ul>
+    <% modelesCyber.forEach((m) => { %>
+      <li><a href="/import/modele-cyber/<%= m.cle %>">Télécharger le modèle « <%= m.titre %> »</a></li>
+    <% }) %>
+  </ul>
+  <p class="petit">Types acceptés : <code>soumission_cyber</code>, <code>mesure_cyber</code>,
+     <code>garanties_cyber</code>, <code>antecedents_cyber</code>.
+     Chaque ligne crée une version (règle d’or : rien n’est écrasé).
+     Les lignes commençant par <code>#</code> sont des commentaires et sont ignorées.</p>
+</div>
+
+<div class="carte">
+  <h3>💼 Import E&O — responsabilité professionnelle</h3>
+  <p>Les en-têtes sont en français (miroir des <a href="/exports">exports</a>).
+     Rattachement : colonne <code>Soumission (id)</code>, ou <code>Entreprise</code>
+     (la soumission E&O active la plus récente est utilisée — créez d’abord une ligne
+     <code>type=soumission_eo</code>).</p>
+  <ul>
+    <% modelesEo.forEach((m) => { %>
+      <li><a href="/import/modele-eo/<%= m.cle %>">Télécharger le modèle « <%= m.titre %> »</a></li>
+    <% }) %>
+  </ul>
+  <p class="petit">Types acceptés : <code>soumission_eo</code>, <code>activite_eo</code>,
+     <code>garanties_eo</code>, <code>antecedents_eo</code>.
+     Chaque ligne crée une version (règle d’or : rien n’est écrasé).
+     Les lignes commençant par <code>#</code> sont des commentaires et sont ignorées.</p>
+</div>
+
+<div class="carte">
+  <h3>🛡️ Import D&O — administrateurs et dirigeants</h3>
+  <p>Les en-têtes sont en français (miroir des <a href="/exports">exports</a>).
+     Rattachement : colonne <code>Soumission (id)</code>, ou <code>Entreprise</code>
+     (la soumission D&O active la plus récente est utilisée — créez d’abord une ligne
+     <code>type=soumission_do</code>).</p>
+  <ul>
+    <% modelesDo.forEach((m) => { %>
+      <li><a href="/import/modele-do/<%= m.cle %>">Télécharger le modèle « <%= m.titre %> »</a></li>
+    <% }) %>
+  </ul>
+  <p class="petit">Types acceptés : <code>soumission_do</code>, <code>dirigeant_do</code>,
+     <code>garanties_do</code>, <code>antecedents_do</code>.
+     Chaque ligne crée une version (règle d’or : rien n’est écrasé).
+     Les lignes commençant par <code>#</code> sont des commentaires et sont ignorées.</p>
+</div>
+
+<div class="carte">
+  <h3>📉 Import perte d’exploitation — interruption des affaires</h3>
+  <p>Les en-têtes sont en français (miroir des <a href="/exports">exports</a>).
+     Rattachement : colonne <code>Soumission (id)</code>, ou <code>Entreprise</code>
+     (la soumission perte d’exploitation active la plus récente est utilisée — créez d’abord une ligne
+     <code>type=soumission_pe</code>).</p>
+  <ul>
+    <% modelesPe.forEach((m) => { %>
+      <li><a href="/import/modele-pe/<%= m.cle %>">Télécharger le modèle « <%= m.titre %> »</a></li>
+    <% }) %>
+  </ul>
+  <p class="petit">Types acceptés : <code>soumission_pe</code>, <code>etablissement_pe</code>,
+     <code>garanties_pe</code>, <code>antecedents_pe</code>.
+     Chaque ligne crée une version (règle d’or : rien n’est écrasé).
+     Les lignes commençant par <code>#</code> sont des commentaires et sont ignorées.</p>
+</div>
+
+<div class="carte">
+  <h3>🚚 Import flotte automobile</h3>
+  <p>Les en-têtes sont en français (miroir des <a href="/exports">exports</a>).
+     Rattachement : colonne <code>Soumission (id)</code>, ou <code>Entreprise</code>
+     (la soumission flotte active la plus récente est utilisée — créez d’abord une ligne
+     <code>type=soumission_flotte</code>). La flotte a deux lignes illimitées (véhicules
+     et conducteurs) : 5 types d’import.</p>
+  <ul>
+    <% modelesFlotte.forEach((m) => { %>
+      <li><a href="/import/modele-flotte/<%= m.cle %>">Télécharger le modèle « <%= m.titre %> »</a></li>
+    <% }) %>
+  </ul>
+  <p class="petit">Types acceptés : <code>soumission_flotte</code>, <code>vehicule_flotte</code>,
+     <code>conducteur_flotte</code>, <code>garanties_flotte</code>, <code>antecedents_flotte</code>.
+     Chaque ligne crée une version (règle d’or : rien n’est écrasé).
+     Les lignes commençant par <code>#</code> sont des commentaires et sont ignorées.</p>
+</div>
+
+<div class="carte">
+  <h3>🔒 Import cautionnement</h3>
+  <p>Les en-têtes sont en français (miroir des <a href="/exports">exports</a>).
+     Rattachement : colonne <code>Soumission (id)</code>, ou <code>Entreprise</code>
+     (la soumission cautionnement active la plus récente est utilisée — créez d’abord une ligne
+     <code>type=soumission_caut</code>). Obligations illimitées ; la ligne de cautionnement
+     est unique par soumission (limite globale = capacité, limite par projet, fonds de roulement).</p>
+  <ul>
+    <% modelesCautionnement.forEach((m) => { %>
+      <li><a href="/import/modele-cautionnement/<%= m.cle %>">Télécharger le modèle « <%= m.titre %> »</a></li>
+    <% }) %>
+  </ul>
+  <p class="petit">Types acceptés : <code>soumission_caut</code>, <code>obligation_caut</code>,
+     <code>ligne_caut</code>, <code>antecedents_caut</code>.
+     Chaque ligne crée une version (règle d’or : rien n’est écrasé).
+     Les lignes commençant par <code>#</code> sont des commentaires et sont ignorées.</p>
+</div>
+
 <% if (rapport) { %>
 <div class="carte">
   <h3>📊 Rapport d’import</h3>

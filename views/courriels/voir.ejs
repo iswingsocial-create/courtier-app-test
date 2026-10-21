@@ -5,6 +5,7 @@
     <a class="btn btn-secondaire btn-petit" href="/courriels<%= courriel.dossier === 'envoyes' ? '/envoyes' : '' %>">← Retour</a>
     <% if (courriel.dossier === 'reception') { %>
       <a class="btn btn-petit" href="/courriels/rediger?reponse_id=<%= courriel.id %>">↩️ Répondre</a>
+      <a class="btn btn-petit" href="/courriels/<%= courriel.id %>/analyser-reponse">🤖 Analyser la réponse</a>
     <% } %>
   </div>
 </div>
@@ -30,8 +31,35 @@
             <option value="<%= cl.id %>" <%= courriel.client_id === cl.id ? 'selected' : '' %>><%= cl.raison_sociale %><%= cl.courriel ? ' (' + cl.courriel + ')' : '' %></option>
           <% }) %>
         </select>
+        <% if (policesClient && policesClient.length) { %>
+          <select name="police_id">
+            <option value="">— Police précise (optionnel) —</option>
+            <% policesClient.forEach((p) => { %>
+              <option value="<%= p.id %>" <%= courriel.police_id === p.id ? 'selected' : '' %>><%= p.numero_police %> — <%= p.assureur %></option>
+            <% }) %>
+          </select>
+        <% } %>
         <button class="btn btn-petit btn-secondaire" type="submit">Lier</button>
       </form>
+      <% if (courriel.client_id && (!policesClient || !policesClient.length)) { %>
+        <span class="petit">(cette entreprise n’a pas encore de police au dossier)</span>
+      <% } %>
+    </dd>
+    <% if (courriel.police_numero) { %>
+    <dt>Police liée</dt>
+    <dd><a href="/echeances/police/<%= courriel.police_id %>">🔗 <%= courriel.police_numero %></a></dd>
+    <% } %>
+    <dt>Classement</dt>
+    <dd>
+      <% const badgeMsg = badgeClassement(courriel); %>
+      <% if (badgeMsg) { %>
+        <span class="badge badge-gris"><%= badgeMsg %></span>
+        <span class="petit"><%= NOMS_METHODES_CLASSEMENT[courriel.classement_methode] || '' %><% if (courriel.classement_detail && courriel.classement_methode !== 'numero_police') { %> — <%= courriel.classement_detail %><% } %></span>
+      <% } else if (courriel.client_id) { %>
+        <span class="petit">Classé (méthode non enregistrée)</span>
+      <% } else { %>
+        <span class="petit">Non classé — liez-le à une entreprise ci-dessus, ou lancez « ♻️ Reclasser les non classés » depuis la liste.</span>
+      <% } %>
     </dd>
   </dl>
 </div>
