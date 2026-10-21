@@ -145,16 +145,20 @@ router.get('/:id', (req, res) => {
   const a = analyseAutorisee(req, res, true);
   if (!a) return;
   const polices = bd.prepare(`
-    SELECT p.id, p.numero_police, p.ligne, p.assureur, c.raison_sociale
+    SELECT p.id, p.client_id, p.numero_police, p.ligne, p.assureur, c.raison_sociale
     FROM polices p JOIN clients c ON c.id = p.client_id
     WHERE p.cabinet_id = ? ORDER BY p.date_echeance
   `).all(res.locals.cabinetId);
   // Cible « Ajouter à une soumission existante » (v2) : soumissions non
   // archivées du cabinet, tous produits, pour le sélecteur de la révision.
+  // Chaque option porte son client_id : la révision ne propose que les
+  // soumissions DU client choisi (et du produit choisi) — correctif
+  // demandé par Patrick : un document, ses soumissions et ses polices
+  // appartiennent au même client.
   const soumissionsExistantes = [];
   for (const [produit, table] of Object.entries(TABLES_SOUMISSIONS_EXISTANTES)) {
     const lignes = bd.prepare(`
-      SELECT s.id, s.statut, s.cree_le, c.raison_sociale
+      SELECT s.id, s.client_id, s.statut, s.cree_le, c.raison_sociale
       FROM ${table} s LEFT JOIN clients c ON c.id = s.client_id
       WHERE s.cabinet_id = ? AND s.archive = 0
       ORDER BY s.id DESC LIMIT 100
@@ -169,8 +173,40 @@ router.get('/:id', (req, res) => {
     const demandesInfos = require('../lib/demandes-infos');
     demandeLiee = demandesInfos.obtenirDemande(a.demande_info_id, res.locals.cabinetId);
   }
+  // --- Client du document (correctif) ------------------------------------
+  // Le client se choisit AVANT les rattachements. Pré-sélection : le client
+  // résolu par lecture seule depuis la raison sociale extraite. Analyse
+  // liée à une demande : le client est celui de la demande, VERROUILLÉ.
+  const clients = bd.prepare(`
+    SELECT id, raison_sociale FROM clients
+    WHERE cabinet_id = ? AND archive = 0 ORDER BY raison_sociale
+  `).all(res.locals.cabinetId);
+  let clientPreselectionne = null;
+  let clientVerrouille = null;
+  if (demandeLiee) {
+    let cid = demandeLiee.client_id || null;
+    if (!cid) {
+      const table = TABLES_SOUMISSIONS_EXISTANTES[demandeLiee.produit];
+      if (table) {
+        const s = bd.prepare(`SELECT client_id FROM ${table} WHERE id = ? AND cabinet_id = ?`)
+          .get(demandeLiee.soumission_id, res.locals.cabinetId);
+        cid = s ? s.client_id : null;
+      }
+    }
+    if (cid) {
+      const c = clients.find((x) => x.id === cid);
+      clientVerrouille = { id: cid, raison_sociale: c ? c.raison_sociale : `Client #${cid}` };
+      clientPreselectionne = cid;
+    }
+  } else {
+    const valeursProposees = {};
+    (a.champs || []).forEach((c) => { if (c.champ) valeursProposees[c.champ] = c.valeur; });
+    const resolu = insertion.trouverClient(res.locals.cabinetId, valeursProposees['client.entreprise']);
+    if (resolu) clientPreselectionne = resolu.id;
+  }
   res.render('analyses/fiche', {
     a, NOMS_STATUTS, NOMS_PRODUITS, polices, soumissionsExistantes, demandeLiee,
+    clients, clientPreselectionne, clientVerrouille,
     META_LISTES: moteurAnalyse.META_LISTES,
     insere: req.query.insere === '1',
   });
@@ -236,6 +272,36 @@ router.post('/:id/inserer', (req, res) => {
   const cible = String(req.body.cible || 'soumission');
   const produit = String(req.body.produit || a.produit_detecte || '');
 
+  // --- Client du document (correctif) ---------------------------------------
+  // Le client choisi à la révision prime : une soumission ou une police
+  // existante d'un AUTRE client est refusée (400), et les créations se font
+  // chez CE client. Analyse liée à une demande d'informations : le client
+  // est imposé par la demande, quoi que le formulaire envoie.
+  let clientIdChoisi = Number(req.body.client_id) || null;
+  if (a.demande_info_id) {
+    const demandesInfos = require('../lib/demandes-infos');
+    const demandeLieePost = demandesInfos.obtenirDemande(a.demande_info_id, cabinetId);
+    if (demandeLieePost) {
+      let cid = demandeLieePost.client_id || null;
+      if (!cid) {
+        const table = TABLES_SOUMISSIONS_EXISTANTES[demandeLieePost.produit];
+        if (table) {
+          const s = bd.prepare(`SELECT client_id FROM ${table} WHERE id = ? AND cabinet_id = ?`)
+            .get(demandeLieePost.soumission_id, cabinetId);
+          cid = s ? s.client_id : null;
+        }
+      }
+      if (cid) clientIdChoisi = cid;
+    }
+  }
+  if (clientIdChoisi) {
+    const cliChoisi = bd.prepare('SELECT id FROM clients WHERE id = ? AND cabinet_id = ? AND archive = 0')
+      .get(clientIdChoisi, cabinetId);
+    if (!cliChoisi) {
+      return pageErreur(res, 400, 'Client invalide', 'Le client sélectionné est introuvable dans votre cabinet.');
+    }
+  }
+
   // Valeurs retenues (cases cochées), avec les corrections de l'utilisateur.
   const valeurs = {};
   a.champs.forEach((c, i) => {
@@ -293,6 +359,10 @@ router.post('/:id/inserer', (req, res) => {
       if (soum.client_id && clientHorsPortefeuille(cabinetId, utilisateur, soum.client_id)) {
         return reponseHorsPortefeuille(res);
       }
+      if (clientIdChoisi && soum.client_id && soum.client_id !== clientIdChoisi) {
+        return pageErreur(res, 400, 'Client incohérent',
+          "La soumission choisie n'appartient pas au client sélectionné. Choisissez d'abord le client du document, puis une de ses soumissions.");
+      }
       const detailsInsertion = [];
       if (nbElementsListes) {
         const r = insertion.ajouterListesAExistante(cabinetId, utilisateur, produit, soumissionId, listes);
@@ -326,13 +396,22 @@ router.post('/:id/inserer', (req, res) => {
       if (!moteurAnalyse.PRODUITS.includes(produit)) {
         return pageErreur(res, 400, 'Produit manquant', 'Choisissez le produit de la soumission à créer.');
       }
-      // Portefeuille courtier : si l'entreprise résolue appartient à un autre
-      // courtier, refus (403) comme partout ailleurs dans l'application.
-      const { client } = insertion.resoudreClient(cabinetId, utilisateur, valeurs);
-      if (client && clientHorsPortefeuille(cabinetId, utilisateur, client.id)) {
-        return reponseHorsPortefeuille(res);
+      // Client du document : le choix explicite prime (la soumission est
+      // créée chez CE client) ; sinon, résolution par raison sociale comme
+      // avant. Le contrôle portefeuille s'applique au client final.
+      let r;
+      if (clientIdChoisi) {
+        if (clientHorsPortefeuille(cabinetId, utilisateur, clientIdChoisi)) {
+          return reponseHorsPortefeuille(res);
+        }
+        r = insertion.creerSoumission(cabinetId, utilisateur, produit, valeurs, listes, { clientId: clientIdChoisi });
+      } else {
+        const { client } = insertion.resoudreClient(cabinetId, utilisateur, valeurs);
+        if (client && clientHorsPortefeuille(cabinetId, utilisateur, client.id)) {
+          return reponseHorsPortefeuille(res);
+        }
+        r = insertion.creerSoumission(cabinetId, utilisateur, produit, valeurs, listes);
       }
-      const r = insertion.creerSoumission(cabinetId, utilisateur, produit, valeurs, listes);
       const echecs = r.sections.filter((s) => !s.ok);
       analyses.marquerInseree(a.id, cabinetId, utilisateur.id, {
         produit, soumissionId: r.soumissionId,
@@ -348,7 +427,10 @@ router.post('/:id/inserer', (req, res) => {
       if (!moteurAnalyse.PRODUITS.includes(produit)) {
         return pageErreur(res, 400, 'Produit manquant', 'Choisissez le produit (ligne) de la police à créer.');
       }
-      const r = insertion.creerPolice(cabinetId, utilisateur, produit, valeurs, a);
+      if (clientIdChoisi && clientHorsPortefeuille(cabinetId, utilisateur, clientIdChoisi)) {
+        return reponseHorsPortefeuille(res);
+      }
+      const r = insertion.creerPolice(cabinetId, utilisateur, produit, valeurs, a, { clientId: clientIdChoisi || undefined });
       const documentId = insertion.copierDocumentVersPolice(cabinetId, utilisateur, a, r.policeId);
       analyses.marquerInseree(a.id, cabinetId, utilisateur.id, {
         produit, policeId: r.policeId, documentId,
@@ -361,6 +443,10 @@ router.post('/:id/inserer', (req, res) => {
       if (!police) return pageErreur(res, 404, 'Introuvable', 'Police introuvable dans votre cabinet.');
       if (clientHorsPortefeuille(cabinetId, utilisateur, police.client_id)) {
         return reponseHorsPortefeuille(res);
+      }
+      if (clientIdChoisi && police.client_id !== clientIdChoisi) {
+        return pageErreur(res, 400, 'Client incohérent',
+          "La police choisie n'appartient pas au client sélectionné. Choisissez d'abord le client du document, puis une de ses polices.");
       }
       const documentId = insertion.copierDocumentVersPolice(cabinetId, utilisateur, a, police.id);
       analyses.marquerInseree(a.id, cabinetId, utilisateur.id, {

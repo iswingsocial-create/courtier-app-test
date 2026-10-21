@@ -4696,6 +4696,16 @@ Quand l'assureur retourne son document (avenant, note de couverture), le systèm
 
 **Limites assumées** : la comparaison est fiable sur les montants, les dates, les franchises et les éléments identifiés (adresse, NIV, permis) ; un avenant rédigé en texte libre exotique produira des verdicts « à confirmer » avec les valeurs côte à côte plutôt que de faux écarts. Les contenus des bâtiments et les garanties par élément ne sont comparés que si le document de l'assureur les énumère aussi.
 
+## Correctif — révision d'analyse : le client d'abord
+
+Retour de Patrick en testant la version publiée : la révision d'une analyse proposait, pour un document « Cyber », une soumission Auto d'un autre client et une police d'un troisième — alors qu'un document, ses soumissions et ses polices appartiennent au **même client**. Correctif appliqué (`routes/analyses.js`, `views/analyses/fiche.ejs`, `public/analyse-revision.js`, `lib/analyse-insertion.js`) :
+
+- **« Client du document » choisi en premier**, au-dessus du produit et des cibles : sélecteur des entreprises du cabinet, **pré-sélectionné** par résolution en lecture seule (`trouverClient` — correspondance de la raison sociale extraite, sans jamais créer de client sur un affichage). Analyse liée à une demande d'informations : client = celui de la demande, **verrouillé** en lecture seule.
+- **Rattachements filtrés** : les sélecteurs « soumission existante » et « police existante » ne proposent que les éléments **du client choisi** (soumissions : **du produit choisi** en plus), filtrés en page à chaque changement ; messages « Aucune soumission du produit choisi pour ce client » / « Aucune police pour ce client » quand la liste filtrée est vide. Sans client choisi, les rattachements sont désactivés.
+- **Contrôle serveur** (l'écran ne suffit pas) : le POST d'insertion reçoit `client_id` et refuse en **400 explicite** (« La soumission choisie n'appartient pas au client sélectionné » / idem police) tout rattachement incohérent. Les créations acceptent le **client forcé** (`options.clientId` de `creerSoumission`/`creerPolice`) : la soumission/police naît chez CE client, même si le nom extrait du document ne correspond à personne. Sans choix, l'ancien comportement (résolution/création par raison sociale) est conservé. Le contrôle portefeuille courtier s'applique au client final. Analyse liée à une demande : le client est **imposé par la demande** côté serveur, quoi que le formulaire envoie.
+
+Test : `scripts/test-analyse-client-cible.js` (36 vérifications — fiche et pré-sélection, données de filtrage, refus 400 sans rien insérer, insertion cohérente, création forcée, verrouillage demande, CSRF). Capture 126.
+
 ## Volontairement non inclus (phases suivantes)
 
 - **Phase 2** : classification automatique des courriels (reçus/envoyés),

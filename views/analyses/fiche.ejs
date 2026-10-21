@@ -48,6 +48,19 @@
     <strong>Rien n'est inséré tant que vous n'avez pas cliqué sur « Insérer les champs retenus ».</strong></p>
   <form method="post" action="/analyses/<%= a.id %>/inserer">
     <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+    <label for="client_id">Client du document</label>
+    <% if (typeof clientVerrouille !== 'undefined' && clientVerrouille) { %>
+      <input type="hidden" id="client_id" name="client_id" value="<%= clientVerrouille.id %>">
+      <p>🏢 <strong><%= clientVerrouille.raison_sociale %></strong> <span class="petit">(client de la demande d'informations #<%= demandeLiee ? demandeLiee.id : '' %> — verrouillé : le document, ses soumissions et ses polices appartiennent au même client)</span></p>
+    <% } else { %>
+      <select id="client_id" name="client_id">
+        <option value="">— Choisir le client du document —</option>
+        <% (typeof clients !== 'undefined' ? clients : []).forEach(function (c) { %>
+          <option value="<%= c.id %>" <%= (typeof clientPreselectionne !== 'undefined' && clientPreselectionne === c.id) ? 'selected' : '' %>><%= c.raison_sociale %></option>
+        <% }); %>
+      </select>
+      <p class="petit">Choisissez d'abord le client : les soumissions et polices proposées ci-dessous sont uniquement les siennes (et, pour les soumissions, celles du produit choisi). Les créations se rattachent aussi à ce client.</p>
+    <% } %>
     <label for="produit">Produit</label>
     <select id="produit" name="produit">
       <option value="">— Choisir —</option>
@@ -59,18 +72,20 @@
     <div class="radio-ligne">
       <label><input type="radio" name="cible" value="soumission" <%= !(typeof demandeLiee !== 'undefined' && demandeLiee) ? 'checked' : '' %>> Créer une nouvelle soumission du produit choisi</label>
       <label><input type="radio" name="cible" value="soumission_existante" <%= (typeof demandeLiee !== 'undefined' && demandeLiee) ? 'checked' : '' %>> Ajouter les éléments de listes à une soumission existante :</label>
-      <select name="soumission_existante">
+      <select name="soumission_existante" id="select-soumission-existante">
         <% (soumissionsExistantes || []).forEach(function (s) { %>
-          <option value="<%= s.produit %>:<%= s.id %>" <%= (typeof demandeLiee !== 'undefined' && demandeLiee && demandeLiee.produit === s.produit && demandeLiee.soumission_id === s.id) ? 'selected' : '' %>>[<%= NOMS_PRODUITS[s.produit] || s.produit %>] #<%= s.id %> — <%= s.raison_sociale || 'Entreprise à confirmer' %> (<%= s.statut %>)</option>
+          <option value="<%= s.produit %>:<%= s.id %>" <%= (typeof demandeLiee !== 'undefined' && demandeLiee && demandeLiee.produit === s.produit && demandeLiee.soumission_id === s.id) ? 'selected' : '' %> data-client="<%= s.client_id || '' %>" data-produit="<%= s.produit %>">[<%= NOMS_PRODUITS[s.produit] || s.produit %>] #<%= s.id %> — <%= s.raison_sociale || 'Entreprise à confirmer' %> (<%= s.statut %>)</option>
         <% }); %>
       </select>
+      <p class="petit" id="msg-aucune-soumission" style="display:none;">Aucune soumission du produit choisi pour ce client.</p>
       <label><input type="radio" name="cible" value="police_nouvelle"> Créer une police (module commercial)</label>
       <label><input type="radio" name="cible" value="police_existante"> Rattacher le document à une police existante :</label>
-      <select name="police_id">
+      <select name="police_id" id="select-police-existante">
         <% polices.forEach(function (p) { %>
-          <option value="<%= p.id %>"><%= p.numero_police %> — <%= p.raison_sociale %> (<%= p.ligne %>)</option>
+          <option value="<%= p.id %>" data-client="<%= p.client_id %>"><%= p.numero_police %> — <%= p.raison_sociale %> (<%= p.ligne %>)</option>
         <% }); %>
       </select>
+      <p class="petit" id="msg-aucune-police" style="display:none;">Aucune police pour ce client.</p>
     </div>
     <% if (a.reponsesCiblees && a.reponsesCiblees.length) { %>
     <h4>💬 Réponses aux questions posées au client</h4>
