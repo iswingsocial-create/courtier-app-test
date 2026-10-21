@@ -1,0 +1,426 @@
+<%- include('../partials/haut', { titre }) %>
+<% const fmt$ = (x) => (x != null && x !== '' ? Number(x).toLocaleString('fr-CA') + ' $' : '—'); %>
+<div class="entete-page">
+  <h1>🧩 Soumission combinée #<%= d.id %></h1>
+  <div>
+    <a class="btn btn-secondaire btn-petit" href="/combinees">← Dossiers</a>
+    <a class="btn btn-secondaire btn-petit" href="/clients/<%= d.client_id %>">Fiche client</a>
+  </div>
+</div>
+
+<div class="carte">
+  <p style="margin:0">
+    <strong><%= client ? client.raison_sociale : '' %></strong>
+    <% if (client && client.description_activites) { %> · <%= client.description_activites %><% } %>
+    <br><span class="petit">Volets liés :
+    <% if (d.soumissions.biens) { %><a href="/biens/<%= d.soumissions.biens.id %>">🏢 Biens #<%= d.soumissions.biens.id %></a> (<%= d.soumissions.biens.statut %>) · <% } %>
+    <% if (d.soumissions.rc) { %><a href="/rc/<%= d.soumissions.rc.id %>">⚖️ RC #<%= d.soumissions.rc.id %></a> (<%= d.soumissions.rc.statut %>) · <% } %>
+    <% if (d.soumissions.perte_exploitation) { %><a href="/pe/<%= d.soumissions.perte_exploitation.id %>">📉 Perte d’exploitation #<%= d.soumissions.perte_exploitation.id %></a> (<%= d.soumissions.perte_exploitation.statut %>)<% } %>
+    </span>
+  </p>
+  <p class="petit" style="margin-top:8px">
+    <a class="btn btn-petit" href="/combinees/<%= d.id %>/proposition" target="_blank">📄 Proposition combinée (demande de prix)</a>
+    <a class="btn btn-petit btn-secondaire" href="/combinees/<%= d.id %>/proposition.pdf">⬇️ PDF</a>
+  </p>
+  <form method="post" action="/combinees/<%= d.id %>/proposition-brouillon" class="inline">
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+    <button class="btn btn-petit btn-secondaire" type="submit">✉️ Créer le brouillon « demande de prix » (envoi au clic seulement)</button>
+  </form>
+</div>
+
+<div class="carte" id="entete">
+  <h2>🧾 En-tête du dossier</h2>
+  <form method="post" action="/combinees/<%= d.id %>/entete" class="grille-form">
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+    <div><label for="statut">Statut</label>
+      <select id="statut" name="statut">
+        <% STATUTS_DOSSIER.forEach((s) => { %><option value="<%= s %>"<%= d.statut === s ? ' selected' : '' %>><%= ({brouillon: 'Brouillon', en_cours: 'En cours', envoye: 'Envoyé', clos: 'Clos'})[s] %></option><% }) %>
+      </select></div>
+    <div><label for="date_effet">Date d’effet</label>
+      <input type="date" id="date_effet" name="date_effet" value="<%= d.date_effet || '' %>"></div>
+    <div><label for="date_echeance">Date d’échéance</label>
+      <input type="date" id="date_echeance" name="date_echeance" value="<%= d.date_echeance || '' %>"></div>
+    <div><label for="plan_paiement">Plan de paiement</label>
+      <input type="text" id="plan_paiement" name="plan_paiement" maxlength="80" value="<%= d.plan_paiement || '' %>"></div>
+    <div><label for="code_courtier_assureur">Code du courtier chez l’assureur</label>
+      <input type="text" id="code_courtier_assureur" name="code_courtier_assureur" maxlength="60" value="<%= d.code_courtier_assureur || '' %>"></div>
+    <div><label for="courtier_placement_id">Courtier de placement</label>
+      <select id="courtier_placement_id" name="courtier_placement_id">
+        <option value="">—</option>
+        <% utilisateurs.forEach((u) => { %><option value="<%= u.id %>"<%= d.courtier_placement_id === u.id ? ' selected' : '' %>><%= u.nom %> (<%= u.role %>)</option><% }) %>
+      </select></div>
+    <div><label for="signataire_nom">Signataire — nom</label>
+      <input type="text" id="signataire_nom" name="signataire_nom" maxlength="120" value="<%= d.signataire_nom || '' %>"></div>
+    <div><label for="signataire_titre">Signataire — titre</label>
+      <input type="text" id="signataire_titre" name="signataire_titre" maxlength="120" value="<%= d.signataire_titre || '' %>"></div>
+    <div><label for="date_signature">Date de signature</label>
+      <input type="date" id="date_signature" name="date_signature" value="<%= d.date_signature || '' %>"></div>
+    <div style="grid-column:1/-1"><label for="circonstances_speciales">Circonstances spéciales</label>
+      <textarea id="circonstances_speciales" name="circonstances_speciales" rows="2"><%= d.circonstances_speciales || '' %></textarea></div>
+    <div style="grid-column:1/-1"><label for="remarques_diverses">Remarques diverses (imprimées sur la proposition)</label>
+      <textarea id="remarques_diverses" name="remarques_diverses" rows="2"><%= d.remarques_diverses || '' %></textarea></div>
+    <div style="grid-column:1/-1"><label for="commentaires_courtier">Commentaires du courtier (internes)</label>
+      <textarea id="commentaires_courtier" name="commentaires_courtier" rows="2"><%= d.commentaires_courtier || '' %></textarea></div>
+    <div class="actions" style="grid-column:1/-1"><button class="btn btn-petit" type="submit">Enregistrer l’en-tête</button></div>
+  </form>
+  <form method="post" action="/combinees/<%= d.id %>/archiver" data-confirm="Archiver ce dossier combiné ? Les soumissions liées ne sont pas touchées.">
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+    <button class="btn btn-petit btn-secondaire" type="submit">Archiver le dossier</button>
+  </form>
+</div>
+
+<div class="carte" id="entreprise">
+  <h2>🏭 Entreprise — profil de souscription</h2>
+  <p class="petit">Ces informations vivent sur la fiche client et sont partagées par toutes ses soumissions.</p>
+  <form method="post" action="/combinees/<%= d.id %>/profil" class="grille-form">
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+    <div><label for="forme_juridique">Forme juridique</label>
+      <select id="forme_juridique" name="forme_juridique">
+        <option value="">—</option>
+        <% FORMES_JURIDIQUES.forEach(([code, libelle]) => { %><option value="<%= code %>"<%= client && client.forme_juridique === code ? ' selected' : '' %>><%= libelle %></option><% }) %>
+      </select></div>
+    <div><label for="annee_fondation">Année de fondation</label>
+      <input type="number" id="annee_fondation" name="annee_fondation" min="1600" max="2100" value="<%= client && client.annee_fondation != null ? client.annee_fondation : '' %>"></div>
+    <div><label for="annees_experience_liee">Années d’expérience dans un domaine lié</label>
+      <input type="number" id="annees_experience_liee" name="annees_experience_liee" min="0" max="120" value="<%= client && client.annees_experience_liee != null ? client.annees_experience_liee : '' %>"></div>
+    <div><label for="noms_exploitation">Nom(s) d’exploitation</label>
+      <input type="text" id="noms_exploitation" name="noms_exploitation" maxlength="200" value="<%= client ? client.noms_exploitation || '' : '' %>"></div>
+    <div style="grid-column:1/-1"><label for="description_activites">Description des activités</label>
+      <textarea id="description_activites" name="description_activites" rows="2"><%= client ? client.description_activites || '' : '' %></textarea></div>
+    <div><label for="code_industrie">Code d’industrie</label>
+      <input type="text" id="code_industrie" name="code_industrie" maxlength="20" value="<%= client ? client.code_industrie || '' : '' %>"></div>
+    <div><label for="code_industrie_description">Description du code d’industrie</label>
+      <input type="text" id="code_industrie_description" name="code_industrie_description" maxlength="200" value="<%= client ? client.code_industrie_description || '' : '' %>"></div>
+    <div><label for="code_industrie_pct_revenus">% des revenus — code d’industrie principal</label>
+      <input type="number" id="code_industrie_pct_revenus" name="code_industrie_pct_revenus" min="0" max="100" step="0.01" value="<%= client && client.code_industrie_pct_revenus != null ? client.code_industrie_pct_revenus : '' %>"></div>
+    <div><label for="masse_salariale">Masse salariale ($)</label>
+      <input type="number" id="masse_salariale" name="masse_salariale" min="0" step="0.01" value="<%= client && client.masse_salariale != null ? client.masse_salariale : '' %>"></div>
+    <div><label for="nb_employes_temps_plein">Employés temps plein</label>
+      <input type="number" id="nb_employes_temps_plein" name="nb_employes_temps_plein" min="0" value="<%= client && client.nb_employes_temps_plein != null ? client.nb_employes_temps_plein : '' %>"></div>
+    <div><label for="nb_employes_temps_partiel">Employés temps partiel</label>
+      <input type="number" id="nb_employes_temps_partiel" name="nb_employes_temps_partiel" min="0" value="<%= client && client.nb_employes_temps_partiel != null ? client.nb_employes_temps_partiel : '' %>"></div>
+    <div><label for="pct_sous_traitance">% de sous-traitance</label>
+      <input type="number" id="pct_sous_traitance" name="pct_sous_traitance" min="0" max="100" step="0.01" value="<%= client && client.pct_sous_traitance != null ? client.pct_sous_traitance : '' %>"></div>
+    <div><span class="case"><input type="checkbox" id="employes_csst" name="employes_csst"<%= client && client.employes_csst ? ' checked' : '' %>><label for="employes_csst">Employés couverts par la CSST</label></span></div>
+    <div><span class="case"><input type="checkbox" id="responsabilite_alcool" name="responsabilite_alcool"<%= client && client.responsabilite_alcool ? ' checked' : '' %>><label for="responsabilite_alcool">Responsabilité pour l’alcool</label></span></div>
+    <div style="grid-column:1/-1"><span class="petit">Répartition des recettes par type d’activité (%)</span><br>
+      <% const repT = (client && client.repartition_revenus_types) || {}; %>
+      <% REP_TYPES_PAIRES.forEach(([cle, libelle]) => { %>
+      <label class="petit"><%= libelle %> <input type="number" name="rep_type_<%= cle %>" min="0" max="100" step="0.01" style="width:90px" value="<%= repT[cle] != null ? repT[cle] : '' %>"></label>
+      <% }) %></div>
+    <div style="grid-column:1/-1"><span class="petit">Répartition géographique des recettes (%)</span><br>
+      <% const repG = (client && client.repartition_revenus_geo) || {}; %>
+      <% REP_GEO_PAIRES.forEach(([cle, libelle]) => { %>
+      <label class="petit"><%= libelle %> <input type="number" name="rep_geo_<%= cle %>" min="0" max="100" step="0.01" style="width:90px" value="<%= repG[cle] != null ? repG[cle] : '' %>"></label>
+      <% }) %></div>
+    <div class="actions" style="grid-column:1/-1"><button class="btn btn-petit" type="submit">Enregistrer le profil entreprise</button></div>
+  </form>
+</div>
+
+<div class="carte" id="antecedents">
+  <h2>📋 Antécédents communs — saisis une fois, synchronisés vers les 3 volets</h2>
+  <% const ab = d.antecedents_bloc || {}; %>
+  <form method="post" action="/combinees/<%= d.id %>/antecedents" class="grille-form">
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+    <div><label for="ant-assureur">Assureur actuel</label>
+      <input type="text" id="ant-assureur" name="assureur_actuel" maxlength="120" value="<%= ab.assureur_actuel || '' %>"></div>
+    <div><label for="ant-police">N° de police actuelle</label>
+      <input type="text" id="ant-police" name="numero_police_actuelle" maxlength="60" value="<%= ab.numero_police_actuelle || '' %>"></div>
+    <div><label for="ant-expiration">Expiration</label>
+      <input type="date" id="ant-expiration" name="date_expiration_actuelle" value="<%= ab.date_expiration_actuelle || '' %>"></div>
+    <div><label for="ant-annees">Années d’assurance continue</label>
+      <input type="number" id="ant-annees" name="annees_assurance_continue" min="0" max="80" value="<%= ab.annees_assurance_continue != null ? ab.annees_assurance_continue : '' %>"></div>
+    <div><label for="ant-type-prec">Type de police précédente</label>
+      <input type="text" id="ant-type-prec" name="type_police_precedente" maxlength="120" value="<%= ab.type_police_precedente || '' %>"></div>
+    <div><label for="ant-effet-prec">Date d’effet de la police précédente</label>
+      <input type="date" id="ant-effet-prec" name="date_effet_precedente" value="<%= ab.date_effet_precedente || '' %>"></div>
+    <div><label for="ant-prime-prec">Prime de la police précédente ($)</label>
+      <input type="number" id="ant-prime-prec" name="prime_precedente" min="0" step="0.01" value="<%= ab.prime_precedente != null ? ab.prime_precedente : '' %>"></div>
+    <div><span class="case"><input type="checkbox" id="ant-refus" name="refus"<%= ab.refus_resiliation_nonrenouvellement ? ' checked' : '' %>><label for="ant-refus">Refus, résiliation ou non-renouvellement (5 ans)</label></span></div>
+    <div><label for="ant-refus-exp">Explication</label>
+      <input type="text" id="ant-refus-exp" name="refus_explication" maxlength="300" value="<%= ab.refus_explication || '' %>"></div>
+    <div><span class="case"><input type="checkbox" id="ant-faillite" name="faillite"<%= ab.faillite_jugement ? ' checked' : '' %>><label for="ant-faillite">Faillite ou jugement contre l’assuré</label></span></div>
+    <div><label for="ant-faillite-exp">Explication</label>
+      <input type="text" id="ant-faillite-exp" name="faillite_explication" maxlength="300" value="<%= ab.faillite_explication || '' %>"></div>
+    <div><span class="case"><input type="checkbox" id="ant-condamnation" name="condamnation"<%= ab.condamnation_honnetete ? ' checked' : '' %>><label for="ant-condamnation">Condamnation — infraction impliquant la malhonnêteté</label></span></div>
+    <div><label for="ant-condamnation-exp">Explication</label>
+      <input type="text" id="ant-condamnation-exp" name="condamnation_explication" maxlength="300" value="<%= ab.condamnation_explication || '' %>"></div>
+    <div style="grid-column:1/-1">
+      <span class="petit">Sinistres des 5 dernières années (biens et RC)</span>
+      <div data-lignes-dynamiques data-existant='<%= JSON.stringify(ab.sinistres_5ans || []).replace(/'/g, "&#39;") %>'>
+        <div class="lignes"></div>
+        <template><div class="ligne-dynamique" style="display:flex;gap:8px;margin:6px 0;flex-wrap:wrap">
+          <input data-col="date" type="date" aria-label="Date">
+          <input data-col="type" type="text" placeholder="Type" maxlength="120">
+          <input data-col="description" type="text" placeholder="Description" maxlength="300">
+          <input data-col="montant" type="number" min="0" step="0.01" placeholder="Montant $" style="width:110px">
+          <input data-col="montant_paye" type="number" min="0" step="0.01" placeholder="Payé $" style="width:110px">
+          <input data-col="reserve" type="number" min="0" step="0.01" placeholder="Réserve $" style="width:110px">
+          <input data-col="statut" type="text" placeholder="Statut" maxlength="40">
+          <button type="button" class="btn btn-petit btn-secondaire retirer-ligne">✕</button>
+        </div></template>
+        <button type="button" class="btn btn-petit btn-secondaire ajouter-ligne">+ Ajouter un sinistre</button>
+        <input type="hidden" name="sinistres_json" value="[]">
+      </div>
+    </div>
+    <div style="grid-column:1/-1"><label for="ant-interruptions">Interruptions d’exploitation des 5 dernières années (volet perte d’exploitation)</label>
+      <textarea id="ant-interruptions" name="interruptions" rows="3" placeholder="Une interruption par ligne : AAAA-MM-JJ | cause | durée (jours) | montant $"><%= interruptionsTexte %></textarea></div>
+    <div class="actions" style="grid-column:1/-1"><button class="btn btn-petit" type="submit">Enregistrer et synchroniser les antécédents</button></div>
+  </form>
+</div>
+
+<div class="carte" id="emplacements">
+  <h2>📍 Emplacements (<%= batiments.length %>) — fiche maîtresse, saisie unique</h2>
+  <p class="petit">L’emplacement est saisi ici une seule fois : il alimente les volets biens, perte d’exploitation et RC du dossier.</p>
+
+  <details class="details-inline">
+    <summary class="btn btn-petit">+ Ajouter un emplacement</summary>
+    <form method="post" action="/combinees/<%= d.id %>/emplacement" class="grille-form">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+      <div><label>Adresse *</label><input type="text" name="adresse" required maxlength="200"></div>
+      <div><label>Ville</label><input type="text" name="ville" maxlength="80"></div>
+      <div><label>Code postal</label><input type="text" name="code_postal" maxlength="10"></div>
+      <div><label>Type d’activité</label><input type="text" name="type_activite" maxlength="120"></div>
+      <%- include('../biens/_batiment-enrichi', { b: null, p: 'cb-nouv' }) %>
+      <div class="actions" style="grid-column:1/-1"><button class="btn btn-petit" type="submit">Ajouter l’emplacement</button></div>
+    </form>
+  </details>
+
+  <% batiments.forEach((b) => { const al = alarmes[b.id]; const peL = peParBatiment[b.id]; const rcL = rcParBatiment[b.id]; const bens = beneficiaires[b.id] || []; %>
+  <details class="details-inline" style="margin-top:10px">
+    <summary class="btn btn-secondaire btn-petit"><%= b.adresse %><%= b.ville ? ', ' + b.ville : '' %><%= peL ? ' · PE liée' : '' %><%= rcL ? ' · RC liée' : '' %></summary>
+
+    <h4>🏢 Fiche emplacement</h4>
+    <form method="post" action="/combinees/<%= d.id %>/emplacement/<%= b.id %>" class="grille-form">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+      <div><label>Adresse *</label><input type="text" name="adresse" required maxlength="200" value="<%= b.adresse %>"></div>
+      <div><label>Ville</label><input type="text" name="ville" maxlength="80" value="<%= b.ville || '' %>"></div>
+      <div><label>Code postal</label><input type="text" name="code_postal" maxlength="10" value="<%= b.code_postal || '' %>"></div>
+      <div><label>Type d’activité</label><input type="text" name="type_activite" maxlength="120" value="<%= b.type_activite || '' %>"></div>
+      <%- include('../biens/_batiment-enrichi', { b, p: 'cb' + b.id }) %>
+      <div class="actions" style="grid-column:1/-1"><button class="btn btn-petit btn-secondaire" type="submit">Enregistrer l’emplacement</button></div>
+    </form>
+
+    <h4>🚨 Questionnaire alarme</h4>
+    <form method="post" action="/combinees/<%= d.id %>/emplacement/<%= b.id %>/alarme" class="grille-form">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+      <div><label>Compagnie d’alarme</label><input type="text" name="alarme_compagnie_alarme" maxlength="120" value="<%= al ? al.compagnie_alarme || '' : '' %>"></div>
+      <div><label>Téléphone</label><input type="text" name="alarme_compagnie_telephone" maxlength="40" value="<%= al ? al.compagnie_telephone || '' : '' %>"></div>
+      <div><label>Centrale de surveillance (nom et lieu)</label><input type="text" name="alarme_centrale_nom_lieu" maxlength="160" value="<%= al ? al.centrale_nom_lieu || '' : '' %>"></div>
+      <div><label>Taux d’interrogation</label><input type="text" name="alarme_taux_interrogation" maxlength="60" value="<%= al ? al.taux_interrogation || '' : '' %>"></div>
+      <div><span class="case"><input type="checkbox" id="alm-ulc-<%= b.id %>" name="alarme_certificat_ulc_actif"<%= al && al.certificat_ulc_actif ? ' checked' : '' %>><label for="alm-ulc-<%= b.id %>">Certificat ULC actif</label></span></div>
+      <div><label>N° de certificat ULC</label><input type="text" name="alarme_certificat_ulc_numero" maxlength="60" value="<%= al ? al.certificat_ulc_numero || '' : '' %>"></div>
+      <div><label>Expiration ULC</label><input type="date" name="alarme_certificat_ulc_expiration" value="<%= al ? al.certificat_ulc_expiration || '' : '' %>"></div>
+      <div><label>Signaux d’ouverture/fermeture</label>
+        <select name="alarme_signaux_ouverture_fermeture">
+          <option value="">—</option>
+          <% LISTES_ALARME.SIGNAUX_OUVERTURE_FERMETURE.forEach(([code, libelle]) => { %><option value="<%= code %>"<%= al && al.signaux_ouverture_fermeture === code ? ' selected' : '' %>><%= libelle %></option><% }) %>
+        </select></div>
+      <div><span class="case"><input type="checkbox" id="alm-ent-<%= b.id %>" name="alarme_contrat_entretien_annuel"<%= al && al.contrat_entretien_annuel ? ' checked' : '' %>><label for="alm-ent-<%= b.id %>">Contrat annuel d’entretien</label></span></div>
+      <div><span class="case"><input type="checkbox" id="alm-ligne-<%= b.id %>" name="alarme_securite_ligne"<%= al && al.securite_ligne ? ' checked' : '' %>><label for="alm-ligne-<%= b.id %>">Sécurité de ligne</label></span></div>
+      <div><span class="case"><input type="checkbox" id="alm-rep-<%= b.id %>" name="alarme_reponse_en_personne"<%= al && al.reponse_en_personne ? ' checked' : '' %>><label for="alm-rep-<%= b.id %>">Réponse en personne aux alarmes</label></span></div>
+      <div style="grid-column:1/-1"><span class="petit">Transmission primaire</span><br>
+        <% LISTES_ALARME.TRANSMISSIONS.forEach((t, i) => { %><span class="case" style="display:inline-flex;margin-right:12px"><input type="checkbox" id="tp-<%= b.id %>-<%= i %>" name="alarme_transmission_primaire" value="<%= t %>"<%= al && al.transmission_primaire && al.transmission_primaire.includes(t) ? ' checked' : '' %>><label for="tp-<%= b.id %>-<%= i %>"><%= t %></label></span><% }) %></div>
+      <div style="grid-column:1/-1"><span class="petit">Transmission secondaire</span><br>
+        <% LISTES_ALARME.TRANSMISSIONS.forEach((t, i) => { %><span class="case" style="display:inline-flex;margin-right:12px"><input type="checkbox" id="ts-<%= b.id %>-<%= i %>" name="alarme_transmission_secondaire" value="<%= t %>"<%= al && al.transmission_secondaire && al.transmission_secondaire.includes(t) ? ' checked' : '' %>><label for="ts-<%= b.id %>-<%= i %>"><%= t %></label></span><% }) %></div>
+      <div style="grid-column:1/-1"><span class="petit">Couverture de la détection</span><br>
+        <% LISTES_ALARME.COUVERTURES_DETECTION.forEach((t, i) => { %><span class="case" style="display:inline-flex;margin-right:12px"><input type="checkbox" id="cd-<%= b.id %>-<%= i %>" name="alarme_couverture_detection" value="<%= t %>"<%= al && al.couverture_detection && al.couverture_detection.includes(t) ? ' checked' : '' %>><label for="cd-<%= b.id %>-<%= i %>"><%= t %></label></span><% }) %></div>
+      <div style="grid-column:1/-1"><span class="petit">Répondants aux alarmes</span><br>
+        <% LISTES_ALARME.REPONDANTS_ALARME.forEach((t, i) => { %><span class="case" style="display:inline-flex;margin-right:12px"><input type="checkbox" id="ra-<%= b.id %>-<%= i %>" name="alarme_repondants" value="<%= t %>"<%= al && al.repondants && al.repondants.includes(t) ? ' checked' : '' %>><label for="ra-<%= b.id %>-<%= i %>"><%= t %></label></span><% }) %></div>
+      <div style="grid-column:1/-1"><span class="petit">Protections physiques</span><br>
+        <% LISTES_ALARME.PROTECTIONS_PHYSIQUES.forEach((t, i) => { %><span class="case" style="display:inline-flex;margin-right:12px"><input type="checkbox" id="pp-<%= b.id %>-<%= i %>" name="alarme_protections_physiques" value="<%= t %>"<%= al && al.protections_physiques && al.protections_physiques.includes(t) ? ' checked' : '' %>><label for="pp-<%= b.id %>-<%= i %>"><%= t %></label></span><% }) %></div>
+      <div class="actions" style="grid-column:1/-1"><button class="btn btn-petit btn-secondaire" type="submit">Enregistrer le questionnaire alarme</button></div>
+    </form>
+
+    <h4>👥 Bénéficiaires de cet emplacement (<%= bens.length %>)</h4>
+    <% if (bens.length) { %>
+    <div class="tableau-deroulant"><table>
+      <thead><tr><th>Nom</th><th>Adresse</th><th>Qualité</th><th>Préavis</th></tr></thead>
+      <tbody><% bens.forEach((ben) => { %><tr><td><%= ben.nom %></td><td><%= [ben.adresse, ben.ville, ben.code_postal].filter(Boolean).join(', ') || '—' %></td><td><%= ben.qualite || '—' %></td><td><%= ben.clause_preavis || '—' %></td></tr><% }) %></tbody>
+    </table></div>
+    <% } %>
+    <form method="post" action="/combinees/<%= d.id %>/emplacement/<%= b.id %>/beneficiaire" class="grille-form">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+      <div><label>Nom du bénéficiaire *</label><input type="text" name="nom" required maxlength="160"></div>
+      <div><label>Adresse</label><input type="text" name="adresse" maxlength="200"></div>
+      <div><label>Ville</label><input type="text" name="ville" maxlength="80"></div>
+      <div><label>Code postal</label><input type="text" name="code_postal" maxlength="10"></div>
+      <div><label>Qualité</label><input type="text" name="qualite" maxlength="120" placeholder="Créancier hypothécaire…"></div>
+      <div><label>Clause de préavis</label><input type="text" name="clause_preavis" maxlength="80" placeholder="30 jours…"></div>
+      <div class="actions"><button class="btn btn-petit btn-secondaire" type="submit">+ Ajouter</button></div>
+    </form>
+
+    <h4>📉 Volet perte d’exploitation — <%= peL ? 'établissement lié' : 'non lié' %></h4>
+    <form method="post" action="/combinees/<%= d.id %>/emplacement/<%= b.id %>/lier-pe" class="grille-form">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+      <div><label>Nom du lieu</label><input type="text" name="nom_lieu" maxlength="120" value="<%= peL ? peL.nom_lieu || '' : '' %>"></div>
+      <div><label>Occupation à ce lieu</label><input type="text" name="occupation" maxlength="200" value="<%= peL ? peL.occupation || '' : '' %>"></div>
+      <div><label>Chiffre d’affaires du lieu ($)</label><input type="number" name="chiffre_affaires" min="0" step="0.01" value="<%= peL && peL.chiffre_affaires != null ? peL.chiffre_affaires : '' %>"></div>
+      <div><label>Montant de perte d’exploitation du lieu ($)</label><input type="number" name="montant_pe" min="0" step="0.01" value="<%= peL && peL.montant_pe != null ? peL.montant_pe : '' %>"></div>
+      <div class="actions"><button class="btn btn-petit btn-secondaire" type="submit"><%= peL ? 'Mettre à jour le lien PE' : 'Lier à la perte d’exploitation' %></button></div>
+    </form>
+
+    <h4>⚖️ Volet RC — <%= rcL ? 'lieu lié' : 'non lié' %></h4>
+    <form method="post" action="/combinees/<%= d.id %>/emplacement/<%= b.id %>/lier-rc" class="grille-form">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+      <div><label>Type d’activité à ce lieu</label><input type="text" name="type_activite" maxlength="120" value="<%= rcL ? rcL.type_activite || '' : '' %>"></div>
+      <div><label>Chiffre d’affaires du lieu ($)</label><input type="number" name="chiffre_affaires" min="0" step="0.01" value="<%= rcL && rcL.chiffre_affaires != null ? rcL.chiffre_affaires : '' %>"></div>
+      <div style="grid-column:1/-1"><label>Description des activités à ce lieu</label><input type="text" name="description_activites" maxlength="300" value="<%= rcL ? rcL.description_activites || '' : '' %>"></div>
+      <div class="actions"><button class="btn btn-petit btn-secondaire" type="submit"><%= rcL ? 'Mettre à jour le lien RC' : 'Lier à la RC' %></button></div>
+    </form>
+  </details>
+  <% }) %>
+</div>
+
+<div class="carte" id="garanties">
+  <h2>🛡️ Garanties des 3 volets</h2>
+
+  <h3>🏢 Biens — par emplacement</h3>
+  <% batiments.forEach((b) => { const g = b.garanties; %>
+  <details class="details-inline">
+    <summary class="btn btn-secondaire btn-petit"><%= b.adresse %> — <%= g ? 'montant ' + fmt$(g.montant_assurance) : 'aucune garantie' %></summary>
+    <form method="post" action="/combinees/<%= d.id %>/garanties-biens/<%= b.id %>" class="grille-form">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+      <div><label>Formule</label>
+        <select name="formule">
+          <option value="">—</option>
+          <% FORMULES_BIENS.forEach((f) => { %><option value="<%= f %>"<%= g && g.formule === f ? ' selected' : '' %>><%= NOMS_FORMULE_BIENS[f] %></option><% }) %>
+        </select></div>
+      <div><label>Montant d’assurance — bâtiment ($)</label>
+        <input type="number" name="montant_assurance" min="0" step="0.01" value="<%= g && g.montant_assurance != null ? g.montant_assurance : '' %>"></div>
+      <div><label>Franchise — bâtiment ($)</label>
+        <input type="number" name="franchise" min="0" step="0.01" value="<%= g && g.franchise != null ? g.franchise : '' %>"></div>
+      <div><label>Règle proportionnelle — bâtiment (%)</label>
+        <input type="number" name="regle_proportionnelle" min="0" max="100" step="0.01" value="<%= g && g.regle_proportionnelle != null ? g.regle_proportionnelle : '' %>"></div>
+      <div><label>Franchise — contenu ($)</label>
+        <input type="number" name="franchise_contenu" min="0" step="0.01" value="<%= g && g.franchise_contenu != null ? g.franchise_contenu : '' %>"></div>
+      <div><label>Règle proportionnelle — contenu (%)</label>
+        <input type="number" name="regle_proportionnelle_contenu" min="0" max="100" step="0.01" value="<%= g && g.regle_proportionnelle_contenu != null ? g.regle_proportionnelle_contenu : '' %>"></div>
+      <div style="grid-column:1/-1"><span class="petit">Avenants détaillés — franchise et montant par avenant</span>
+        <div class="tableau-deroulant"><table>
+          <thead><tr><th>Avenant</th><th>Franchise ($)</th><th>Montant ($)</th><th>Détails</th></tr></thead>
+          <tbody>
+          <% AVENANTS_DETAILLES.forEach(([code, libelle]) => { const av = g && g.avenants ? g.avenants[code] : null; const det = av && typeof av === 'object' ? av : {}; %>
+            <tr>
+              <td><span class="case" style="display:inline-flex"><input type="checkbox" id="cav-<%= b.id %>-<%= code %>" name="avenant_det_<%= code %>"<%= av ? ' checked' : '' %>><label for="cav-<%= b.id %>-<%= code %>"><%= libelle %></label></span></td>
+              <td><input type="number" name="avenant_det_<%= code %>_franchise" min="0" step="0.01" value="<%= det.franchise != null ? det.franchise : '' %>"></td>
+              <td><input type="number" name="avenant_det_<%= code %>_montant" min="0" step="0.01" value="<%= det.montant != null ? det.montant : '' %>"></td>
+              <td><% (CHAMPS_AVENANT_SUPPL[code] || []).forEach((champ) => { %>
+                <label class="petit"><%= ({franchise_pct: 'Franchise (%)', franchise_min: 'Franchise min. ($)', date_debut: 'Du', date_fin: 'Au', montant_hors_lieux: 'Hors lieux ($)', montant_par_accident: 'Par accident ($)', limitations: 'Limitations'})[champ] || champ %>
+                <input type="<%= champ.startsWith('date') ? 'date' : (champ === 'limitations' ? 'text' : 'number') %>" name="avenant_det_<%= code %>_<%= champ %>" <%= champ === 'limitations' ? '' : 'min="0" step="0.01"' %> value="<%= det[champ] != null ? det[champ] : '' %>"></label>
+                <% }) %></td>
+            </tr>
+          <% }) %>
+          </tbody>
+        </table></div>
+      </div>
+      <div class="actions" style="grid-column:1/-1"><button class="btn btn-petit btn-secondaire" type="submit">Enregistrer les garanties biens</button></div>
+    </form>
+  </details>
+  <% }) %>
+  <% if (!batiments.length) { %><p class="petit">Ajoutez d’abord un emplacement.</p><% } %>
+
+  <h3 style="margin-top:16px">🧰 Assurance flottante des outils</h3>
+  <% if (flottante.length) { %>
+  <div class="tableau-deroulant"><table>
+    <thead><tr><th>Description</th><th>Base de règlement</th><th>Montant</th></tr></thead>
+    <tbody><% flottante.forEach((art) => { %><tr><td><%= art.description %></td><td><%= art.base_reglement || '—' %></td><td><%= fmt$(art.montant) %></td></tr><% }) %></tbody>
+  </table></div>
+  <% } %>
+  <form method="post" action="/combinees/<%= d.id %>/flottante" class="grille-form">
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+    <div><label>Description de l’article *</label><input type="text" name="description" required maxlength="200"></div>
+    <div><label>Base de règlement</label><input type="text" name="base_reglement" maxlength="120"></div>
+    <div><label>Montant ($)</label><input type="number" name="montant" min="0" step="0.01"></div>
+    <div class="actions"><button class="btn btn-petit btn-secondaire" type="submit">+ Ajouter l’article</button></div>
+  </form>
+
+  <h3 style="margin-top:16px">⚖️ RC — par lieu lié</h3>
+  <% const explLiees = d.soumissions.rc ? d.soumissions.rc.exploitations.filter((e) => !e.archive && e.batiment_id) : []; %>
+  <% explLiees.forEach((e) => { const g = e.garanties; %>
+  <details class="details-inline">
+    <summary class="btn btn-secondaire btn-petit"><%= e.adresse %><%= e.ville ? ', ' + e.ville : '' %> — <%= g ? 'limite ' + fmt$(g.limite_par_sinistre) : 'aucune garantie' %></summary>
+    <form method="post" action="/combinees/<%= d.id %>/garanties-rc/<%= e.id %>" class="grille-form">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+      <div><label>Formule</label>
+        <select name="formule">
+          <option value="">—</option>
+          <% FORMULES_RC.forEach((f) => { %><option value="<%= f %>"<%= g && g.formule === f ? ' selected' : '' %>><%= NOMS_FORMULE_RC[f] %></option><% }) %>
+        </select></div>
+      <% [['limite_par_sinistre', 'Limite par sinistre ($)'], ['limite_agregat', 'Limite agrégat ($)'], ['franchise', 'Franchise ($)'], ['prejudice_personnel_publicite', 'Préjudice personnel et publicité ($)'], ['frais_medicaux_par_personne', 'Frais médicaux — par personne ($)'], ['frais_medicaux_par_sinistre', 'Frais médicaux — par sinistre ($)'], ['responsabilite_locative', 'Responsabilité locative — ce lieu ($)'], ['rc_auto_non_proprietaires', 'RC automobiles non-propriétaires ($)'], ['produits_travaux_termines_montant', 'Produits et travaux terminés ($)'], ['pollution_montant', 'Pollution ($)'], ['umbrella_montant', 'Umbrella — montant ($)'], ['umbrella_retention', 'Umbrella — rétention ($)']].forEach(([champ, libelle]) => { %>
+      <div><label><%= libelle %></label>
+        <input type="number" name="<%= champ %>" min="0" step="0.01" value="<%= g && g[champ] != null ? g[champ] : '' %>"></div>
+      <% }) %>
+      <div style="grid-column:1/-1"><span class="petit">Avenants</span><br>
+        <% AVENANTS_RC.forEach(([code, libelle], i) => { %><span class="case" style="display:inline-flex;margin-right:12px"><input type="checkbox" id="cavrc-<%= e.id %>-<%= i %>" name="avenants" value="<%= code %>"<%= g && g.avenants && g.avenants[code] ? ' checked' : '' %>><label for="cavrc-<%= e.id %>-<%= i %>"><%= libelle %></label></span><% }) %></div>
+      <div class="actions" style="grid-column:1/-1"><button class="btn btn-petit btn-secondaire" type="submit">Enregistrer les garanties RC</button></div>
+    </form>
+  </details>
+  <% }) %>
+  <% if (!explLiees.length) { %><p class="petit">Liez d’abord un emplacement au volet RC (section Emplacements).</p><% } %>
+
+  <h3 style="margin-top:16px">📉 Perte d’exploitation</h3>
+  <% const gpe = d.soumissions.perte_exploitation ? d.soumissions.perte_exploitation.garanties : null; %>
+  <% if (d.soumissions.perte_exploitation) { %>
+  <form method="post" action="/combinees/<%= d.id %>/garanties-pe" class="grille-form">
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+    <div><label>Formule</label>
+      <select name="formule">
+        <option value="">—</option>
+        <% FORMULES_PE.forEach((f) => { %><option value="<%= f %>"<%= gpe && gpe.formule === f ? ' selected' : '' %>><%= NOMS_FORMULE_PE[f] %></option><% }) %>
+      </select></div>
+    <div><label>Limite ($)</label>
+      <input type="number" name="limite" min="0" step="0.01" value="<%= gpe && gpe.limite != null ? gpe.limite : '' %>"></div>
+    <div><label>Franchise — délai de carence (jours)</label>
+      <input type="number" name="franchise_jours" min="0" step="1" value="<%= gpe && gpe.franchise_jours != null ? gpe.franchise_jours : '' %>"></div>
+    <div><label>Règle proportionnelle (%)</label>
+      <input type="number" name="regle_proportionnelle" min="0" max="100" step="0.01" value="<%= gpe && gpe.regle_proportionnelle != null ? gpe.regle_proportionnelle : '' %>"></div>
+    <div><label>Honoraires de comptables ($)</label>
+      <input type="number" name="honoraires_comptables" min="0" step="0.01" value="<%= gpe && gpe.honoraires_comptables != null ? gpe.honoraires_comptables : '' %>"></div>
+    <div style="grid-column:1/-1"><span class="petit">Période d’indemnité</span><br>
+      <% PERIODES_INDEMNITE_MOIS.forEach((mois, i) => { %><span class="case" style="display:inline-flex;margin-right:12px"><input type="radio" id="cpe-per-<%= i %>" name="periode_indemnite_mois" value="<%= mois %>"<%= gpe && Number(gpe.periode_indemnite_mois) === mois ? ' checked' : '' %>><label for="cpe-per-<%= i %>"><%= NOMS_PERIODE_INDEMNITE[mois] %></label></span><% }) %></div>
+    <div style="grid-column:1/-1"><span class="petit">Base d’indemnité</span><br>
+      <% BASES_MONTANT.forEach((bb, i) => { %><span class="case" style="display:inline-flex;margin-right:12px"><input type="radio" id="cpe-base-<%= i %>" name="base_montant" value="<%= bb %>"<%= gpe && gpe.base_montant === bb ? ' checked' : '' %>><label for="cpe-base-<%= i %>"><%= NOMS_BASE_MONTANT[bb] %></label></span><% }) %></div>
+    <div style="grid-column:1/-1"><span class="petit">Avenants</span><br>
+      <% AVENANTS_PE.forEach(([code, libelle], i) => { %><span class="case" style="display:inline-flex;margin-right:12px"><input type="checkbox" id="cavpe-<%= i %>" name="avenants" value="<%= code %>"<%= gpe && gpe.avenants && gpe.avenants[code] ? ' checked' : '' %>><label for="cavpe-<%= i %>"><%= libelle %></label></span><% }) %></div>
+    <div class="actions" style="grid-column:1/-1"><button class="btn btn-petit btn-secondaire" type="submit">Enregistrer les garanties PE</button></div>
+  </form>
+  <% } %>
+</div>
+
+<div class="carte" id="questions">
+  <h2>❓ Questions additionnelles par secteur</h2>
+  <form method="post" action="/combinees/<%= d.id %>/questions" class="grille-form">
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+    <% SECTEURS_QUESTIONS.forEach(([secteur, libelleSecteur]) => { %>
+    <div style="grid-column:1/-1"><h3><%= libelleSecteur %></h3></div>
+    <% QUESTIONS_SECTORIELLES.filter((q) => q.secteur === secteur).forEach((q) => { %>
+    <div><label for="q-<%= q.code %>"><%= q.question %></label>
+      <input type="text" id="q-<%= q.code %>" name="q_<%= q.code %>" maxlength="500" value="<%= reponses[q.code] || '' %>"></div>
+    <% }) %>
+    <% }) %>
+    <div class="actions" style="grid-column:1/-1"><button class="btn btn-petit" type="submit">Enregistrer les réponses</button></div>
+  </form>
+</div>
+
+<div class="carte" id="assures">
+  <h2>👤 Assurés additionnels du dossier</h2>
+  <% if (assures.length) { %>
+  <div class="tableau-deroulant"><table>
+    <thead><tr><th>Nom</th><th>Adresse</th><th>Intérêt assurable</th><th></th></tr></thead>
+    <tbody><% assures.forEach((a) => { %><tr><td><%= a.nom %></td><td><%= [a.adresse, a.ville, a.code_postal].filter(Boolean).join(', ') || '—' %></td><td><%= a.interet || '—' %></td>
+      <td><form method="post" action="/combinees/<%= d.id %>/assures/<%= a.id %>/archiver" class="inline" data-confirm="Archiver cet assuré additionnel ?">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>"><button class="btn btn-petit btn-secondaire" type="submit">Archiver</button></form></td></tr><% }) %></tbody>
+  </table></div>
+  <% } %>
+  <form method="post" action="/combinees/<%= d.id %>/assures" class="grille-form">
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+    <div><label>Nom *</label><input type="text" name="nom" required maxlength="160"></div>
+    <div><label>Adresse</label><input type="text" name="adresse" maxlength="200"></div>
+    <div><label>Ville</label><input type="text" name="ville" maxlength="80"></div>
+    <div><label>Code postal</label><input type="text" name="code_postal" maxlength="10"></div>
+    <div><label>Intérêt assurable</label><input type="text" name="interet" maxlength="200"></div>
+    <div class="actions"><button class="btn btn-petit" type="submit">+ Ajouter l’assuré additionnel</button></div>
+  </form>
+</div>
+<%- include('../partials/bas') %>

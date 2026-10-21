@@ -162,6 +162,11 @@
       <input type="number" id="fr-<%= e.id %>" name="franchise" min="0" step="0.01" value="<%= g && g.franchise !== null ? g.franchise : '' %>"></div>
     <div><label for="prime-<%= e.id %>">Prime ($, si connue)</label>
       <input type="number" id="prime-<%= e.id %>" name="prime" min="0" step="0.01" value="<%= g && g.prime !== null ? g.prime : '' %>"></div>
+    <% const CHAMPS_RC2 = [['prejudice_personnel_publicite', 'Préjudice personnel et préjudice découlant de la publicité ($)'], ['frais_medicaux_par_personne', 'Frais médicaux — par personne ($)'], ['frais_medicaux_par_sinistre', 'Frais médicaux — par sinistre ($)'], ['responsabilite_locative', 'Responsabilité locative — ce lieu ($)'], ['rc_auto_non_proprietaires', 'RC automobiles non-propriétaires ($)'], ['produits_travaux_termines_montant', 'Produits et travaux terminés ($)'], ['pollution_montant', 'Pollution / atteinte à l’environnement ($)'], ['umbrella_montant', 'Umbrella — montant ($)'], ['umbrella_retention', 'Umbrella — rétention ($)']]; %>
+    <% CHAMPS_RC2.forEach(([champ, libelle]) => { %>
+    <div><label for="<%= champ %>-<%= e.id %>"><%= libelle %></label>
+      <input type="number" id="<%= champ %>-<%= e.id %>" name="<%= champ %>" min="0" step="0.01" value="<%= g && g[champ] != null ? g[champ] : '' %>"></div>
+    <% }) %>
     <div style="grid-column:1/-1"><span class="petit">Avenants</span><br>
       <% AVENANTS_RC.forEach(([code, libelle], i) => { %>
       <span class="case" style="display:inline-flex;margin-right:12px"><input type="checkbox" id="av-<%= e.id %>-<%= i %>" name="avenants" value="<%= code %>"<%= g && g.avenants && g.avenants[code] ? ' checked' : '' %>><label for="av-<%= e.id %>-<%= i %>"><%= libelle %></label></span>

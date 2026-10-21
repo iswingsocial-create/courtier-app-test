@@ -9,6 +9,7 @@ const multer = require('multer');
 
 const bd = require('../lib/bd');
 const placesGoogle = require('../lib/places-google');
+const combine = require('../lib/combine');
 const { exigeAuth, exigeMotDePasseChange, verifieCsrf, journal, estCourrielValide,
   estAdmin, estCourtier, clausePortefeuille, clientHorsPortefeuille, reponseHorsPortefeuille } = require('../lib/middleware');
 
@@ -53,6 +54,18 @@ function validerClient(corps) {
   if (corps.neq && !/^\d{10}$/.test(corps.neq.replace(/\s/g, ''))) erreurs.push('NEQ invalide (10 chiffres attendus).');
   if (corps.chiffre_affaires && isNaN(Number(corps.chiffre_affaires))) erreurs.push('Chiffre d’affaires invalide.');
   if (corps.nb_employes && (!/^\d+$/.test(corps.nb_employes) || Number(corps.nb_employes) < 0)) erreurs.push('Nombre d’employés invalide.');
+  // Profil de souscription (soumission combinée, étape 1/10) — champs facultatifs.
+  if (corps.forme_juridique && !combine.FORMES_JURIDIQUES.some(([c]) => c === corps.forme_juridique)) {
+    erreurs.push('Forme juridique invalide.');
+  }
+  if (corps.annee_fondation && (!/^\d{4}$/.test(String(corps.annee_fondation).trim())
+      || Number(corps.annee_fondation) < 1800 || Number(corps.annee_fondation) > 2100)) {
+    erreurs.push('Année de fondation invalide (4 chiffres attendus).');
+  }
+  for (const champ of ['annees_experience_liee', 'masse_salariale', 'code_industrie_pct_revenus',
+    'nb_employes_temps_plein', 'nb_employes_temps_partiel', 'pct_sous_traitance']) {
+    if (corps[champ] && isNaN(Number(corps[champ]))) erreurs.push(`Valeur numérique invalide : ${champ}.`);
+  }
   return erreurs;
 }
 
@@ -112,8 +125,20 @@ router.get('/nouveau', (req, res) => {
   res.render('clients/formulaire', { erreur: null, client: null, consentements: {}, TYPES_CONSENTEMENT, utilisateurs: utilisateursCabinet(res.locals.cabinetId), peutChangerResponsable: estAdmin(req), googleConfiguree: placesGoogle.obtenirReglageGoogle(res.locals.cabinetId).configuree });
 });
 
+// Répartitions de recettes (%) : champs rep_geo_<clé> / rep_type_<clé> du
+// formulaire → JSON stocké sur la fiche client (étape 1/10 combinée).
+function repartitionJson(corps, prefixe, cles) {
+  const obj = {};
+  for (const cle of cles) {
+    const brut = corps[prefixe + cle];
+    if (brut !== undefined && String(brut).trim() !== '' && !isNaN(Number(brut))) obj[cle] = Number(brut);
+  }
+  return Object.keys(obj).length ? JSON.stringify(obj) : null;
+}
+
 function corpsClient(corps) {
   const v = (x) => (x == null ? '' : String(x)).trim();
+  const nb = (x) => (v(x) === '' || isNaN(Number(x)) ? null : Number(x));
   return {
     raison_sociale: v(corps.raison_sociale),
     neq: v(corps.neq).replace(/\s/g, '') || null,
@@ -124,6 +149,22 @@ function corpsClient(corps) {
     place_id_google: v(corps.place_id_google) || null,
     chiffre_affaires: v(corps.chiffre_affaires) ? Number(corps.chiffre_affaires) : null,
     nb_employes: v(corps.nb_employes) ? Number(corps.nb_employes) : null,
+    forme_juridique: v(corps.forme_juridique) || null,
+    annee_fondation: nb(corps.annee_fondation),
+    annees_experience_liee: nb(corps.annees_experience_liee),
+    noms_exploitation: v(corps.noms_exploitation) || null,
+    description_activites: v(corps.description_activites) || null,
+    code_industrie: v(corps.code_industrie) || null,
+    code_industrie_description: v(corps.code_industrie_description) || null,
+    code_industrie_pct_revenus: nb(corps.code_industrie_pct_revenus),
+    repartition_revenus_types: repartitionJson(corps, 'rep_type_', combine.CLES_REPARTITION_TYPES),
+    repartition_revenus_geo: repartitionJson(corps, 'rep_geo_', combine.CLES_REPARTITION_GEO),
+    masse_salariale: nb(corps.masse_salariale),
+    nb_employes_temps_plein: nb(corps.nb_employes_temps_plein),
+    nb_employes_temps_partiel: nb(corps.nb_employes_temps_partiel),
+    employes_csst: corps.employes_csst === 'on' ? 1 : 0,
+    responsabilite_alcool: corps.responsabilite_alcool === 'on' ? 1 : 0,
+    pct_sous_traitance: nb(corps.pct_sous_traitance),
     prenom: v(corps.prenom),
     nom: v(corps.nom),
     titre_contact: v(corps.titre_contact) || null,
@@ -152,12 +193,24 @@ router.post('/', (req, res) => {
     INSERT INTO clients (cabinet_id, raison_sociale, neq, secteur_activite,
                          courriel_entreprise, telephone_entreprise, site_web, place_id_google,
                          chiffre_affaires, nb_employes,
+                         forme_juridique, annee_fondation, annees_experience_liee,
+                         noms_exploitation, description_activites,
+                         code_industrie, code_industrie_description, code_industrie_pct_revenus,
+                         repartition_revenus_types, repartition_revenus_geo, masse_salariale,
+                         nb_employes_temps_plein, nb_employes_temps_partiel,
+                         employes_csst, responsabilite_alcool, pct_sous_traitance,
                          prenom, nom, titre_contact,
                          courriel, telephone, adresse, ville, province, code_postal, langue, notes, responsable_id)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `).run(res.locals.cabinetId, c.raison_sociale, c.neq, c.secteur_activite,
     c.courriel_entreprise, c.telephone_entreprise, c.site_web, c.place_id_google,
     c.chiffre_affaires, c.nb_employes,
+    c.forme_juridique, c.annee_fondation, c.annees_experience_liee,
+    c.noms_exploitation, c.description_activites,
+    c.code_industrie, c.code_industrie_description, c.code_industrie_pct_revenus,
+    c.repartition_revenus_types, c.repartition_revenus_geo, c.masse_salariale,
+    c.nb_employes_temps_plein, c.nb_employes_temps_partiel,
+    c.employes_csst, c.responsabilite_alcool, c.pct_sous_traitance,
     c.prenom, c.nom, c.titre_contact,
     c.courriel, c.telephone, c.adresse, c.ville, c.province, c.code_postal, c.langue, c.notes, resp);
   synchroniserContactPrincipal(res.locals.cabinetId, r.lastInsertRowid, c);
@@ -194,6 +247,12 @@ router.post('/:id', (req, res) => {
                        courriel_entreprise = ?, telephone_entreprise = ?,
                        site_web = ?, place_id_google = ?,
                        chiffre_affaires = ?, nb_employes = ?,
+                       forme_juridique = ?, annee_fondation = ?, annees_experience_liee = ?,
+                       noms_exploitation = ?, description_activites = ?,
+                       code_industrie = ?, code_industrie_description = ?, code_industrie_pct_revenus = ?,
+                       repartition_revenus_types = ?, repartition_revenus_geo = ?, masse_salariale = ?,
+                       nb_employes_temps_plein = ?, nb_employes_temps_partiel = ?,
+                       employes_csst = ?, responsabilite_alcool = ?, pct_sous_traitance = ?,
                        prenom = ?, nom = ?, titre_contact = ?,
                        courriel = ?, telephone = ?, adresse = ?, ville = ?, province = ?, code_postal = ?, langue = ?, notes = ?,
                        responsable_id = ?
@@ -201,6 +260,12 @@ router.post('/:id', (req, res) => {
   `).run(c.raison_sociale, c.neq, c.secteur_activite,
     c.courriel_entreprise, c.telephone_entreprise, c.site_web, placeId,
     c.chiffre_affaires, c.nb_employes,
+    c.forme_juridique, c.annee_fondation, c.annees_experience_liee,
+    c.noms_exploitation, c.description_activites,
+    c.code_industrie, c.code_industrie_description, c.code_industrie_pct_revenus,
+    c.repartition_revenus_types, c.repartition_revenus_geo, c.masse_salariale,
+    c.nb_employes_temps_plein, c.nb_employes_temps_partiel,
+    c.employes_csst, c.responsabilite_alcool, c.pct_sous_traitance,
     c.prenom, c.nom, c.titre_contact,
     c.courriel, c.telephone, c.adresse, c.ville, c.province, c.code_postal, c.langue, c.notes, resp,
     client.id, res.locals.cabinetId);

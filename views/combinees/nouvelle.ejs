@@ -1,0 +1,43 @@
+<%- include('../partials/haut', { titre: 'Nouvelle soumission combinée' }) %>
+<div class="entete-page">
+  <h1>🧩 Nouvelle soumission combinée</h1>
+  <div><a class="btn btn-secondaire btn-petit" href="/combinees">← Dossiers combinés</a></div>
+</div>
+
+<div class="carte">
+  <h2>1. Choisir l’entreprise</h2>
+  <form method="get" action="/combinees/nouvelle" class="grille-form">
+    <div><label for="client_id">Entreprise (client)</label>
+      <select id="client_id" name="client_id" required>
+        <option value="">— Choisir —</option>
+        <% clients.forEach((c) => { %><option value="<%= c.id %>"<%= clientChoisi && clientChoisi.id === c.id ? ' selected' : '' %>><%= c.raison_sociale %></option><% }) %>
+      </select></div>
+    <div class="actions"><button class="btn btn-petit" type="submit">Continuer</button></div>
+  </form>
+</div>
+
+<% if (clientChoisi) { %>
+<div class="carte">
+  <h2>2. Volets du dossier — <%= clientChoisi.raison_sociale %></h2>
+  <p class="petit">Pour chaque produit : créez une nouvelle soumission ou liez une soumission existante <strong>du même client</strong>. Le contrôle est aussi fait côté serveur.</p>
+  <form method="post" action="/combinees" class="grille-form">
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+    <input type="hidden" name="client_id" value="<%= clientChoisi.id %>">
+    <% [['biens', '🏢 Biens + contenu'], ['rc', '⚖️ Responsabilité civile'], ['perte_exploitation', '📉 Perte d’exploitation']].forEach(([produit, libelle]) => { %>
+    <div><label><%= libelle %></label>
+      <select name="lier_<%= produit %>">
+        <option value="nouvelle">Créer une nouvelle soumission</option>
+        <% existantes[produit].forEach((s) => { %><option value="<%= s.id %>">Lier la soumission #<%= s.id %> (<%= s.statut %>, créée le <%= String(s.cree_le).slice(0, 10) %>)</option><% }) %>
+      </select></div>
+    <% }) %>
+    <div><label for="date_effet">Date d’effet demandée</label>
+      <input type="date" id="date_effet" name="date_effet"></div>
+    <div><label for="date_echeance">Date d’échéance</label>
+      <input type="date" id="date_echeance" name="date_echeance"></div>
+    <div><label for="plan_paiement">Plan de paiement</label>
+      <input type="text" id="plan_paiement" name="plan_paiement" maxlength="80" placeholder="Annuel, mensuel, 2/3/4 versements…"></div>
+    <div class="actions" style="grid-column:1/-1"><button class="btn" type="submit">Créer le dossier combiné</button></div>
+  </form>
+</div>
+<% } %>
+<%- include('../partials/bas') %>

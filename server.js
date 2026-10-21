@@ -86,6 +86,7 @@ app.use('/cyber', require('./routes/cyber')); // soumissions cyberrisques (étap
 app.use('/eo', require('./routes/eo')); // soumissions E&O (étape 2/10 E&O)
 app.use('/do', require('./routes/do')); // soumissions D&O (étape 2/10 D&O)
 app.use('/pe', require('./routes/pe')); // soumissions perte d'exploitation (étape 2/10 PE)
+app.use('/combinees', require('./routes/combinees')); // soumissions combinées entreprise (biens + RC + perte liées)
 app.use('/flotte', require('./routes/flotte')); // soumissions flotte automobile (étape 3/10 flotte)
 app.use('/cautionnement', require('./routes/cautionnement')); // soumissions cautionnement (étape 2/10 cautionnement)
 app.use('/reclamations', require('./routes/reclamations'));

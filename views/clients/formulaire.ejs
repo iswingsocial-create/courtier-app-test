@@ -45,6 +45,60 @@
     <% } %>
   </div>
 
+  <%
+    // Profil de souscription (soumission combinée) : listes et répartitions.
+    const FORMES_JURIDIQUES_VUE = [['societe_actions', 'Société par actions'], ['proprietaire_unique', 'Propriétaire unique'], ['srl', 'Société à responsabilité limitée'], ['fiducie', 'Fiducie'], ['snc', 'Société en nom collectif'], ['coentreprise', 'Coentreprise'], ['association', 'Association'], ['autre', 'Autre']];
+    const REP_GEO = [['canada', 'Canada'], ['etats_unis', 'États-Unis'], ['etranger', 'Étranger'], ['internet', 'Internet']];
+    const REP_TYPES = [['detail', 'Détail'], ['gros', 'Gros'], ['reparation', 'Réparation'], ['fabrication', 'Fabrication'], ['estimation', 'Estimation'], ['affinage', 'Affinage'], ['achat_or', 'Achat d\u2019or'], ['autre', 'Autre']];
+    function repValeur(source, prefixe, cle) {
+      if (!source) return '';
+      const brut = source[prefixe + cle];
+      if (brut !== undefined && brut !== null && brut !== '') return brut;
+      return '';
+    }
+    function repValeurJson(json, prefixe, cle) {
+      if (!json) return '';
+      try { const o = JSON.parse(json); return o && o[cle] != null ? o[cle] : ''; } catch (e) { return ''; }
+    }
+  %>
+  <h3>Profil de souscription — soumission combinée</h3>
+  <p class="petit">Ces renseignements alimentent les « Renseignements généraux » et la tarification RC des soumissions combinées (Biens + RC + Perte d’exploitation). Tous facultatifs.</p>
+  <div class="grille-form">
+    <div><label for="forme_juridique">Forme juridique</label>
+      <select id="forme_juridique" name="forme_juridique">
+        <option value="">— Non précisée —</option>
+        <% FORMES_JURIDIQUES_VUE.forEach(([code, lib]) => { %>
+          <option value="<%= code %>" <%= client && client.forme_juridique === code ? 'selected' : '' %>><%= lib %></option>
+        <% }) %>
+      </select></div>
+    <div><label for="annee_fondation">Année de fondation (en affaire depuis)</label><input type="number" id="annee_fondation" name="annee_fondation" min="1800" max="2100" step="1" value="<%= client && client.annee_fondation != null ? client.annee_fondation : '' %>"></div>
+    <div><label for="annees_experience_liee">Expérience antérieure liée (années)</label><input type="number" id="annees_experience_liee" name="annees_experience_liee" min="0" step="1" value="<%= client && client.annees_experience_liee != null ? client.annees_experience_liee : '' %>"></div>
+    <div><label for="noms_exploitation">Noms d’exploitation et filiales à assurer</label><input type="text" id="noms_exploitation" name="noms_exploitation" value="<%= client && client.noms_exploitation ? client.noms_exploitation : '' %>"></div>
+    <div><label for="code_industrie">Code de l’industrie</label><input type="text" id="code_industrie" name="code_industrie" value="<%= client && client.code_industrie ? client.code_industrie : '' %>"></div>
+    <div><label for="code_industrie_description">Description du code de l’industrie</label><input type="text" id="code_industrie_description" name="code_industrie_description" value="<%= client && client.code_industrie_description ? client.code_industrie_description : '' %>"></div>
+    <div><label for="code_industrie_pct_revenus">% des revenus (code de l’industrie)</label><input type="number" id="code_industrie_pct_revenus" name="code_industrie_pct_revenus" min="0" max="100" step="0.01" value="<%= client && client.code_industrie_pct_revenus != null ? client.code_industrie_pct_revenus : '' %>"></div>
+    <div><label for="masse_salariale">Masse salariale annuelle ($)</label><input type="number" id="masse_salariale" name="masse_salariale" min="0" step="0.01" value="<%= client && client.masse_salariale != null ? client.masse_salariale : '' %>"></div>
+    <div><label for="nb_employes_temps_plein">Employés à temps plein</label><input type="number" id="nb_employes_temps_plein" name="nb_employes_temps_plein" min="0" step="1" value="<%= client && client.nb_employes_temps_plein != null ? client.nb_employes_temps_plein : '' %>"></div>
+    <div><label for="nb_employes_temps_partiel">Employés à temps partiel</label><input type="number" id="nb_employes_temps_partiel" name="nb_employes_temps_partiel" min="0" step="1" value="<%= client && client.nb_employes_temps_partiel != null ? client.nb_employes_temps_partiel : '' %>"></div>
+    <div><label for="pct_sous_traitance">Sous-traitance (% des recettes)</label><input type="number" id="pct_sous_traitance" name="pct_sous_traitance" min="0" max="100" step="0.01" value="<%= client && client.pct_sous_traitance != null ? client.pct_sous_traitance : '' %>"></div>
+    <div class="case"><input type="checkbox" id="employes_csst" name="employes_csst" <%= client && client.employes_csst ? 'checked' : '' %>><label for="employes_csst">Employés couverts par la CSST</label></div>
+    <div class="case"><input type="checkbox" id="responsabilite_alcool" name="responsabilite_alcool" <%= client && client.responsabilite_alcool ? 'checked' : '' %>><label for="responsabilite_alcool">Responsabilité liée à la vente de boissons alcoolisées</label></div>
+  </div>
+  <label for="description_activites">Description des activités de l’assuré</label>
+  <textarea id="description_activites" name="description_activites"><%= client && client.description_activites ? client.description_activites : '' %></textarea>
+  <div class="grille-form">
+    <fieldset><legend>Répartition géographique des recettes (%)</legend>
+      <% REP_GEO.forEach(([cle, lib]) => { const val = repValeur(client, 'rep_geo_', cle) !== '' ? repValeur(client, 'rep_geo_', cle) : repValeurJson(client && client.repartition_revenus_geo, 'rep_geo_', cle); %>
+      <div><label for="rep_geo_<%= cle %>"><%= lib %></label><input type="number" id="rep_geo_<%= cle %>" name="rep_geo_<%= cle %>" min="0" max="100" step="0.01" value="<%= val %>"></div>
+      <% }) %>
+    </fieldset>
+    <fieldset><legend>Répartition des recettes par type d’activité (%)</legend>
+      <% REP_TYPES.forEach(([cle, lib]) => { const val = repValeur(client, 'rep_type_', cle) !== '' ? repValeur(client, 'rep_type_', cle) : repValeurJson(client && client.repartition_revenus_types, 'rep_type_', cle); %>
+      <div><label for="rep_type_<%= cle %>"><%= lib %></label><input type="number" id="rep_type_<%= cle %>" name="rep_type_<%= cle %>" min="0" max="100" step="0.01" value="<%= val %>"></div>
+      <% }) %>
+    </fieldset>
+  </div>
+
   <h3>Contact principal</h3>
   <p class="petit">Les autres contacts se gèrent dans la fiche de l’entreprise, section « Contacts ».</p>
   <div class="grille-form">

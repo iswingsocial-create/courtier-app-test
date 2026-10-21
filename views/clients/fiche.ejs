@@ -20,6 +20,12 @@
     <dt>Téléphone de l’entreprise</dt><dd><%= client.telephone_entreprise || '—' %></dd>
     <dt>Chiffre d’affaires</dt><dd><%= client.chiffre_affaires != null ? Number(client.chiffre_affaires).toLocaleString('fr-CA') + ' $' : '—' %></dd>
     <dt>Nombre d’employés</dt><dd><%= client.nb_employes != null ? client.nb_employes : '—' %></dd>
+    <% if (client.forme_juridique) { %><dt>Forme juridique</dt><dd><%= ({societe_actions:'Société par actions',proprietaire_unique:'Propriétaire unique',srl:'Société à responsabilité limitée',fiducie:'Fiducie',snc:'Société en nom collectif',coentreprise:'Coentreprise',association:'Association',autre:'Autre'})[client.forme_juridique] || client.forme_juridique %></dd><% } %>
+    <% if (client.annee_fondation) { %><dt>En affaire depuis</dt><dd><%= client.annee_fondation %><% if (client.annees_experience_liee != null) { %> · expérience liée : <%= client.annees_experience_liee %> ans<% } %></dd><% } %>
+    <% if (client.nb_employes_temps_plein != null || client.nb_employes_temps_partiel != null) { %><dt>Employés (plein / partiel)</dt><dd><%= client.nb_employes_temps_plein != null ? client.nb_employes_temps_plein : '—' %> / <%= client.nb_employes_temps_partiel != null ? client.nb_employes_temps_partiel : '—' %><% if (client.employes_csst) { %> · couverts par la CSST<% } %></dd><% } %>
+    <% if (client.masse_salariale != null) { %><dt>Masse salariale</dt><dd><%= Number(client.masse_salariale).toLocaleString('fr-CA') %> $</dd><% } %>
+    <% if (client.code_industrie) { %><dt>Code de l’industrie</dt><dd><%= client.code_industrie %><%= client.code_industrie_description ? ' — ' + client.code_industrie_description : '' %><%= client.code_industrie_pct_revenus != null ? ' (' + client.code_industrie_pct_revenus + ' % des revenus)' : '' %></dd><% } %>
+    <% if (client.description_activites) { %><dt>Description des activités</dt><dd><%= client.description_activites %></dd><% } %>
     <dt>Adresse</dt><dd><%= [client.adresse, client.ville, client.code_postal].filter(Boolean).join(', ') || '—' %></dd>
     <dt>Langue</dt><dd><%= client.langue === 'EN' ? 'Anglais' : 'Français' %></dd>
     <dt>Courtier responsable</dt><dd><%= client.responsable_nom || '—' %></dd>

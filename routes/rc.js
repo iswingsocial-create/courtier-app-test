@@ -316,14 +316,25 @@ router.post('/:id/exploitation/:eid/garanties', (req, res) => {
   for (const code of asArray(req.body.avenants)) {
     if (AVENANTS_RC.some(([c]) => c === code)) avenants[code] = 1;
   }
+  const numR = (k) => (req.body[k] ? Number(req.body[k]) : null);
   try {
     rc.definirGaranties(e.id, res.locals.cabinetId, req.utilisateur.id, {
-      limite_par_sinistre: req.body.limite_par_sinistre ? Number(req.body.limite_par_sinistre) : null,
-      limite_agregat: req.body.limite_agregat ? Number(req.body.limite_agregat) : null,
-      franchise: req.body.franchise ? Number(req.body.franchise) : null,
+      limite_par_sinistre: numR('limite_par_sinistre'),
+      limite_agregat: numR('limite_agregat'),
+      franchise: numR('franchise'),
       formule,
       avenants,
-      prime: req.body.prime ? Number(req.body.prime) : null,
+      prime: numR('prime'),
+      // Soumission combinée (étape 5/10).
+      prejudice_personnel_publicite: numR('prejudice_personnel_publicite'),
+      frais_medicaux_par_personne: numR('frais_medicaux_par_personne'),
+      frais_medicaux_par_sinistre: numR('frais_medicaux_par_sinistre'),
+      responsabilite_locative: numR('responsabilite_locative'),
+      rc_auto_non_proprietaires: numR('rc_auto_non_proprietaires'),
+      umbrella_montant: numR('umbrella_montant'),
+      umbrella_retention: numR('umbrella_retention'),
+      produits_travaux_termines_montant: numR('produits_travaux_termines_montant'),
+      pollution_montant: numR('pollution_montant'),
     });
   } catch (ex) {
     return pageErreur(res, 400, 'Enregistrement impossible', ex.message);

@@ -1,0 +1,125 @@
+<%#
+  Champs enrichis de la fiche emplacement (soumission combinée, étape 2/10) —
+  inclus dans les formulaires d'ajout et de modification d'un bâtiment.
+  Locals : b (bâtiment ou null), p (préfixe d'ids unique).
+%>
+<%
+  const v = (k) => (b && b[k] != null ? b[k] : '');
+  const coche = (k) => (b && b[k] ? ' checked' : '');
+  const sel = (k, val) => (b && b[k] === val ? ' selected' : '');
+  const CLASSES = [['bois', 'Bois (Frame)'], ['maconnerie_solives', 'Maçonnerie avec solives'], ['incombustible', 'Incombustible'], ['maconnerie_incombustible', 'Maçonnerie incombustible'], ['resistant_feu_modifie', 'Résistant au feu modifié'], ['resistant_feu', 'Résistant au feu']];
+  const AMPLEURS = ['Complète', 'Partielle'];
+  const PRISES_EAU = ['À moins de 150 mètres', 'À moins de 300 mètres', 'À moins de 500 mètres', 'Plus de 500 mètres', 'Aucune prise d\u2019eau'];
+  const ALARMES_INC = ['Aucune', 'Alarme locale', 'Poste de surveillance (service complet)', 'Alarme reliée à une centrale', 'Alarme reliée à la caserne'];
+  const ALARMES_VOL = ['Aucune', 'Alarme locale', 'Poste de surveillance (service complet)', 'Alarme reliée à une centrale'];
+%>
+<div style="grid-column:1/-1">
+  <h4 style="margin:10px 0 4px">📍 Emplacement — adresse complète et affectation</h4>
+  <div class="grille-form">
+    <div><label>Province</label><input type="text" name="province" maxlength="60" value="<%= v('province') %>" placeholder="QC"></div>
+    <div><label>Étage</label><input type="text" name="etage" maxlength="30" value="<%= v('etage') %>"></div>
+    <div><label>Bureau / suite</label><input type="text" name="bureau" maxlength="30" value="<%= v('bureau') %>"></div>
+    <div><label>Type d’emplacement</label><input type="text" name="type_emplacement" maxlength="80" value="<%= v('type_emplacement') %>" placeholder="Indépendant, centre commercial fermé…"></div>
+    <div><label>Type de bâtiment</label><input type="text" name="type_batiment" maxlength="80" value="<%= v('type_batiment') %>" placeholder="Commercial, copropriété…"></div>
+    <div><label>Intérêt de l’assuré</label><input type="text" name="interet_assure" maxlength="80" value="<%= v('interet_assure') %>" placeholder="Propriétaire de l’immeuble, locataire…"></div>
+    <div><label>Superficie occupée par l’assuré (pi²)</label><input type="number" name="superficie_occupee_pi2" min="0" step="0.01" value="<%= v('superficie_occupee_pi2') %>"></div>
+    <div><label>Pourcentage vacant (%)</label><input type="number" name="pct_vacant" min="0" max="100" step="0.01" value="<%= v('pct_vacant') %>"></div>
+    <div><label>Étages occupés par l’assuré</label><input type="text" name="etages_occupes" maxlength="60" value="<%= v('etages_occupes') %>"></div>
+    <div class="case"><input type="checkbox" id="<%= p %>-partage" name="partage_lieux"<%= coche('partage_lieux') %>><label for="<%= p %>-partage">Lieux partagés avec d’autres occupants</label></div>
+    <div><label>Autres occupants du bâtiment</label><input type="text" name="autres_occupants" maxlength="200" value="<%= v('autres_occupants') %>"></div>
+  </div>
+
+  <h4 style="margin:12px 0 4px">🧱 Construction détaillée</h4>
+  <div class="grille-form">
+    <div><label>Classe de construction (assureur)</label><select name="classe_construction"><option value="">—</option>
+      <% CLASSES.forEach(([code, lib]) => { %><option value="<%= code %>"<%= sel('classe_construction', code) %>><%= lib %></option><% }) %>
+    </select></div>
+    <div><label>Matériau des murs</label><input type="text" name="construction_mur" maxlength="120" value="<%= v('construction_mur') %>" placeholder="Béton, bois lambrissé briques…"></div>
+    <div><label>Structure du toit</label><input type="text" name="construction_toit_structure" maxlength="120" value="<%= v('construction_toit_structure') %>" placeholder="Poutres d’acier…"></div>
+    <div><label>Finition du toit</label><input type="text" name="finition_toit" maxlength="120" value="<%= v('finition_toit') %>" placeholder="Goudron et gravier, bardeaux d’asphalte…"></div>
+    <div><label>Matériau des planchers / sol</label><input type="text" name="materiau_sol" maxlength="120" value="<%= v('materiau_sol') %>" placeholder="Béton, bois…"></div>
+    <div><label>Sous-sol</label><input type="text" name="sous_sol" maxlength="80" value="<%= v('sous_sol') %>" placeholder="Aucun, béton…"></div>
+  </div>
+
+  <h4 style="margin:12px 0 4px">⚙️ Mécanique et rénovations</h4>
+  <div class="grille-form">
+    <div><label>Électricité (type)</label><input type="text" name="electricite_type" maxlength="80" value="<%= v('electricite_type') %>" placeholder="Disjoncteurs, fusibles…"></div>
+    <div><label>Carburant utilisé</label><input type="text" name="carburant" maxlength="80" value="<%= v('carburant') %>" placeholder="Gaz naturel, électricité, pétrole…"></div>
+    <div><label>Plomberie (matériaux)</label><input type="text" name="plomberie_materiau" maxlength="80" value="<%= v('plomberie_materiau') %>" placeholder="Cuivre/PVC, plastique…"></div>
+    <div><label>Rénovation toiture — ampleur</label><select name="renovation_toiture_ampleur"><option value="">—</option>
+      <% AMPLEURS.forEach((a) => { %><option value="<%= a %>"<%= sel('renovation_toiture_ampleur', a) %>><%= a %></option><% }) %>
+    </select></div>
+    <div><label>Rénovation électricité — année</label><input type="number" name="renovation_electricite_annee" min="1800" max="2035" value="<%= v('renovation_electricite_annee') %>"></div>
+    <div><label>Rénovation électricité — ampleur</label><select name="renovation_electricite_ampleur"><option value="">—</option>
+      <% AMPLEURS.forEach((a) => { %><option value="<%= a %>"<%= sel('renovation_electricite_ampleur', a) %>><%= a %></option><% }) %>
+    </select></div>
+    <div><label>Rénovation plomberie — année</label><input type="number" name="renovation_plomberie_annee" min="1800" max="2035" value="<%= v('renovation_plomberie_annee') %>"></div>
+    <div><label>Rénovation plomberie — ampleur</label><select name="renovation_plomberie_ampleur"><option value="">—</option>
+      <% AMPLEURS.forEach((a) => { %><option value="<%= a %>"<%= sel('renovation_plomberie_ampleur', a) %>><%= a %></option><% }) %>
+    </select></div>
+    <div><label>Rénovation chauffage — année</label><input type="number" name="renovation_chauffage_annee" min="1800" max="2035" value="<%= v('renovation_chauffage_annee') %>"></div>
+    <div><label>Rénovation chauffage — ampleur</label><select name="renovation_chauffage_ampleur"><option value="">—</option>
+      <% AMPLEURS.forEach((a) => { %><option value="<%= a %>"<%= sel('renovation_chauffage_ampleur', a) %>><%= a %></option><% }) %>
+    </select></div>
+  </div>
+
+  <h4 style="margin:12px 0 4px">🔍 Inspection et évaluation</h4>
+  <div class="grille-form">
+    <div><label>Inspection</label><select name="inspection_statut"><option value="">—</option>
+      <option value="non_inspecte"<%= sel('inspection_statut', 'non_inspecte') %>>Non inspecté</option>
+      <option value="inspecte"<%= sel('inspection_statut', 'inspecte') %>>Inspecté</option>
+    </select></div>
+    <div><label>Date d’inspection</label><input type="date" name="inspection_date" value="<%= v('inspection_date') %>"></div>
+    <div><label>Remarques d’inspection</label><input type="text" name="inspection_notes" maxlength="200" value="<%= v('inspection_notes') %>"></div>
+    <div><label>Date d’évaluation</label><input type="date" name="evaluation_date" value="<%= v('evaluation_date') %>"></div>
+    <div><label>Évaluateur</label><input type="text" name="evaluation_par" maxlength="120" value="<%= v('evaluation_par') %>"></div>
+    <div><label>Coût de remplacement évalué ($)</label><input type="number" name="evaluation_cout_remplacement" min="0" step="0.01" value="<%= v('evaluation_cout_remplacement') %>"></div>
+    <div class="case"><input type="checkbox" id="<%= p %>-evaldet" name="evaluation_details_joints"<%= coche('evaluation_details_joints') %>><label for="<%= p %>-evaldet">Détails d’évaluation joints</label></div>
+  </div>
+
+  <h4 style="margin:12px 0 4px">🔥 Protection incendie</h4>
+  <div class="grille-form">
+    <div><label>Prise d’eau / borne-fontaine</label><select name="prise_eau_distance"><option value="">—</option>
+      <% PRISES_EAU.forEach((a) => { %><option value="<%= a %>"<%= sel('prise_eau_distance', a) %>><%= a %></option><% }) %>
+    </select></div>
+    <div><label>Gicleurs — couverture</label><select name="gicleurs_couverture"><option value="">—</option>
+      <option value="non"<%= sel('gicleurs_couverture', 'non') %>>Non giclé</option>
+      <option value="partiel"<%= sel('gicleurs_couverture', 'partiel') %>>Partiellement giclé</option>
+      <option value="entier"<%= sel('gicleurs_couverture', 'entier') %>>Entièrement giclé</option>
+    </select></div>
+    <div><label>Système d’alarme incendie</label><select name="alarme_incendie_type"><option value="">—</option>
+      <% ALARMES_INC.forEach((a) => { %><option value="<%= a %>"<%= sel('alarme_incendie_type', a) %>><%= a %></option><% }) %>
+    </select></div>
+    <div class="case"><input type="checkbox" id="<%= p %>-colonne" name="colonne_montante"<%= coche('colonne_montante') %>><label for="<%= p %>-colonne">Prise d’eau et tuyau d’incendie (colonne montante)</label></div>
+    <div><label>Extincteurs — catégorie</label><input type="text" name="extincteurs_categorie" maxlength="60" value="<%= v('extincteurs_categorie') %>"></div>
+    <div><label>Extincteurs — type d’agent</label><input type="text" name="extincteurs_agent" maxlength="60" value="<%= v('extincteurs_agent') %>"></div>
+    <div><label>Extincteurs — % couvert</label><input type="number" name="extincteurs_pct_couvert" min="0" max="100" step="0.01" value="<%= v('extincteurs_pct_couvert') %>"></div>
+  </div>
+
+  <h4 style="margin:12px 0 4px">🏘️ Voisinage — risques encourus</h4>
+  <div class="grille-form">
+    <div><label>À gauche — distance (m)</label><input type="number" name="voisin_gauche_distance_m" min="0" step="0.1" value="<%= v('voisin_gauche_distance_m') %>"></div>
+    <div><label>À gauche — affectation voisine</label><input type="text" name="voisin_gauche_affectation" maxlength="120" value="<%= v('voisin_gauche_affectation') %>"></div>
+    <div><label>À droite — distance (m)</label><input type="number" name="voisin_droite_distance_m" min="0" step="0.1" value="<%= v('voisin_droite_distance_m') %>"></div>
+    <div><label>À droite — affectation voisine</label><input type="text" name="voisin_droite_affectation" maxlength="120" value="<%= v('voisin_droite_affectation') %>"></div>
+    <div><label>En arrière — distance (m)</label><input type="number" name="voisin_arriere_distance_m" min="0" step="0.1" value="<%= v('voisin_arriere_distance_m') %>"></div>
+    <div><label>En arrière — affectation voisine</label><input type="text" name="voisin_arriere_affectation" maxlength="120" value="<%= v('voisin_arriere_affectation') %>"></div>
+    <div><label>En face — distance (m)</label><input type="number" name="voisin_enface_distance_m" min="0" step="0.1" value="<%= v('voisin_enface_distance_m') %>"></div>
+    <div><label>En face — affectation voisine</label><input type="text" name="voisin_enface_affectation" maxlength="120" value="<%= v('voisin_enface_affectation') %>"></div>
+    <div class="case"><input type="checkbox" id="<%= p %>-aucunrisque" name="aucun_risque_alentours"<%= coche('aucun_risque_alentours') %>><label for="<%= p %>-aucunrisque">Aucun risque aux alentours</label></div>
+  </div>
+
+  <h4 style="margin:12px 0 4px">🔐 Risques criminels (base)</h4>
+  <div class="grille-form">
+    <div><label>Système d’alarme antivol</label><select name="alarme_vol_type"><option value="">—</option>
+      <% ALARMES_VOL.forEach((a) => { %><option value="<%= a %>"<%= sel('alarme_vol_type', a) %>><%= a %></option><% }) %>
+    </select></div>
+    <div class="case"><input type="checkbox" id="<%= p %>-pene" name="pene_dormant"<%= coche('pene_dormant') %>><label for="<%= p %>-pene">Pêne dormant</label></div>
+    <div class="case"><input type="checkbox" id="<%= p %>-grillage" name="fenetres_grillagees"<%= coche('fenetres_grillagees') %>><label for="<%= p %>-grillage">Fenêtres grillagées / armature métallique</label></div>
+    <div class="case"><input type="checkbox" id="<%= p %>-glaces" name="glaces_incassables"<%= coche('glaces_incassables') %>><label for="<%= p %>-glaces">Glaces incassables</label></div>
+    <div class="case"><input type="checkbox" id="<%= p %>-cameras" name="cameras"<%= coche('cameras') %>><label for="<%= p %>-cameras">Caméras de surveillance</label></div>
+    <div><label>Coffre-fort — type</label><input type="text" name="coffre_type" maxlength="80" value="<%= v('coffre_type') %>"></div>
+    <div><label>Coffre-fort — catégorie</label><input type="text" name="coffre_categorie" maxlength="80" value="<%= v('coffre_categorie') %>"></div>
+    <div><label>Autres protections contre les risques criminels</label><input type="text" name="autres_protections_criminelles" maxlength="200" value="<%= v('autres_protections_criminelles') %>"></div>
+  </div>
+</div>

@@ -115,6 +115,7 @@ function lireEtablissementForm(body) {
     annee_construction: body.annee_construction === '' || body.annee_construction == null
       ? null : Number(body.annee_construction),
     base_valeur: baseValeur,
+    montant_pe: lireNombrePositif(body.montant_pe),
   };
 }
 
@@ -321,6 +322,10 @@ router.post('/:id/garanties', (req, res) => {
   for (const code of recus) {
     if (AVENANTS_PE.some(([c]) => c === code)) avenants[code] = 1;
   }
+  const formulePE = (req.body.formule || '').trim() || null;
+  if (formulePE && !pesoum.FORMULES_PE.includes(formulePE)) {
+    return pageErreur(res, 400, 'Enregistrement impossible', 'Formule de perte d\u2019exploitation invalide.');
+  }
   try {
     pesoum.definirGaranties(s.id, res.locals.cabinetId, req.utilisateur.id, {
       limite: lireNombrePositif(req.body.limite),
@@ -329,6 +334,10 @@ router.post('/:id/garanties', (req, res) => {
       base_montant: baseMontant,
       avenants,
       prime: lireNombrePositif(req.body.prime),
+      // Soumission combinée (étape 5/10).
+      regle_proportionnelle: lireNombrePositif(req.body.regle_proportionnelle),
+      honoraires_comptables: lireNombrePositif(req.body.honoraires_comptables),
+      formule: formulePE,
     });
   } catch (e) {
     return pageErreur(res, 400, 'Enregistrement impossible', e.message);

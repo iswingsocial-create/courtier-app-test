@@ -31,6 +31,21 @@ router.post('/cabinets', (req, res) => {
   res.redirect('/admin/cabinets');
 });
 
+// --- En-tête d'envoi du cabinet (propositions / demandes de prix, étape 1/10 combinée) ----
+router.post('/cabinets/:id/entete', (req, res) => {
+  const cabinet = bd.prepare('SELECT * FROM cabinets WHERE id = ?').get(req.params.id);
+  if (!cabinet) return res.status(404).render('erreur', { titre: 'Introuvable', message: 'Cabinet introuvable.' });
+  const combine = require('../lib/combine');
+  const v = (x) => String(x == null ? '' : x).trim() || null;
+  combine.majEnteteCabinet(cabinet.id, req.utilisateur.id, {
+    adresse: v(req.body.adresse), ville: v(req.body.ville), code_postal: v(req.body.code_postal),
+    telephone: v(req.body.telephone), telecopieur: v(req.body.telecopieur),
+    site_web: v(req.body.site_web), courriel: v(req.body.courriel),
+  });
+  journal(cabinet.id, req.utilisateur.id, 'cabinet_entete_maj', `En-tête d'envoi mis à jour (cabinet « ${cabinet.nom} »)`);
+  res.redirect('/admin/cabinets');
+});
+
 // --- Régénérer le jeton de capture publique de leads (par cabinet) -------------------------
 router.post('/cabinets/:id/token-capture', (req, res) => {
   const cabinet = bd.prepare('SELECT * FROM cabinets WHERE id = ?').get(req.params.id);

@@ -1,0 +1,32 @@
+<%- include('../partials/haut', { titre: 'Soumissions combinées' }) %>
+<div class="entete-page">
+  <h1>🧩 Soumissions combinées</h1>
+  <div><a class="btn btn-petit" href="/combinees/nouvelle">+ Nouvelle soumission combinée</a></div>
+</div>
+
+<p class="petit">Un dossier combiné lie une soumission <strong>biens</strong>, une <strong>responsabilité civile</strong> et une <strong>perte d’exploitation</strong> du même client : l’entreprise, les emplacements et les antécédents ne se saisissent qu’une fois.</p>
+
+<div class="carte">
+  <% if (!dossiers.length) { %>
+  <p>Aucun dossier combiné pour le moment.</p>
+  <% } else { %>
+  <div class="tableau-deroulant"><table>
+    <thead><tr><th>#</th><th>Entreprise</th><th>Statut</th><th>Effet</th><th>Échéance</th><th>Volets liés</th><th></th></tr></thead>
+    <tbody>
+    <% const NOMS_STATUT = { brouillon: 'Brouillon', en_cours: 'En cours', envoye: 'Envoyé', clos: 'Clos' }; %>
+    <% dossiers.forEach((d) => { %>
+      <tr>
+        <td><%= d.id %></td>
+        <td><strong><%= d.client_nom %></strong></td>
+        <td><%= NOMS_STATUT[d.statut] || d.statut %></td>
+        <td><%= d.date_effet || '—' %></td>
+        <td><%= d.date_echeance || '—' %></td>
+        <td><%= d.nb_liens %> / 3</td>
+        <td><a class="btn btn-petit btn-secondaire" href="/combinees/<%= d.id %>">Ouvrir</a></td>
+      </tr>
+    <% }) %>
+    </tbody>
+  </table></div>
+  <% } %>
+</div>
+<%- include('../partials/bas') %>

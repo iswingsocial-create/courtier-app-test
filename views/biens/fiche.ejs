@@ -94,6 +94,7 @@
       <div><label>Année de la toiture</label><input type="number" name="annee_toiture" min="1800" max="2035"></div>
       <div class="case"><input type="checkbox" id="b-gicleurs" name="gicleurs"><label for="b-gicleurs">Gicleurs (protection incendie)</label></div>
       <div style="grid-column:1/-1"><label>Notes</label><textarea name="notes" rows="2"></textarea></div>
+      <%- include('_batiment-enrichi', { b: null, p: 'nb' }) %>
       <div class="actions" style="grid-column:1/-1"><button class="btn btn-petit" type="submit">Ajouter ce bâtiment</button></div>
     </form>
   </div>
@@ -135,6 +136,7 @@
           <div><label>Année de la toiture</label><input type="number" name="annee_toiture" min="1800" max="2035" value="<%= b.annee_toiture || '' %>"></div>
           <div class="case"><input type="checkbox" id="mb-gicleurs-<%= b.id %>" name="gicleurs"<%= b.gicleurs ? ' checked' : '' %>><label for="mb-gicleurs-<%= b.id %>">Gicleurs</label></div>
           <div style="grid-column:1/-1"><label>Notes</label><textarea name="notes" rows="2"><%= b.notes || '' %></textarea></div>
+          <%- include('_batiment-enrichi', { b, p: 'mb' + b.id }) %>
           <div class="actions" style="grid-column:1/-1"><button class="btn btn-petit" type="submit">Enregistrer</button></div>
         </form>
       </td></tr>
@@ -144,6 +146,128 @@
   <% if (!s.batiments.filter((b) => !b.archive).length) { %><p class="petit">Aucun bâtiment pour l’instant.</p><% } %>
   <% const batArch = s.batiments.filter((b) => b.archive); %>
   <% if (batArch.length) { %><p class="petit">Archivés : <% batArch.forEach((b, i) => { %><%= i ? ', ' : '' %><%= b.adresse %> <form method="post" action="/biens/batiment/<%= b.id %>/desarchiver" class="inline"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button class="lien" type="submit">restaurer</button></form><% }) %></p><% } %>
+</div>
+
+<div class="carte" id="alarmes">
+  <div class="entete-page"><h2>🚨 Questionnaires alarme (par emplacement)</h2></div>
+  <% s.batiments.filter((b) => !b.archive).forEach((b) => { const a = (typeof alarmes !== 'undefined' && alarmes) ? alarmes[b.id] : null; %>
+  <details class="details-inline">
+    <summary class="btn btn-secondaire btn-petit"><%= b.adresse %><%= a ? ' — alarme renseignée' : ' — à remplir' %></summary>
+    <form method="post" action="/biens/batiment/<%= b.id %>/alarme">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+      <div class="grille-form">
+        <div><label>Compagnie d’alarme</label><input type="text" name="compagnie_alarme" maxlength="120" value="<%= a ? (a.compagnie_alarme || '') : '' %>"></div>
+        <div><label>Téléphone de la compagnie</label><input type="text" name="compagnie_telephone" maxlength="40" value="<%= a ? (a.compagnie_telephone || '') : '' %>"></div>
+        <div><label>Courriel de la compagnie</label><input type="email" name="compagnie_courriel" maxlength="120" value="<%= a ? (a.compagnie_courriel || '') : '' %>"></div>
+        <div><label>Personne-contact</label><input type="text" name="compagnie_contact" maxlength="120" value="<%= a ? (a.compagnie_contact || '') : '' %>"></div>
+        <div><label>Centrale de surveillance (nom et lieu)</label><input type="text" name="centrale_nom_lieu" maxlength="160" value="<%= a ? (a.centrale_nom_lieu || '') : '' %>"></div>
+        <div><label>Taux d’interrogation (polling)</label><input type="text" name="taux_interrogation" maxlength="60" value="<%= a ? (a.taux_interrogation || '') : '' %>"></div>
+      </div>
+      <div class="grille-form">
+        <fieldset><legend>Transmission primaire</legend>
+          <% LISTES_ALARME.transmissions.forEach((t) => { %>
+          <div class="case"><input type="checkbox" name="transmission_primaire" value="<%= t %>" id="tp-<%= b.id %>-<%= t %>" <%= a && Array.isArray(a.transmission_primaire) && a.transmission_primaire.includes(t) ? 'checked' : '' %>><label for="tp-<%= b.id %>-<%= t %>"><%= t %></label></div>
+          <% }) %>
+          <div><label>Fabricant</label><input type="text" name="transmission_primaire_fabricant" maxlength="80" value="<%= a ? (a.transmission_primaire_fabricant || '') : '' %>"></div>
+          <div><label>N° de modèle</label><input type="text" name="transmission_primaire_modele" maxlength="80" value="<%= a ? (a.transmission_primaire_modele || '') : '' %>"></div>
+        </fieldset>
+        <fieldset><legend>Transmission secondaire</legend>
+          <% LISTES_ALARME.transmissions.forEach((t) => { %>
+          <div class="case"><input type="checkbox" name="transmission_secondaire" value="<%= t %>" id="ts-<%= b.id %>-<%= t %>" <%= a && Array.isArray(a.transmission_secondaire) && a.transmission_secondaire.includes(t) ? 'checked' : '' %>><label for="ts-<%= b.id %>-<%= t %>"><%= t %></label></div>
+          <% }) %>
+          <div><label>Fabricant</label><input type="text" name="transmission_secondaire_fabricant" maxlength="80" value="<%= a ? (a.transmission_secondaire_fabricant || '') : '' %>"></div>
+          <div><label>N° de modèle</label><input type="text" name="transmission_secondaire_modele" maxlength="80" value="<%= a ? (a.transmission_secondaire_modele || '') : '' %>"></div>
+        </fieldset>
+      </div>
+      <div class="grille-form">
+        <div class="case"><input type="checkbox" id="al-secu-<%= b.id %>" name="securite_ligne" <%= a && a.securite_ligne ? 'checked' : '' %>><label for="al-secu-<%= b.id %>">Sécurité de ligne</label></div>
+        <div class="case"><input type="checkbox" id="al-pers-<%= b.id %>" name="reponse_en_personne" <%= a && a.reponse_en_personne ? 'checked' : '' %>><label for="al-pers-<%= b.id %>">Réponse en personne aux alarmes</label></div>
+        <div class="case"><input type="checkbox" id="al-entr-<%= b.id %>" name="contrat_entretien_annuel" <%= a && a.contrat_entretien_annuel ? 'checked' : '' %>><label for="al-entr-<%= b.id %>">Contrat annuel d’entretien</label></div>
+        <div><label>Signaux d’ouverture/fermeture</label><select name="signaux_ouverture_fermeture"><option value="">—</option>
+          <% LISTES_ALARME.signaux.forEach(([code, lib]) => { %><option value="<%= code %>" <%= a && a.signaux_ouverture_fermeture === code ? 'selected' : '' %>><%= lib %></option><% }) %>
+        </select></div>
+        <div><label>Dispositifs de périmètre</label><input type="text" name="dispositifs_perimetre" maxlength="200" value="<%= a ? (a.dispositifs_perimetre || '') : '' %>"></div>
+      </div>
+      <div class="grille-form">
+        <fieldset><legend>Couverture de la détection de mouvements</legend>
+          <% LISTES_ALARME.couvertures.forEach((t) => { %>
+          <div class="case"><input type="checkbox" name="couverture_detection" value="<%= t %>" id="cd-<%= b.id %>-<%= t %>" <%= a && Array.isArray(a.couverture_detection) && a.couverture_detection.includes(t) ? 'checked' : '' %>><label for="cd-<%= b.id %>-<%= t %>"><%= t %></label></div>
+          <% }) %>
+        </fieldset>
+        <fieldset><legend>Protection des coffres-forts</legend>
+          <% LISTES_ALARME.coffres.forEach((t) => { %>
+          <div class="case"><input type="checkbox" name="protection_coffres" value="<%= t %>" id="pc-<%= b.id %>-<%= t %>" <%= a && Array.isArray(a.protection_coffres) && a.protection_coffres.includes(t) ? 'checked' : '' %>><label for="pc-<%= b.id %>-<%= t %>"><%= t %></label></div>
+          <% }) %>
+        </fieldset>
+        <fieldset><legend>Répondants aux alarmes</legend>
+          <% LISTES_ALARME.repondants.forEach((t) => { %>
+          <div class="case"><input type="checkbox" name="repondants" value="<%= t %>" id="rp-<%= b.id %>-<%= t %>" <%= a && Array.isArray(a.repondants) && a.repondants.includes(t) ? 'checked' : '' %>><label for="rp-<%= b.id %>-<%= t %>"><%= t %></label></div>
+          <% }) %>
+        </fieldset>
+      </div>
+      <div class="grille-form">
+        <div class="case"><input type="checkbox" id="al-ulc-<%= b.id %>" name="certificat_ulc_actif" <%= a && a.certificat_ulc_actif ? 'checked' : '' %>><label for="al-ulc-<%= b.id %>">Certificat ULC actif</label></div>
+        <div><label>N° de certificat ULC</label><input type="text" name="certificat_ulc_numero" maxlength="60" value="<%= a ? (a.certificat_ulc_numero || '') : '' %>"></div>
+        <div><label>Expiration du certificat ULC</label><input type="date" name="certificat_ulc_expiration" value="<%= a ? (a.certificat_ulc_expiration || '') : '' %>"></div>
+      </div>
+      <fieldset><legend>Vidéosurveillance</legend><div class="grille-form">
+        <% [['presente', 'Caméras présentes'], ['couvre_tout_sauf_toilettes', 'Couvre tout sauf les toilettes'], ['enregistre_24h', 'Enregistre 24 h/24'], ['sauvegardes_hors_site', 'Sauvegardes hors site'], ['exterieures', 'Caméras extérieures']].forEach(([k, lib]) => { %>
+        <div class="case"><input type="checkbox" id="cam-<%= b.id %>-<%= k %>" name="camera_<%= k %>" <%= a && a.cameras_detail && a.cameras_detail[k] ? 'checked' : '' %>><label for="cam-<%= b.id %>-<%= k %>"><%= lib %></label></div>
+        <% }) %>
+      </div></fieldset>
+      <fieldset><legend>Protections physiques</legend><div class="grille-form">
+        <% LISTES_ALARME.physiques.forEach((t) => { %>
+        <div class="case"><input type="checkbox" name="protections_physiques" value="<%= t %>" id="pp-<%= b.id %>-<%= t %>" <%= a && Array.isArray(a.protections_physiques) && a.protections_physiques.includes(t) ? 'checked' : '' %>><label for="pp-<%= b.id %>-<%= t %>"><%= t %></label></div>
+        <% }) %>
+      </div></fieldset>
+      <fieldset><legend>Coffre-fort — détail</legend><div class="grille-form">
+        <div><label>Fabricant</label><input type="text" name="coffre_fabricant" maxlength="80" value="<%= a && a.coffre_detail ? (a.coffre_detail.fabricant || '') : '' %>"></div>
+        <div><label>Modèle</label><input type="text" name="coffre_modele" maxlength="80" value="<%= a && a.coffre_detail ? (a.coffre_detail.modele || '') : '' %>"></div>
+        <div><label>Cote feu / cambriolage</label><input type="text" name="coffre_cote" maxlength="80" value="<%= a && a.coffre_detail ? (a.coffre_detail.cote || '') : '' %>"></div>
+        <div class="case"><input type="checkbox" id="cf-poids-<%= b.id %>" name="coffre_poids" <%= a && a.coffre_detail && a.coffre_detail.poids_moins_500lb ? 'checked' : '' %>><label for="cf-poids-<%= b.id %>">Poids &lt; 500 lb</label></div>
+        <div class="case"><input type="checkbox" id="cf-boul-<%= b.id %>" name="coffre_boulonne" <%= a && a.coffre_detail && a.coffre_detail.boulonne ? 'checked' : '' %>><label for="cf-boul-<%= b.id %>">Boulonné au sol</label></div>
+        <div class="case"><input type="checkbox" id="cf-forte-<%= b.id %>" name="coffre_chambre_forte" <%= a && a.coffre_detail && a.coffre_detail.chambre_forte ? 'checked' : '' %>><label for="cf-forte-<%= b.id %>">Situé dans une chambre forte</label></div>
+      </div></fieldset>
+      <div class="actions"><button class="btn btn-petit" type="submit">Enregistrer le questionnaire alarme</button></div>
+    </form>
+  </details>
+  <% }) %>
+  <% if (!s.batiments.filter((b) => !b.archive).length) { %><p class="petit">Ajoutez d’abord un bâtiment.</p><% } %>
+</div>
+
+<div class="carte" id="beneficiaires">
+  <div class="entete-page"><h2>👥 Bénéficiaires et créanciers (par emplacement)</h2></div>
+  <p class="petit">Créanciers hypothécaires et autres bénéficiaires désignés pour chaque emplacement, avec leur clause de préavis de résiliation — section « Bénéficiaires » de la soumission combinée.</p>
+  <% s.batiments.filter((b) => !b.archive).forEach((b) => { const liste = (typeof beneficiaires !== 'undefined' && beneficiaires[b.id]) || []; %>
+  <details class="details-inline">
+    <summary class="btn btn-secondaire btn-petit"><%= b.adresse %><%= b.ville ? ', ' + b.ville : '' %> — <%= liste.length %> bénéficiaire(s)</summary>
+    <% if (liste.length) { %>
+    <div class="tableau-deroulant"><table>
+      <thead><tr><th>Nom</th><th>Adresse</th><th>Qualité</th><th>Préavis</th><th></th></tr></thead>
+      <tbody>
+      <% liste.forEach((ben) => { %>
+        <tr><td><%= ben.nom %></td>
+          <td><%= [ben.adresse, ben.ville, ben.code_postal].filter(Boolean).join(', ') || '—' %></td>
+          <td><%= ben.qualite || '—' %></td><td><%= ben.clause_preavis || '—' %></td>
+          <td><form method="post" action="/biens/beneficiaire/<%= ben.id %>/archiver" class="inline" data-confirm="Archiver ce bénéficiaire ?">
+            <input type="hidden" name="_csrf" value="<%= csrfToken %>"><button class="btn btn-petit btn-secondaire" type="submit">Archiver</button></form></td></tr>
+      <% }) %>
+      </tbody>
+    </table></div>
+    <% } %>
+    <form method="post" action="/biens/<%= s.id %>/batiment/<%= b.id %>/beneficiaire" class="grille-form">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+      <div><label>Nom du bénéficiaire *</label><input type="text" name="nom" required maxlength="160"></div>
+      <div><label>Adresse</label><input type="text" name="adresse" maxlength="200"></div>
+      <div><label>Ville</label><input type="text" name="ville" maxlength="80"></div>
+      <div><label>Code postal</label><input type="text" name="code_postal" maxlength="10"></div>
+      <div><label>Qualité</label><input type="text" name="qualite" maxlength="120" placeholder="Créancier hypothécaire…"></div>
+      <div><label>Clause de préavis</label><input type="text" name="clause_preavis" maxlength="80" placeholder="30 jours…"></div>
+      <div class="actions"><button class="btn btn-petit" type="submit">+ Ajouter le bénéficiaire</button></div>
+    </form>
+  </details>
+  <% }) %>
+  <% if (!s.batiments.filter((b) => !b.archive).length) { %><p class="petit">Ajoutez d’abord un bâtiment.</p><% } %>
 </div>
 
 <div class="carte" id="contenus">
@@ -222,13 +346,69 @@
       <input type="number" id="fr-<%= b.id %>" name="franchise" min="0" step="0.01" value="<%= g && g.franchise !== null ? g.franchise : '' %>"></div>
     <div><label for="prime-<%= b.id %>">Prime ($, si connue)</label>
       <input type="number" id="prime-<%= b.id %>" name="prime" min="0" step="0.01" value="<%= g && g.prime !== null ? g.prime : '' %>"></div>
+    <div><label for="rp-<%= b.id %>">Règle proportionnelle — bâtiment (%)</label>
+      <input type="number" id="rp-<%= b.id %>" name="regle_proportionnelle" min="0" max="100" step="0.01" value="<%= g && g.regle_proportionnelle != null ? g.regle_proportionnelle : '' %>"></div>
+    <div><label for="frc-<%= b.id %>">Franchise — contenu ($)</label>
+      <input type="number" id="frc-<%= b.id %>" name="franchise_contenu" min="0" step="0.01" value="<%= g && g.franchise_contenu != null ? g.franchise_contenu : '' %>"></div>
+    <div><label for="rpc-<%= b.id %>">Règle proportionnelle — contenu (%)</label>
+      <input type="number" id="rpc-<%= b.id %>" name="regle_proportionnelle_contenu" min="0" max="100" step="0.01" value="<%= g && g.regle_proportionnelle_contenu != null ? g.regle_proportionnelle_contenu : '' %>"></div>
     <div style="grid-column:1/-1"><span class="petit">Avenants</span><br>
       <% AVENANTS_BIENS.forEach(([code, libelle], i) => { %>
       <span class="case" style="display:inline-flex;margin-right:12px"><input type="checkbox" id="av-<%= b.id %>-<%= i %>" name="avenants" value="<%= code %>"<%= g && g.avenants && g.avenants[code] ? ' checked' : '' %>><label for="av-<%= b.id %>-<%= i %>"><%= libelle %></label></span>
       <% }) %></div>
+    <div style="grid-column:1/-1">
+      <details class="details-inline">
+        <summary class="btn btn-secondaire btn-petit">Avenants détaillés — franchise et montant par avenant</summary>
+        <div class="tableau-deroulant"><table>
+          <thead><tr><th>Avenant</th><th>Franchise ($)</th><th>Montant ($)</th><th>Détails</th></tr></thead>
+          <tbody>
+          <% AVENANTS_DETAILLES.forEach(([code, libelle]) => { const av = g && g.avenants ? g.avenants[code] : null; const det = av && typeof av === 'object' ? av : {}; %>
+            <tr>
+              <td><span class="case" style="display:inline-flex"><input type="checkbox" id="avd-<%= b.id %>-<%= code %>" name="avenant_det_<%= code %>"<%= av ? ' checked' : '' %>><label for="avd-<%= b.id %>-<%= code %>"><%= libelle %></label></span></td>
+              <td><input type="number" name="avenant_det_<%= code %>_franchise" min="0" step="0.01" value="<%= det.franchise != null ? det.franchise : '' %>"></td>
+              <td><input type="number" name="avenant_det_<%= code %>_montant" min="0" step="0.01" value="<%= det.montant != null ? det.montant : '' %>"></td>
+              <td>
+                <% (CHAMPS_AVENANT_SUPPL[code] || []).forEach((champ) => { %>
+                <label class="petit"><%= ({franchise_pct: 'Franchise (%)', franchise_min: 'Franchise min. ($)', date_debut: 'Du', date_fin: 'Au', montant_hors_lieux: 'Montant hors lieux ($)', montant_par_accident: 'Montant par accident ($)', limitations: 'Limitations'})[champ] || champ %>
+                <input type="<%= champ.startsWith('date') ? 'date' : (champ === 'limitations' ? 'text' : 'number') %>" name="avenant_det_<%= code %>_<%= champ %>" <%= champ === 'limitations' ? '' : 'min="0" step="0.01"' %> value="<%= det[champ] != null ? det[champ] : '' %>"></label>
+                <% }) %>
+              </td>
+            </tr>
+          <% }) %>
+          </tbody>
+        </table></div>
+      </details>
+    </div>
     <div class="actions" style="grid-column:1/-1"><button class="btn btn-petit btn-secondaire" type="submit">Enregistrer les garanties</button></div>
   </form>
   <% }) %>
+</div>
+
+<div class="carte" id="flottante">
+  <h2>🧰 Assurance flottante des outils</h2>
+  <p class="petit">Liste des articles couverts par la flottante (annexe de la soumission combinée). Laissez vide si la garantie ne s’applique pas.</p>
+  <% const articles = (typeof flottante !== 'undefined' && flottante) || []; %>
+  <% if (articles.length) { %>
+  <div class="tableau-deroulant"><table>
+    <thead><tr><th>Description</th><th>Base de règlement</th><th>Assuré additionnel</th><th>Montant ($)</th><th></th></tr></thead>
+    <tbody>
+    <% articles.forEach((art) => { %>
+      <tr><td><%= art.description %></td><td><%= art.base_reglement || '—' %></td><td><%= art.assure_additionnel || '—' %></td>
+        <td><%= art.montant != null ? Number(art.montant).toLocaleString('fr-CA') : '—' %></td>
+        <td><form method="post" action="/biens/flottante/<%= art.id %>/archiver" class="inline" data-confirm="Archiver cet article ?">
+          <input type="hidden" name="_csrf" value="<%= csrfToken %>"><button class="btn btn-petit btn-secondaire" type="submit">Archiver</button></form></td></tr>
+    <% }) %>
+    </tbody>
+  </table></div>
+  <% } %>
+  <form method="post" action="/biens/<%= s.id %>/flottante" class="grille-form">
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+    <div><label>Description de l’article *</label><input type="text" name="description" required maxlength="200"></div>
+    <div><label>Base de règlement</label><input type="text" name="base_reglement" maxlength="120" placeholder="Valeur à neuf…"></div>
+    <div><label>Assuré additionnel</label><input type="text" name="assure_additionnel" maxlength="120"></div>
+    <div><label>Montant ($)</label><input type="number" name="montant" min="0" step="0.01"></div>
+    <div class="actions"><button class="btn btn-petit" type="submit">+ Ajouter l’article</button></div>
+  </form>
 </div>
 
 <div class="carte" id="antecedents">

@@ -23,7 +23,8 @@
   "pe": "Perte d'exploitation",
   "flotte": "Flotte automobile",
   "cautionnement": "Cautionnement",
-  "analyse_ia": "Analyse de documents IA"
+  "analyse_ia": "Analyse de documents IA",
+  "combine": "Soumission combinée"
  },
  "tables": [
   {
@@ -62,6 +63,62 @@
      "description": "Horodatage de création.",
      "type": "TEXT",
      "usage": "technique",
+     "relations": []
+    },
+    {
+     "nom": "adresse",
+     "libelle": "Adresse du cabinet",
+     "description": "Adresse du cabinet, imprimée dans l'en-tête d'envoi des propositions (demandes de prix).",
+     "type": "TEXT",
+     "usage": "gestion",
+     "relations": []
+    },
+    {
+     "nom": "ville",
+     "libelle": "Ville du cabinet",
+     "description": "Ville du cabinet (en-tête d'envoi des propositions).",
+     "type": "TEXT",
+     "usage": "gestion",
+     "relations": []
+    },
+    {
+     "nom": "code_postal",
+     "libelle": "Code postal du cabinet",
+     "description": "Code postal du cabinet (en-tête d'envoi des propositions).",
+     "type": "TEXT",
+     "usage": "gestion",
+     "relations": []
+    },
+    {
+     "nom": "telephone",
+     "libelle": "Téléphone du cabinet",
+     "description": "Téléphone du cabinet (en-tête d'envoi des propositions).",
+     "type": "TEXT",
+     "usage": "gestion",
+     "relations": []
+    },
+    {
+     "nom": "telecopieur",
+     "libelle": "Télécopieur du cabinet",
+     "description": "Télécopieur du cabinet (en-tête d'envoi des propositions).",
+     "type": "TEXT",
+     "usage": "gestion",
+     "relations": []
+    },
+    {
+     "nom": "site_web",
+     "libelle": "Site Web du cabinet",
+     "description": "Site Web du cabinet (en-tête d'envoi des propositions).",
+     "type": "TEXT",
+     "usage": "gestion",
+     "relations": []
+    },
+    {
+     "nom": "courriel",
+     "libelle": "Courriel du cabinet",
+     "description": "Courriel du cabinet (en-tête d'envoi des propositions).",
+     "type": "TEXT",
+     "usage": "gestion",
      "relations": []
     }
    ]
@@ -393,6 +450,144 @@
      "description": "Province de l'entreprise (ex. QC), souvent remplie par l'enrichissement Google Maps à partir des composantes d'adresse.",
      "type": "TEXT",
      "usage": "les_deux",
+     "relations": []
+    },
+    {
+     "nom": "forme_juridique",
+     "libelle": "Forme juridique",
+     "description": "Forme juridique de l'entreprise (la description de l'entité légale des soumissions combinées).",
+     "type": "TEXT",
+     "usage": "soumission",
+     "relations": [],
+     "valeurs": [
+      "societe_actions",
+      "proprietaire_unique",
+      "srl",
+      "fiducie",
+      "snc",
+      "coentreprise",
+      "association",
+      "autre"
+     ]
+    },
+    {
+     "nom": "annee_fondation",
+     "libelle": "Année de fondation",
+     "description": "Année de fondation de l'entreprise, le 'En affaire depuis' des renseignements relatifs à la responsabilité civile.",
+     "type": "INTEGER",
+     "usage": "soumission",
+     "relations": []
+    },
+    {
+     "nom": "annees_experience_liee",
+     "libelle": "Expérience antérieure liée (années)",
+     "description": "Nombre d'années d'expérience antérieure liée au même type d'activités.",
+     "type": "INTEGER",
+     "usage": "soumission",
+     "relations": []
+    },
+    {
+     "nom": "noms_exploitation",
+     "libelle": "Noms d'exploitation et filiales",
+     "description": "Noms commerciaux d'exploitation et filiales à assurer, en plus de la dénomination sociale.",
+     "type": "TEXT",
+     "usage": "soumission",
+     "relations": []
+    },
+    {
+     "nom": "description_activites",
+     "libelle": "Description des activités",
+     "description": "Description détaillée des activités de l'assuré (renseignements généraux de la soumission combinée).",
+     "type": "TEXT",
+     "usage": "soumission",
+     "relations": []
+    },
+    {
+     "nom": "code_industrie",
+     "libelle": "Code de l'industrie",
+     "description": "Code de classification de l'industrie de l'entreprise.",
+     "type": "TEXT",
+     "usage": "soumission",
+     "relations": []
+    },
+    {
+     "nom": "code_industrie_description",
+     "libelle": "Description du code de l'industrie",
+     "description": "Libellé du code de l'industrie.",
+     "type": "TEXT",
+     "usage": "soumission",
+     "relations": []
+    },
+    {
+     "nom": "code_industrie_pct_revenus",
+     "libelle": "% des revenus (code de l'industrie)",
+     "description": "Pourcentage des revenus totaux rattaché au code de l'industrie.",
+     "type": "REAL",
+     "usage": "soumission",
+     "relations": []
+    },
+    {
+     "nom": "repartition_revenus_types",
+     "libelle": "Répartition des recettes par type d'activité",
+     "description": "Répartition des recettes par type d'activité en % (JSON : detail, gros, reparation, fabrication, estimation, affinage, achat_or, autre) — base de tarification.",
+     "type": "TEXT",
+     "usage": "soumission",
+     "relations": []
+    },
+    {
+     "nom": "repartition_revenus_geo",
+     "libelle": "Répartition géographique des recettes",
+     "description": "Répartition géographique des recettes en % (JSON : canada, etats_unis, etranger, internet) — base de tarification RC.",
+     "type": "TEXT",
+     "usage": "soumission",
+     "relations": []
+    },
+    {
+     "nom": "masse_salariale",
+     "libelle": "Masse salariale annuelle",
+     "description": "Masse salariale annuelle de l'entreprise ($) — base de tarification RC.",
+     "type": "REAL",
+     "usage": "soumission",
+     "relations": []
+    },
+    {
+     "nom": "nb_employes_temps_plein",
+     "libelle": "Employés à temps plein",
+     "description": "Nombre d'employés à temps plein de l'entreprise.",
+     "type": "INTEGER",
+     "usage": "soumission",
+     "relations": []
+    },
+    {
+     "nom": "nb_employes_temps_partiel",
+     "libelle": "Employés à temps partiel",
+     "description": "Nombre d'employés à temps partiel de l'entreprise.",
+     "type": "INTEGER",
+     "usage": "soumission",
+     "relations": []
+    },
+    {
+     "nom": "employes_csst",
+     "libelle": "Employés couverts par la CSST",
+     "description": "Les employés sont couverts par la CSST/CNESST (1 = oui, 0 = non).",
+     "type": "INTEGER",
+     "usage": "soumission",
+     "relations": []
+    },
+    {
+     "nom": "responsabilite_alcool",
+     "libelle": "Responsabilité alcool",
+     "description": "Responsabilité liée à la vente de boissons alcoolisées (1 = oui, 0 = non).",
+     "type": "INTEGER",
+     "usage": "soumission",
+     "relations": []
+    },
+    {
+     "nom": "pct_sous_traitance",
+     "libelle": "% de sous-traitance",
+     "description": "Volume annuel de travail en sous-traitance, en % des recettes totales.",
+     "type": "REAL",
+     "usage": "soumission",
      "relations": []
     }
    ]
@@ -849,6 +1044,16 @@
      "type": "TEXT",
      "usage": "technique",
      "relations": []
+    },
+    {
+     "nom": "combine_dossier_id",
+     "libelle": "Dossier combiné d'origine",
+     "description": "Dossier combiné dont la conversion a produit cette police (traçabilité).",
+     "type": "INTEGER",
+     "usage": "technique",
+     "relations": [
+      "combine_dossiers.id"
+     ]
     }
    ]
   },
@@ -2206,6 +2411,16 @@
      "type": "TEXT",
      "usage": "technique",
      "relations": []
+    },
+    {
+     "nom": "combine_dossier_id",
+     "libelle": "Dossier combiné d'origine",
+     "description": "Dossier combiné auquel un brouillon « demande de prix » se rattache (ni police ni facture).",
+     "type": "INTEGER",
+     "usage": "technique",
+     "relations": [
+      "combine_dossiers.id"
+     ]
     }
    ]
   },
@@ -4108,6 +4323,503 @@
      "type": "TEXT",
      "usage": "technique",
      "relations": []
+    },
+    {
+     "nom": "province",
+     "libelle": "Province de l'emplacement",
+     "description": "Province de l'emplacement assuré.",
+     "type": "TEXT",
+     "usage": "soumission",
+     "relations": []
+    },
+    {
+     "nom": "etage",
+     "libelle": "Étage",
+     "description": "Étage de l'emplacement dans le bâtiment.",
+     "type": "TEXT",
+     "usage": "soumission",
+     "relations": []
+    },
+    {
+     "nom": "bureau",
+     "libelle": "Bureau / suite",
+     "description": "Numéro de bureau ou de suite de l'emplacement.",
+     "type": "TEXT",
+     "usage": "soumission",
+     "relations": []
+    },
+    {
+     "nom": "type_emplacement",
+     "libelle": "Type d'emplacement",
+     "description": "Type d'emplacement (condominium commercial, indépendant, centre commercial fermé, galerie marchande, domicile...).",
+     "type": "TEXT",
+     "usage": "soumission",
+     "relations": []
+    },
+    {
+     "nom": "type_batiment",
+     "libelle": "Type de bâtiment",
+     "description": "Type de bâtiment (commercial, détaché, habitation, copropriété résidentielle...).",
+     "type": "TEXT",
+     "usage": "soumission",
+     "relations": []
+    },
+    {
+     "nom": "interet_assure",
+     "libelle": "Intérêt de l'assuré",
+     "description": "Intérêt de l'assuré à cet emplacement (propriétaire de l'immeuble, locataire...).",
+     "type": "TEXT",
+     "usage": "soumission",
+     "relations": []
+    },
+    {
+     "nom": "superficie_occupee_pi2",
+     "libelle": "Superficie occupée (pi2)",
+     "description": "Superficie occupée par l'assuré à cet emplacement, en pieds carrés.",
+     "type": "REAL",
+     "usage": "soumission",
+     "relations": []
+    },
+    {
+     "nom": "pct_vacant",
+     "libelle": "Pourcentage vacant (%)",
+     "description": "Pourcentage de l'emplacement laissé vacant.",
+     "type": "REAL",
+     "usage": "soumission",
+     "relations": []
+    },
+    {
+     "nom": "partage_lieux",
+     "libelle": "Lieux partagés",
+     "description": "Les lieux sont partagés avec d'autres occupants (1 = oui, 0 = non).",
+     "type": "INTEGER",
+     "usage": "soumission",
+     "relations": []
+    },
+    {
+     "nom": "autres_occupants",
+     "libelle": "Autres occupants",
+     "description": "Description des autres occupations du bâtiment.",
+     "type": "TEXT",
+     "usage": "soumission",
+     "relations": []
+    },
+    {
+     "nom": "etages_occupes",
+     "libelle": "Étages occupés",
+     "description": "Étage(s) occupé(s) par l'assuré dans le bâtiment.",
+     "type": "TEXT",
+     "usage": "soumission",
+     "relations": []
+    },
+    {
+     "nom": "classe_construction",
+     "libelle": "Classe de construction (assureur)",
+     "description": "Classe de construction des assureurs, selon la résistance au feu — distincte de type_construction (taxonomie historique de l'application).",
+     "type": "TEXT",
+     "usage": "soumission",
+     "relations": [],
+     "valeurs": [
+      "bois",
+      "maconnerie_solives",
+      "incombustible",
+      "maconnerie_incombustible",
+      "resistant_feu_modifie",
+      "resistant_feu"
+     ]
+    },
+    {
+     "nom": "construction_mur",
+     "libelle": "Matériau des murs",
+     "description": "Matériau des murs du bâtiment (ex. béton, bois lambrissé briques).",
+     "type": "TEXT",
+     "usage": "soumission",
+     "relations": []
+    },
+    {
+     "nom": "construction_toit_structure",
+     "libelle": "Structure du toit",
+     "description": "Structure du toit (ex. poutres d'acier, structure de bois).",
+     "type": "TEXT",
+     "usage": "soumission",
+     "relations": []
+    },
+    {
+     "nom": "finition_toit",
+     "libelle": "Finition du toit",
+     "description": "Finition ou couverture du toit (ex. goudron et gravier, bardeaux d'asphalte, toiture d'acier).",
+     "type": "TEXT",
+     "usage": "soumission",
+     "relations": []
+    },
+    {
+     "nom": "materiau_sol",
+     "libelle": "Matériau des planchers / sol",
+     "description": "Matériau des planchers et du sol (ex. béton, bois, matériau résistant au feu).",
+     "type": "TEXT",
+     "usage": "soumission",
+     "relations": []
+    },
+    {
+     "nom": "sous_sol",
+     "libelle": "Sous-sol",
+     "description": "Sous-sol du bâtiment (ex. aucun, béton).",
+     "type": "TEXT",
+     "usage": "soumission",
+     "relations": []
+    },
+    {
+     "nom": "electricite_type",
+     "libelle": "Électricité — type",
+     "description": "Type d'installation électrique (ex. disjoncteurs, fusibles).",
+     "type": "TEXT",
+     "usage": "soumission",
+     "relations": []
+    },
+    {
+     "nom": "carburant",
+     "libelle": "Carburant utilisé",
+     "description": "Carburant utilisé (gaz naturel, énergie électrique, pétrole, combinaison).",
+     "type": "TEXT",
+     "usage": "soumission",
+     "relations": []
+    },
+    {
+     "nom": "plomberie_materiau",
+     "libelle": "Plomberie — matériaux",
+     "description": "Matériaux de plomberie (ex. cuivre/PVC, plastique).",
+     "type": "TEXT",
+     "usage": "soumission",
+     "relations": []
+    },
+    {
+     "nom": "renovation_toiture_ampleur",
+     "libelle": "Rénovation toiture — ampleur",
+     "description": "Ampleur de la rénovation de la toiture (avec annee_toiture).",
+     "type": "TEXT",
+     "usage": "soumission",
+     "relations": [],
+     "valeurs": [
+      "Complète",
+      "Partielle"
+     ]
+    },
+    {
+     "nom": "renovation_electricite_annee",
+     "libelle": "Rénovation électricité — année",
+     "description": "Année de rénovation de l'électricité.",
+     "type": "INTEGER",
+     "usage": "soumission",
+     "relations": []
+    },
+    {
+     "nom": "renovation_electricite_ampleur",
+     "libelle": "Rénovation électricité — ampleur",
+     "description": "Ampleur de la rénovation de l'électricité.",
+     "type": "TEXT",
+     "usage": "soumission",
+     "relations": [],
+     "valeurs": [
+      "Complète",
+      "Partielle"
+     ]
+    },
+    {
+     "nom": "renovation_plomberie_annee",
+     "libelle": "Rénovation plomberie — année",
+     "description": "Année de rénovation de la plomberie.",
+     "type": "INTEGER",
+     "usage": "soumission",
+     "relations": []
+    },
+    {
+     "nom": "renovation_plomberie_ampleur",
+     "libelle": "Rénovation plomberie — ampleur",
+     "description": "Ampleur de la rénovation de la plomberie.",
+     "type": "TEXT",
+     "usage": "soumission",
+     "relations": [],
+     "valeurs": [
+      "Complète",
+      "Partielle"
+     ]
+    },
+    {
+     "nom": "renovation_chauffage_annee",
+     "libelle": "Rénovation chauffage — année",
+     "description": "Année de rénovation du chauffage.",
+     "type": "INTEGER",
+     "usage": "soumission",
+     "relations": []
+    },
+    {
+     "nom": "renovation_chauffage_ampleur",
+     "libelle": "Rénovation chauffage — ampleur",
+     "description": "Ampleur de la rénovation du chauffage.",
+     "type": "TEXT",
+     "usage": "soumission",
+     "relations": [],
+     "valeurs": [
+      "Complète",
+      "Partielle"
+     ]
+    },
+    {
+     "nom": "inspection_statut",
+     "libelle": "Inspection",
+     "description": "L'emplacement a été inspecté ou non.",
+     "type": "TEXT",
+     "usage": "soumission",
+     "relations": [],
+     "valeurs": [
+      "inspecte",
+      "non_inspecte"
+     ]
+    },
+    {
+     "nom": "inspection_date",
+     "libelle": "Date d'inspection",
+     "description": "Date de l'inspection de l'emplacement.",
+     "type": "TEXT",
+     "usage": "soumission",
+     "relations": []
+    },
+    {
+     "nom": "inspection_notes",
+     "libelle": "Remarques d'inspection",
+     "description": "Remarques relatives à l'inspection.",
+     "type": "TEXT",
+     "usage": "soumission",
+     "relations": []
+    },
+    {
+     "nom": "evaluation_date",
+     "libelle": "Date d'évaluation",
+     "description": "Date de l'évaluation du bâtiment.",
+     "type": "TEXT",
+     "usage": "soumission",
+     "relations": []
+    },
+    {
+     "nom": "evaluation_par",
+     "libelle": "Évaluateur",
+     "description": "Évaluateur du bâtiment (nom ou firme).",
+     "type": "TEXT",
+     "usage": "soumission",
+     "relations": []
+    },
+    {
+     "nom": "evaluation_cout_remplacement",
+     "libelle": "Coût de remplacement évalué ($)",
+     "description": "Coût de remplacement selon l'évaluation.",
+     "type": "REAL",
+     "usage": "soumission",
+     "relations": []
+    },
+    {
+     "nom": "evaluation_details_joints",
+     "libelle": "Détails d'évaluation joints",
+     "description": "Les détails de l'évaluation sont joints au dossier (1 = oui, 0 = non).",
+     "type": "INTEGER",
+     "usage": "soumission",
+     "relations": []
+    },
+    {
+     "nom": "prise_eau_distance",
+     "libelle": "Prise d'eau — distance",
+     "description": "Distance de la prise d'eau ou borne-fontaine, en tranches comme les envois réels.",
+     "type": "TEXT",
+     "usage": "soumission",
+     "relations": []
+    },
+    {
+     "nom": "extincteurs_categorie",
+     "libelle": "Extincteurs — catégorie",
+     "description": "Catégorie des extincteurs portatifs (saisie facultative).",
+     "type": "TEXT",
+     "usage": "soumission",
+     "relations": []
+    },
+    {
+     "nom": "extincteurs_agent",
+     "libelle": "Extincteurs — type d'agent",
+     "description": "Type d'agent des extincteurs (saisie facultative).",
+     "type": "TEXT",
+     "usage": "soumission",
+     "relations": []
+    },
+    {
+     "nom": "extincteurs_pct_couvert",
+     "libelle": "Extincteurs — % couvert",
+     "description": "Pourcentage de l'emplacement couvert par les extincteurs (saisie facultative).",
+     "type": "REAL",
+     "usage": "soumission",
+     "relations": []
+    },
+    {
+     "nom": "alarme_incendie_type",
+     "libelle": "Système d'alarme incendie",
+     "description": "Type de système d'alarme incendie (alarme locale, poste de surveillance — service complet, reliée à une centrale...).",
+     "type": "TEXT",
+     "usage": "soumission",
+     "relations": []
+    },
+    {
+     "nom": "colonne_montante",
+     "libelle": "Colonne montante",
+     "description": "Prise d'eau et tuyau d'incendie / colonne montante présents (1 = oui, 0 = non).",
+     "type": "INTEGER",
+     "usage": "soumission",
+     "relations": []
+    },
+    {
+     "nom": "gicleurs_couverture",
+     "libelle": "Gicleurs — couverture",
+     "description": "Couverture du système de gicleurs (raffine le booléen historique gicleurs).",
+     "type": "TEXT",
+     "usage": "soumission",
+     "relations": [],
+     "valeurs": [
+      "non",
+      "partiel",
+      "entier"
+     ]
+    },
+    {
+     "nom": "voisin_gauche_distance_m",
+     "libelle": "Risque à gauche — distance (m)",
+     "description": "Distance du risque voisin à gauche, en mètres.",
+     "type": "REAL",
+     "usage": "soumission",
+     "relations": []
+    },
+    {
+     "nom": "voisin_gauche_affectation",
+     "libelle": "Risque à gauche — affectation",
+     "description": "Affectation du risque voisin à gauche.",
+     "type": "TEXT",
+     "usage": "soumission",
+     "relations": []
+    },
+    {
+     "nom": "voisin_droite_distance_m",
+     "libelle": "Risque à droite — distance (m)",
+     "description": "Distance du risque voisin à droite, en mètres.",
+     "type": "REAL",
+     "usage": "soumission",
+     "relations": []
+    },
+    {
+     "nom": "voisin_droite_affectation",
+     "libelle": "Risque à droite — affectation",
+     "description": "Affectation du risque voisin à droite.",
+     "type": "TEXT",
+     "usage": "soumission",
+     "relations": []
+    },
+    {
+     "nom": "voisin_arriere_distance_m",
+     "libelle": "Risque en arrière — distance (m)",
+     "description": "Distance du risque voisin en arrière, en mètres.",
+     "type": "REAL",
+     "usage": "soumission",
+     "relations": []
+    },
+    {
+     "nom": "voisin_arriere_affectation",
+     "libelle": "Risque en arrière — affectation",
+     "description": "Affectation du risque voisin en arrière.",
+     "type": "TEXT",
+     "usage": "soumission",
+     "relations": []
+    },
+    {
+     "nom": "voisin_enface_distance_m",
+     "libelle": "Risque en face — distance (m)",
+     "description": "Distance du risque voisin en face, en mètres.",
+     "type": "REAL",
+     "usage": "soumission",
+     "relations": []
+    },
+    {
+     "nom": "voisin_enface_affectation",
+     "libelle": "Risque en face — affectation",
+     "description": "Affectation du risque voisin en face.",
+     "type": "TEXT",
+     "usage": "soumission",
+     "relations": []
+    },
+    {
+     "nom": "aucun_risque_alentours",
+     "libelle": "Aucun risque aux alentours",
+     "description": "Déclaration qu'il n'y a aucun risque aux alentours de l'emplacement (1 = oui).",
+     "type": "INTEGER",
+     "usage": "soumission",
+     "relations": []
+    },
+    {
+     "nom": "alarme_vol_type",
+     "libelle": "Système d'alarme antivol",
+     "description": "Type de système d'alarme antivol (alarme locale, poste de surveillance — service complet, reliée à une centrale).",
+     "type": "TEXT",
+     "usage": "soumission",
+     "relations": []
+    },
+    {
+     "nom": "pene_dormant",
+     "libelle": "Pêne dormant",
+     "description": "Serrures à pêne dormant (1 = oui, 0 = non).",
+     "type": "INTEGER",
+     "usage": "soumission",
+     "relations": []
+    },
+    {
+     "nom": "fenetres_grillagees",
+     "libelle": "Fenêtres grillagées",
+     "description": "Fenêtres extérieures grillagées ou armature métallique (1 = oui, 0 = non).",
+     "type": "INTEGER",
+     "usage": "soumission",
+     "relations": []
+    },
+    {
+     "nom": "glaces_incassables",
+     "libelle": "Glaces incassables",
+     "description": "Glaces incassables (1 = oui, 0 = non).",
+     "type": "INTEGER",
+     "usage": "soumission",
+     "relations": []
+    },
+    {
+     "nom": "coffre_type",
+     "libelle": "Coffre-fort — type",
+     "description": "Type de coffre-fort (saisie facultative ; le détail complet va au questionnaire alarme).",
+     "type": "TEXT",
+     "usage": "soumission",
+     "relations": []
+    },
+    {
+     "nom": "coffre_categorie",
+     "libelle": "Coffre-fort — catégorie",
+     "description": "Catégorie du coffre-fort (saisie facultative).",
+     "type": "TEXT",
+     "usage": "soumission",
+     "relations": []
+    },
+    {
+     "nom": "autres_protections_criminelles",
+     "libelle": "Autres protections (risques criminels)",
+     "description": "Autres protections contre les risques criminels à cet emplacement.",
+     "type": "TEXT",
+     "usage": "soumission",
+     "relations": []
+    },
+    {
+     "nom": "cameras",
+     "libelle": "Caméras de surveillance",
+     "description": "Caméras de surveillance présentes (1 = oui, 0 = non) ; le détail va au questionnaire alarme.",
+     "type": "INTEGER",
+     "usage": "soumission",
+     "relations": []
     }
    ]
   },
@@ -4277,7 +4989,7 @@
     {
      "nom": "avenants",
      "libelle": "Avenants",
-     "description": "Avenants en JSON — ex. {tremblement_terre:1, inondation:1} (1 = présent).",
+     "description": "Avenants souscrits (JSON) : format historique {code: 1} ou format enrichi de la soumission combinée {code: {present, franchise, montant, ...}} avec franchise et montant propres par avenant ; tremblement_terre admet franchise_pct et franchise_min, pointe_saisonniere date_debut/date_fin, argent_valeurs montant_hors_lieux, bris_equipement montant_par_accident et limitations.",
      "type": "TEXT",
      "usage": "soumission",
      "relations": [],
@@ -4286,7 +4998,14 @@
       "inondation",
       "refoulement_egout",
       "bris_machines",
-      "perte_exploitation_liee"
+      "perte_exploitation_liee",
+      "valeur_neuf",
+      "frais_communautaires",
+      "extension_hors_lieux",
+      "pointe_saisonniere",
+      "argent_valeurs",
+      "transit_tiers",
+      "bris_equipement"
      ]
     },
     {
@@ -4311,6 +5030,30 @@
      "description": "Horodatage de création.",
      "type": "TEXT",
      "usage": "technique",
+     "relations": []
+    },
+    {
+     "nom": "regle_proportionnelle",
+     "libelle": "Règle proportionnelle — bâtiment (%)",
+     "description": "Règle proportionnelle (coassurance) de la garantie bâtiment, en % — colonne du tableau des garanties des envois réels.",
+     "type": "REAL",
+     "usage": "soumission",
+     "relations": []
+    },
+    {
+     "nom": "franchise_contenu",
+     "libelle": "Franchise — contenu ($)",
+     "description": "Franchise propre à la ligne de contenu, distincte de la franchise du bâtiment.",
+     "type": "REAL",
+     "usage": "soumission",
+     "relations": []
+    },
+    {
+     "nom": "regle_proportionnelle_contenu",
+     "libelle": "Règle proportionnelle — contenu (%)",
+     "description": "Règle proportionnelle de la ligne de contenu, en %.",
+     "type": "REAL",
+     "usage": "soumission",
      "relations": []
     }
    ]
@@ -4411,6 +5154,78 @@
      "description": "Horodatage de création.",
      "type": "TEXT",
      "usage": "technique",
+     "relations": []
+    },
+    {
+     "nom": "refus_resiliation_nonrenouvellement",
+     "libelle": "Refus / résiliation / non-renouvellement (5 ans)",
+     "description": "L'assuré s'est vu refuser une assurance, ou une police a été résiliée ou non renouvelée au cours des 5 dernières années (1 = oui, 0 = non) — champ commun de la soumission combinée, synchronisé vers les 3 produits.",
+     "type": "INTEGER",
+     "usage": "soumission",
+     "relations": []
+    },
+    {
+     "nom": "refus_explication",
+     "libelle": "Refus — explication",
+     "description": "Explication du refus, de la résiliation ou du non-renouvellement.",
+     "type": "TEXT",
+     "usage": "soumission",
+     "relations": []
+    },
+    {
+     "nom": "type_police_precedente",
+     "libelle": "Type de police précédente",
+     "description": "Type de la police précédente (ex. combinée, biens seul).",
+     "type": "TEXT",
+     "usage": "soumission",
+     "relations": []
+    },
+    {
+     "nom": "date_effet_precedente",
+     "libelle": "Date d'effet de la police précédente",
+     "description": "Date d'effet de la police précédente.",
+     "type": "TEXT",
+     "usage": "soumission",
+     "relations": []
+    },
+    {
+     "nom": "prime_precedente",
+     "libelle": "Prime de la police précédente ($)",
+     "description": "Prime de la police précédente.",
+     "type": "REAL",
+     "usage": "soumission",
+     "relations": []
+    },
+    {
+     "nom": "faillite_jugement",
+     "libelle": "Faillite ou jugement",
+     "description": "Faillite ou jugement contre l'assuré (1 = oui, 0 = non).",
+     "type": "INTEGER",
+     "usage": "soumission",
+     "relations": []
+    },
+    {
+     "nom": "faillite_explication",
+     "libelle": "Faillite ou jugement — explication",
+     "description": "Explication de la faillite ou du jugement.",
+     "type": "TEXT",
+     "usage": "soumission",
+     "relations": []
+    },
+    {
+     "nom": "condamnation_honnetete",
+     "libelle": "Condamnation — malhonnêteté",
+     "description": "Condamnation pour une infraction impliquant la malhonnêteté (1 = oui, 0 = non).",
+     "type": "INTEGER",
+     "usage": "soumission",
+     "relations": []
+    },
+    {
+     "nom": "condamnation_explication",
+     "libelle": "Condamnation — explication",
+     "description": "Explication de la condamnation pour malhonnêteté.",
+     "type": "TEXT",
+     "usage": "soumission",
      "relations": []
     }
    ]
@@ -4750,6 +5565,16 @@
      "type": "TEXT",
      "usage": "technique",
      "relations": []
+    },
+    {
+     "nom": "batiment_id",
+     "libelle": "Emplacement maître",
+     "description": "Emplacement (biens_batiments) auquel le lieu d'exploitation se rattache dans une soumission combinée.",
+     "type": "INTEGER",
+     "usage": "technique",
+     "relations": [
+      "biens_batiments.id"
+     ]
     }
    ]
   },
@@ -4859,6 +5684,86 @@
      "type": "TEXT",
      "usage": "technique",
      "relations": []
+    },
+    {
+     "nom": "prejudice_personnel_publicite",
+     "libelle": "Préjudice personnel et publicité ($)",
+     "description": "Montant de garantie du préjudice personnel et du préjudice découlant de la publicité (ligne du tableau des garanties des soumissions combinées).",
+     "type": "REAL",
+     "usage": "soumission",
+     "relations": []
+    },
+    {
+     "nom": "frais_medicaux_par_personne",
+     "libelle": "Frais médicaux — par personne ($)",
+     "description": "Montant de frais médicaux par personne.",
+     "type": "REAL",
+     "usage": "soumission",
+     "relations": []
+    },
+    {
+     "nom": "frais_medicaux_par_sinistre",
+     "libelle": "Frais médicaux — par sinistre ($)",
+     "description": "Montant de frais médicaux par sinistre.",
+     "type": "REAL",
+     "usage": "soumission",
+     "relations": []
+    },
+    {
+     "nom": "responsabilite_locative",
+     "libelle": "Responsabilité locative — ce lieu ($)",
+     "description": "Montant de responsabilité locative rattaché à ce lieu d'exploitation.",
+     "type": "REAL",
+     "usage": "soumission",
+     "relations": []
+    },
+    {
+     "nom": "rc_auto_non_proprietaires",
+     "libelle": "RC automobiles non-propriétaires ($)",
+     "description": "Montant de la responsabilité civile automobiles non-propriétaires.",
+     "type": "REAL",
+     "usage": "soumission",
+     "relations": []
+    },
+    {
+     "nom": "umbrella_montant",
+     "libelle": "Umbrella — montant ($)",
+     "description": "Montant de la police umbrella (annexe umbrella des soumissions combinées).",
+     "type": "REAL",
+     "usage": "soumission",
+     "relations": []
+    },
+    {
+     "nom": "umbrella_retention",
+     "libelle": "Umbrella — rétention ($)",
+     "description": "Rétention (franchise) de la police umbrella.",
+     "type": "REAL",
+     "usage": "soumission",
+     "relations": []
+    },
+    {
+     "nom": "umbrella_polices_base",
+     "libelle": "Umbrella — polices de base",
+     "description": "Polices de base de l'umbrella (JSON : liste des polices sous-jacentes auxquelles l'umbrella s'adosse).",
+     "type": "TEXT",
+     "usage": "soumission",
+     "relations": []
+    },
+    {
+     "nom": "produits_travaux_termines_montant",
+     "libelle": "Produits et travaux terminés ($)",
+     "description": "Montant distinct de la garantie produits et travaux terminés.",
+     "type": "REAL",
+     "usage": "soumission",
+     "relations": []
+    },
+    {
+     "nom": "pollution_montant",
+     "libelle": "Pollution ($)",
+     "description": "Montant de la garantie pollution / atteinte à l'environnement.",
+     "type": "REAL",
+     "usage": "soumission",
+     "relations": []
     }
    ]
   },
@@ -4958,6 +5863,78 @@
      "description": "Créé le",
      "type": "TEXT",
      "usage": "technique",
+     "relations": []
+    },
+    {
+     "nom": "refus_resiliation_nonrenouvellement",
+     "libelle": "Refus / résiliation / non-renouvellement (5 ans)",
+     "description": "L'assuré s'est vu refuser une assurance, ou une police a été résiliée ou non renouvelée au cours des 5 dernières années (1 = oui, 0 = non) — champ commun de la soumission combinée, synchronisé vers les 3 produits.",
+     "type": "INTEGER",
+     "usage": "soumission",
+     "relations": []
+    },
+    {
+     "nom": "refus_explication",
+     "libelle": "Refus — explication",
+     "description": "Explication du refus, de la résiliation ou du non-renouvellement.",
+     "type": "TEXT",
+     "usage": "soumission",
+     "relations": []
+    },
+    {
+     "nom": "type_police_precedente",
+     "libelle": "Type de police précédente",
+     "description": "Type de la police précédente (ex. combinée, biens seul).",
+     "type": "TEXT",
+     "usage": "soumission",
+     "relations": []
+    },
+    {
+     "nom": "date_effet_precedente",
+     "libelle": "Date d'effet de la police précédente",
+     "description": "Date d'effet de la police précédente.",
+     "type": "TEXT",
+     "usage": "soumission",
+     "relations": []
+    },
+    {
+     "nom": "prime_precedente",
+     "libelle": "Prime de la police précédente ($)",
+     "description": "Prime de la police précédente.",
+     "type": "REAL",
+     "usage": "soumission",
+     "relations": []
+    },
+    {
+     "nom": "faillite_jugement",
+     "libelle": "Faillite ou jugement",
+     "description": "Faillite ou jugement contre l'assuré (1 = oui, 0 = non).",
+     "type": "INTEGER",
+     "usage": "soumission",
+     "relations": []
+    },
+    {
+     "nom": "faillite_explication",
+     "libelle": "Faillite ou jugement — explication",
+     "description": "Explication de la faillite ou du jugement.",
+     "type": "TEXT",
+     "usage": "soumission",
+     "relations": []
+    },
+    {
+     "nom": "condamnation_honnetete",
+     "libelle": "Condamnation — malhonnêteté",
+     "description": "Condamnation pour une infraction impliquant la malhonnêteté (1 = oui, 0 = non).",
+     "type": "INTEGER",
+     "usage": "soumission",
+     "relations": []
+    },
+    {
+     "nom": "condamnation_explication",
+     "libelle": "Condamnation — explication",
+     "description": "Explication de la condamnation pour malhonnêteté.",
+     "type": "TEXT",
+     "usage": "soumission",
      "relations": []
     }
    ]
@@ -6753,6 +7730,24 @@
      "usage": "technique",
      "relations": [],
      "description": "Horodatage de création (datetime('now'))."
+    },
+    {
+     "nom": "montant_pe",
+     "libelle": "Montant de perte d'exploitation du lieu ($)",
+     "description": "Montant de perte d'exploitation propre à l'établissement (page d'emplacement des soumissions combinées).",
+     "type": "REAL",
+     "usage": "soumission",
+     "relations": []
+    },
+    {
+     "nom": "batiment_id",
+     "libelle": "Emplacement maître",
+     "description": "Emplacement (biens_batiments) auquel l'établissement se rattache dans une soumission combinée — l'adresse n'est saisie qu'une fois.",
+     "type": "INTEGER",
+     "usage": "technique",
+     "relations": [
+      "biens_batiments.id"
+     ]
     }
    ]
   },
@@ -6869,6 +7864,35 @@
      "usage": "technique",
      "relations": [],
      "description": "Horodatage de création (datetime('now'))."
+    },
+    {
+     "nom": "regle_proportionnelle",
+     "libelle": "Règle proportionnelle (%)",
+     "description": "Règle proportionnelle appliquée au montant de perte d'exploitation, en %.",
+     "type": "REAL",
+     "usage": "soumission",
+     "relations": []
+    },
+    {
+     "nom": "honoraires_comptables",
+     "libelle": "Honoraires de comptables ($)",
+     "description": "Montant de la garantie d'honoraires de comptables (ligne des soumissions combinées).",
+     "type": "REAL",
+     "usage": "soumission",
+     "relations": []
+    },
+    {
+     "nom": "formule",
+     "libelle": "Formule de perte d'exploitation",
+     "description": "Formule de perte d'exploitation demandée.",
+     "type": "TEXT",
+     "usage": "soumission",
+     "relations": [],
+     "valeurs": [
+      "pertes_loyers",
+      "benefice_brut",
+      "formule_etendue"
+     ]
     }
    ]
   },
@@ -6969,6 +7993,78 @@
      "usage": "technique",
      "relations": [],
      "description": "Horodatage de création (datetime('now'))."
+    },
+    {
+     "nom": "refus_resiliation_nonrenouvellement",
+     "libelle": "Refus / résiliation / non-renouvellement (5 ans)",
+     "description": "L'assuré s'est vu refuser une assurance, ou une police a été résiliée ou non renouvelée au cours des 5 dernières années (1 = oui, 0 = non) — champ commun de la soumission combinée, synchronisé vers les 3 produits.",
+     "type": "INTEGER",
+     "usage": "soumission",
+     "relations": []
+    },
+    {
+     "nom": "refus_explication",
+     "libelle": "Refus — explication",
+     "description": "Explication du refus, de la résiliation ou du non-renouvellement.",
+     "type": "TEXT",
+     "usage": "soumission",
+     "relations": []
+    },
+    {
+     "nom": "type_police_precedente",
+     "libelle": "Type de police précédente",
+     "description": "Type de la police précédente (ex. combinée, biens seul).",
+     "type": "TEXT",
+     "usage": "soumission",
+     "relations": []
+    },
+    {
+     "nom": "date_effet_precedente",
+     "libelle": "Date d'effet de la police précédente",
+     "description": "Date d'effet de la police précédente.",
+     "type": "TEXT",
+     "usage": "soumission",
+     "relations": []
+    },
+    {
+     "nom": "prime_precedente",
+     "libelle": "Prime de la police précédente ($)",
+     "description": "Prime de la police précédente.",
+     "type": "REAL",
+     "usage": "soumission",
+     "relations": []
+    },
+    {
+     "nom": "faillite_jugement",
+     "libelle": "Faillite ou jugement",
+     "description": "Faillite ou jugement contre l'assuré (1 = oui, 0 = non).",
+     "type": "INTEGER",
+     "usage": "soumission",
+     "relations": []
+    },
+    {
+     "nom": "faillite_explication",
+     "libelle": "Faillite ou jugement — explication",
+     "description": "Explication de la faillite ou du jugement.",
+     "type": "TEXT",
+     "usage": "soumission",
+     "relations": []
+    },
+    {
+     "nom": "condamnation_honnetete",
+     "libelle": "Condamnation — malhonnêteté",
+     "description": "Condamnation pour une infraction impliquant la malhonnêteté (1 = oui, 0 = non).",
+     "type": "INTEGER",
+     "usage": "soumission",
+     "relations": []
+    },
+    {
+     "nom": "condamnation_explication",
+     "libelle": "Condamnation — explication",
+     "description": "Explication de la condamnation pour malhonnêteté.",
+     "type": "TEXT",
+     "usage": "soumission",
+     "relations": []
     }
    ]
   },
@@ -9233,6 +10329,900 @@
      "nom": "maj_le",
      "libelle": "Modifiée le",
      "description": "Date et heure de dernière modification.",
+     "type": "TEXT",
+     "usage": "technique",
+     "relations": []
+    }
+   ]
+  },
+  {
+   "nom": "biens_protections_alarme",
+   "domaine": "combine",
+   "versionnage": false,
+   "description": "Questionnaire technique d'alarme d'un emplacement (transmissions, centrale, certificat ULC, répondants, protections physiques) — une fiche par bâtiment d'une soumission biens.",
+   "colonnes": [
+    {
+     "nom": "id",
+     "libelle": "Identifiant",
+     "description": "Clé primaire.",
+     "type": "INTEGER",
+     "usage": "technique",
+     "relations": []
+    },
+    {
+     "nom": "cabinet_id",
+     "libelle": "Cabinet",
+     "description": "Cabinet propriétaire (cloisonnement).",
+     "type": "INTEGER",
+     "usage": "technique",
+     "relations": [
+      "cabinets.id"
+     ]
+    },
+    {
+     "nom": "batiment_id",
+     "libelle": "Bâtiment",
+     "description": "Bâtiment (emplacement) auquel le questionnaire alarme se rattache — UNIQUE : une fiche par bâtiment.",
+     "type": "INTEGER",
+     "usage": "technique",
+     "relations": [
+      "biens_batiments.id"
+     ]
+    },
+    {
+     "nom": "compagnie_alarme",
+     "libelle": "Compagnie d'alarme",
+     "description": "Nom de la compagnie d'alarme.",
+     "type": "TEXT",
+     "usage": "soumission",
+     "relations": []
+    },
+    {
+     "nom": "compagnie_telephone",
+     "libelle": "Téléphone de la compagnie d'alarme",
+     "description": "Téléphone de la compagnie d'alarme.",
+     "type": "TEXT",
+     "usage": "soumission",
+     "relations": []
+    },
+    {
+     "nom": "compagnie_courriel",
+     "libelle": "Courriel de la compagnie d'alarme",
+     "description": "Courriel de la compagnie d'alarme.",
+     "type": "TEXT",
+     "usage": "soumission",
+     "relations": []
+    },
+    {
+     "nom": "compagnie_contact",
+     "libelle": "Personne-contact (alarme)",
+     "description": "Personne-contact chez la compagnie d'alarme.",
+     "type": "TEXT",
+     "usage": "soumission",
+     "relations": []
+    },
+    {
+     "nom": "transmission_primaire",
+     "libelle": "Transmission primaire",
+     "description": "Modes de transmission primaire du système d'alarme (JSON, multi-choix).",
+     "type": "TEXT",
+     "usage": "soumission",
+     "relations": []
+    },
+    {
+     "nom": "transmission_primaire_fabricant",
+     "libelle": "Transmission primaire — fabricant",
+     "description": "Fabricant de l'équipement de transmission primaire.",
+     "type": "TEXT",
+     "usage": "soumission",
+     "relations": []
+    },
+    {
+     "nom": "transmission_primaire_modele",
+     "libelle": "Transmission primaire — modèle",
+     "description": "Numéro de modèle de l'équipement de transmission primaire.",
+     "type": "TEXT",
+     "usage": "soumission",
+     "relations": []
+    },
+    {
+     "nom": "transmission_secondaire",
+     "libelle": "Transmission secondaire",
+     "description": "Modes de transmission secondaire (JSON, multi-choix).",
+     "type": "TEXT",
+     "usage": "soumission",
+     "relations": []
+    },
+    {
+     "nom": "transmission_secondaire_fabricant",
+     "libelle": "Transmission secondaire — fabricant",
+     "description": "Fabricant de l'équipement de transmission secondaire.",
+     "type": "TEXT",
+     "usage": "soumission",
+     "relations": []
+    },
+    {
+     "nom": "transmission_secondaire_modele",
+     "libelle": "Transmission secondaire — modèle",
+     "description": "Numéro de modèle de l'équipement de transmission secondaire.",
+     "type": "TEXT",
+     "usage": "soumission",
+     "relations": []
+    },
+    {
+     "nom": "securite_ligne",
+     "libelle": "Sécurité de ligne",
+     "description": "Sécurité de ligne du système d'alarme (1 = oui, 0 = non).",
+     "type": "INTEGER",
+     "usage": "soumission",
+     "relations": []
+    },
+    {
+     "nom": "taux_interrogation",
+     "libelle": "Taux d'interrogation",
+     "description": "Taux d'interrogation (polling) de la centrale de surveillance.",
+     "type": "TEXT",
+     "usage": "soumission",
+     "relations": []
+    },
+    {
+     "nom": "centrale_nom_lieu",
+     "libelle": "Centrale de surveillance",
+     "description": "Nom et lieu de la centrale de surveillance.",
+     "type": "TEXT",
+     "usage": "soumission",
+     "relations": []
+    },
+    {
+     "nom": "couverture_detection",
+     "libelle": "Couverture de la détection",
+     "description": "Couverture de la détection de mouvements (JSON, multi-choix).",
+     "type": "TEXT",
+     "usage": "soumission",
+     "relations": []
+    },
+    {
+     "nom": "dispositifs_perimetre",
+     "libelle": "Dispositifs de périmètre",
+     "description": "Dispositifs de protection du périmètre.",
+     "type": "TEXT",
+     "usage": "soumission",
+     "relations": []
+    },
+    {
+     "nom": "protection_coffres",
+     "libelle": "Protection des coffres-forts",
+     "description": "Protections des coffres-forts (JSON, multi-choix).",
+     "type": "TEXT",
+     "usage": "soumission",
+     "relations": []
+    },
+    {
+     "nom": "repondants",
+     "libelle": "Répondants aux alarmes",
+     "description": "Répondants aux alarmes (JSON, multi-choix : abonné, service de garde, police).",
+     "type": "TEXT",
+     "usage": "soumission",
+     "relations": []
+    },
+    {
+     "nom": "reponse_en_personne",
+     "libelle": "Réponse en personne",
+     "description": "Une réponse en personne est faite aux alarmes (1 = oui, 0 = non).",
+     "type": "INTEGER",
+     "usage": "soumission",
+     "relations": []
+    },
+    {
+     "nom": "signaux_ouverture_fermeture",
+     "libelle": "Signaux d'ouverture/fermeture",
+     "description": "Traitement des signaux d'ouverture et de fermeture.",
+     "type": "TEXT",
+     "usage": "soumission",
+     "relations": [],
+     "valeurs": [
+      "surveilles",
+      "supervises",
+      "aucun"
+     ]
+    },
+    {
+     "nom": "contrat_entretien_annuel",
+     "libelle": "Contrat d'entretien annuel",
+     "description": "Contrat annuel d'entretien du système d'alarme (1 = oui, 0 = non).",
+     "type": "INTEGER",
+     "usage": "soumission",
+     "relations": []
+    },
+    {
+     "nom": "certificat_ulc_actif",
+     "libelle": "Certificat ULC actif",
+     "description": "Certificat ULC de l'alarme actif (1 = oui, 0 = non).",
+     "type": "INTEGER",
+     "usage": "soumission",
+     "relations": []
+    },
+    {
+     "nom": "certificat_ulc_numero",
+     "libelle": "N° de certificat ULC",
+     "description": "Numéro du certificat ULC.",
+     "type": "TEXT",
+     "usage": "soumission",
+     "relations": []
+    },
+    {
+     "nom": "certificat_ulc_expiration",
+     "libelle": "Expiration du certificat ULC",
+     "description": "Date d'expiration du certificat ULC.",
+     "type": "TEXT",
+     "usage": "soumission",
+     "relations": []
+    },
+    {
+     "nom": "cameras_detail",
+     "libelle": "Vidéosurveillance — détail",
+     "description": "Détail de la vidéosurveillance (JSON : presente, couvre_tout_sauf_toilettes, enregistre_24h, sauvegardes_hors_site, exterieures).",
+     "type": "TEXT",
+     "usage": "soumission",
+     "relations": []
+    },
+    {
+     "nom": "protections_physiques",
+     "libelle": "Protections physiques",
+     "description": "Protections physiques contre le vol (JSON, liste à cocher).",
+     "type": "TEXT",
+     "usage": "soumission",
+     "relations": []
+    },
+    {
+     "nom": "coffre_detail",
+     "libelle": "Coffre-fort — détail",
+     "description": "Détail du coffre-fort (JSON : fabricant, modele, cote, poids_moins_500lb, boulonne, chambre_forte).",
+     "type": "TEXT",
+     "usage": "soumission",
+     "relations": []
+    },
+    {
+     "nom": "archive",
+     "libelle": "Archivé",
+     "description": "Drapeau d'archivage (règle d'or : rien ne se supprime).",
+     "type": "INTEGER",
+     "usage": "technique",
+     "relations": []
+    },
+    {
+     "nom": "cree_le",
+     "libelle": "Créé le",
+     "description": "Date de création.",
+     "type": "TEXT",
+     "usage": "technique",
+     "relations": []
+    }
+   ]
+  },
+  {
+   "nom": "biens_flottante_articles",
+   "domaine": "combine",
+   "versionnage": false,
+   "description": "Articles de l'assurance flottante des outils rattachée à une soumission biens (annexe des soumissions combinées) — description, base de règlement, assuré additionnel, montant.",
+   "colonnes": [
+    {
+     "nom": "id",
+     "libelle": "Identifiant",
+     "description": "Clé primaire.",
+     "type": "INTEGER",
+     "usage": "soumission",
+     "relations": []
+    },
+    {
+     "nom": "cabinet_id",
+     "libelle": "Cabinet",
+     "description": "Cabinet propriétaire (cloisonnement).",
+     "type": "INTEGER",
+     "usage": "technique",
+     "relations": [
+      "cabinets.id"
+     ]
+    },
+    {
+     "nom": "soumission_id",
+     "libelle": "Soumission biens",
+     "description": "Soumission biens à laquelle la flottante se rattache.",
+     "type": "INTEGER",
+     "usage": "technique",
+     "relations": [
+      "biens_soumissions.id"
+     ]
+    },
+    {
+     "nom": "batiment_id",
+     "libelle": "Bâtiment",
+     "description": "Bâtiment de rattachement, si l'article est lié à un emplacement précis (NULL = soumission entière).",
+     "type": "INTEGER",
+     "usage": "technique",
+     "relations": [
+      "biens_batiments.id"
+     ]
+    },
+    {
+     "nom": "description",
+     "libelle": "Description de l'article",
+     "description": "Description de l'outil ou de l'article couvert par la flottante.",
+     "type": "TEXT",
+     "usage": "soumission",
+     "relations": []
+    },
+    {
+     "nom": "base_reglement",
+     "libelle": "Base de règlement",
+     "description": "Base de règlement de l'article (valeur à neuf, valeur au jour du sinistre...).",
+     "type": "TEXT",
+     "usage": "soumission",
+     "relations": []
+    },
+    {
+     "nom": "assure_additionnel",
+     "libelle": "Assuré additionnel",
+     "description": "Assuré additionnel rattaché à l'article.",
+     "type": "TEXT",
+     "usage": "soumission",
+     "relations": []
+    },
+    {
+     "nom": "montant",
+     "libelle": "Montant de garantie ($)",
+     "description": "Montant de garantie de l'article.",
+     "type": "REAL",
+     "usage": "soumission",
+     "relations": []
+    },
+    {
+     "nom": "archive",
+     "libelle": "Archivé",
+     "description": "Drapeau d'archivage (règle d'or : rien ne se supprime).",
+     "type": "INTEGER",
+     "usage": "soumission",
+     "relations": []
+    },
+    {
+     "nom": "cree_le",
+     "libelle": "Créé le",
+     "description": "Date de création.",
+     "type": "TEXT",
+     "usage": "soumission",
+     "relations": []
+    }
+   ]
+  },
+  {
+   "nom": "client_questions_sectorielles",
+   "domaine": "combine",
+   "versionnage": false,
+   "description": "Réponses aux questions additionnelles sectorielles d'un client (copropriété, entrepreneur...), structurées question/réponse par code — partagées par ses soumissions combinées.",
+   "colonnes": [
+    {
+     "nom": "id",
+     "libelle": "Identifiant",
+     "description": "Clé primaire.",
+     "type": "INTEGER",
+     "usage": "technique",
+     "relations": []
+    },
+    {
+     "nom": "cabinet_id",
+     "libelle": "Cabinet",
+     "description": "Cabinet propriétaire (cloisonnement).",
+     "type": "INTEGER",
+     "usage": "technique",
+     "relations": [
+      "cabinets.id"
+     ]
+    },
+    {
+     "nom": "client_id",
+     "libelle": "Client",
+     "description": "Client auquel la réponse se rattache.",
+     "type": "INTEGER",
+     "usage": "technique",
+     "relations": [
+      "clients.id"
+     ]
+    },
+    {
+     "nom": "code_question",
+     "libelle": "Code de la question",
+     "description": "Code stable de la question sectorielle (catalogue lib/combine.js).",
+     "type": "TEXT",
+     "usage": "soumission",
+     "relations": []
+    },
+    {
+     "nom": "question",
+     "libelle": "Question",
+     "description": "Libellé de la question au moment de la réponse.",
+     "type": "TEXT",
+     "usage": "soumission",
+     "relations": []
+    },
+    {
+     "nom": "reponse",
+     "libelle": "Réponse",
+     "description": "Réponse libre du client ou du courtier.",
+     "type": "TEXT",
+     "usage": "soumission",
+     "relations": []
+    },
+    {
+     "nom": "archive",
+     "libelle": "Archivé",
+     "description": "Drapeau d'archivage (règle d'or : rien ne se supprime).",
+     "type": "INTEGER",
+     "usage": "technique",
+     "relations": []
+    },
+    {
+     "nom": "cree_le",
+     "libelle": "Créé le",
+     "description": "Date de création.",
+     "type": "TEXT",
+     "usage": "technique",
+     "relations": []
+    },
+    {
+     "nom": "maj_le",
+     "libelle": "Mis à jour le",
+     "description": "Date de dernière mise à jour.",
+     "type": "TEXT",
+     "usage": "technique",
+     "relations": []
+    }
+   ]
+  },
+  {
+   "nom": "emplacement_beneficiaires",
+   "domaine": "combine",
+   "versionnage": false,
+   "description": "Bénéficiaires et créanciers désignés pour un emplacement (bâtiment) : nom, adresse, qualité et clause de préavis de résiliation — section Bénéficiaires des soumissions combinées.",
+   "colonnes": [
+    {
+     "nom": "id",
+     "libelle": "Identifiant",
+     "description": "Clé primaire.",
+     "type": "INTEGER",
+     "usage": "technique",
+     "relations": []
+    },
+    {
+     "nom": "cabinet_id",
+     "libelle": "Cabinet",
+     "description": "Cabinet propriétaire (cloisonnement).",
+     "type": "INTEGER",
+     "usage": "technique",
+     "relations": [
+      "cabinets.id"
+     ]
+    },
+    {
+     "nom": "batiment_id",
+     "libelle": "Bâtiment",
+     "description": "Emplacement auquel le bénéficiaire se rattache.",
+     "type": "INTEGER",
+     "usage": "technique",
+     "relations": [
+      "biens_batiments.id"
+     ]
+    },
+    {
+     "nom": "nom",
+     "libelle": "Nom du bénéficiaire",
+     "description": "Nom du bénéficiaire ou du créancier désigné.",
+     "type": "TEXT",
+     "usage": "soumission",
+     "relations": []
+    },
+    {
+     "nom": "adresse",
+     "libelle": "Adresse",
+     "description": "Adresse du bénéficiaire.",
+     "type": "TEXT",
+     "usage": "soumission",
+     "relations": []
+    },
+    {
+     "nom": "ville",
+     "libelle": "Ville",
+     "description": "Ville du bénéficiaire.",
+     "type": "TEXT",
+     "usage": "soumission",
+     "relations": []
+    },
+    {
+     "nom": "code_postal",
+     "libelle": "Code postal",
+     "description": "Code postal du bénéficiaire.",
+     "type": "TEXT",
+     "usage": "soumission",
+     "relations": []
+    },
+    {
+     "nom": "qualite",
+     "libelle": "Qualité",
+     "description": "Qualité en vertu de laquelle le bénéficiaire est désigné (créancier hypothécaire, etc.).",
+     "type": "TEXT",
+     "usage": "soumission",
+     "relations": []
+    },
+    {
+     "nom": "clause_preavis",
+     "libelle": "Clause de préavis",
+     "description": "Clause de préavis de résiliation applicable au bénéficiaire (ex. 30 jours).",
+     "type": "TEXT",
+     "usage": "soumission",
+     "relations": []
+    },
+    {
+     "nom": "archive",
+     "libelle": "Archivé",
+     "description": "Drapeau d'archivage (règle d'or : rien ne se supprime).",
+     "type": "INTEGER",
+     "usage": "technique",
+     "relations": []
+    },
+    {
+     "nom": "cree_le",
+     "libelle": "Créé le",
+     "description": "Date de création.",
+     "type": "TEXT",
+     "usage": "technique",
+     "relations": []
+    }
+   ]
+  },
+  {
+   "nom": "soumission_assures_additionnels",
+   "domaine": "combine",
+   "versionnage": false,
+   "description": "Assurés additionnels d'un dossier (biens, RC, perte d'exploitation ou dossier combiné) — mécanisme réutilisable hors FPQ1.",
+   "colonnes": [
+    {
+     "nom": "id",
+     "libelle": "Identifiant",
+     "description": "Clé primaire.",
+     "type": "INTEGER",
+     "usage": "technique",
+     "relations": []
+    },
+    {
+     "nom": "cabinet_id",
+     "libelle": "Cabinet",
+     "description": "Cabinet propriétaire (cloisonnement).",
+     "type": "INTEGER",
+     "usage": "technique",
+     "relations": [
+      "cabinets.id"
+     ]
+    },
+    {
+     "nom": "dossier_type",
+     "libelle": "Type de dossier",
+     "description": "Type du dossier auquel l'assuré additionnel se rattache.",
+     "type": "TEXT",
+     "usage": "technique",
+     "relations": [],
+     "valeurs": [
+      "biens",
+      "rc",
+      "perte_exploitation",
+      "combine"
+     ]
+    },
+    {
+     "nom": "dossier_id",
+     "libelle": "Dossier",
+     "description": "Identifiant du dossier (soumission ou dossier combiné) auquel l'assuré additionnel se rattache.",
+     "type": "INTEGER",
+     "usage": "technique",
+     "relations": []
+    },
+    {
+     "nom": "nom",
+     "libelle": "Nom de l'assuré additionnel",
+     "description": "Nom de l'assuré additionnel.",
+     "type": "TEXT",
+     "usage": "soumission",
+     "relations": []
+    },
+    {
+     "nom": "adresse",
+     "libelle": "Adresse",
+     "description": "Adresse de l'assuré additionnel.",
+     "type": "TEXT",
+     "usage": "soumission",
+     "relations": []
+    },
+    {
+     "nom": "ville",
+     "libelle": "Ville",
+     "description": "Ville de l'assuré additionnel.",
+     "type": "TEXT",
+     "usage": "soumission",
+     "relations": []
+    },
+    {
+     "nom": "code_postal",
+     "libelle": "Code postal",
+     "description": "Code postal de l'assuré additionnel.",
+     "type": "TEXT",
+     "usage": "soumission",
+     "relations": []
+    },
+    {
+     "nom": "interet",
+     "libelle": "Intérêt assurable",
+     "description": "Intérêt assurable de l'assuré additionnel.",
+     "type": "TEXT",
+     "usage": "soumission",
+     "relations": []
+    },
+    {
+     "nom": "archive",
+     "libelle": "Archivé",
+     "description": "Drapeau d'archivage (règle d'or : rien ne se supprime).",
+     "type": "INTEGER",
+     "usage": "technique",
+     "relations": []
+    },
+    {
+     "nom": "cree_le",
+     "libelle": "Créé le",
+     "description": "Date de création.",
+     "type": "TEXT",
+     "usage": "technique",
+     "relations": []
+    }
+   ]
+  },
+  {
+   "nom": "combine_dossiers",
+   "domaine": "combine",
+   "versionnage": false,
+   "description": "Dossier de soumission combinée entreprise : en-tête commun (dates, plan de paiement, signataire) liant une soumission biens, une RC et une perte d'exploitation du même client.",
+   "colonnes": [
+    {
+     "nom": "id",
+     "libelle": "Identifiant",
+     "description": "Clé primaire.",
+     "type": "INTEGER",
+     "usage": "technique",
+     "relations": []
+    },
+    {
+     "nom": "cabinet_id",
+     "libelle": "Cabinet",
+     "description": "Cabinet propriétaire (cloisonnement).",
+     "type": "INTEGER",
+     "usage": "technique",
+     "relations": [
+      "cabinets.id"
+     ]
+    },
+    {
+     "nom": "client_id",
+     "libelle": "Client",
+     "description": "Client (entreprise) du dossier combiné.",
+     "type": "INTEGER",
+     "usage": "technique",
+     "relations": [
+      "clients.id"
+     ]
+    },
+    {
+     "nom": "statut",
+     "libelle": "Statut du dossier",
+     "description": "Statut du dossier combiné.",
+     "type": "TEXT",
+     "usage": "gestion",
+     "relations": [],
+     "valeurs": [
+      "brouillon",
+      "en_cours",
+      "envoye",
+      "clos"
+     ]
+    },
+    {
+     "nom": "date_effet",
+     "libelle": "Date d'effet",
+     "description": "Date d'effet demandée pour l'ensemble des volets.",
+     "type": "TEXT",
+     "usage": "soumission",
+     "relations": []
+    },
+    {
+     "nom": "date_echeance",
+     "libelle": "Date d'échéance",
+     "description": "Date d'échéance demandée.",
+     "type": "TEXT",
+     "usage": "soumission",
+     "relations": []
+    },
+    {
+     "nom": "plan_paiement",
+     "libelle": "Plan de paiement",
+     "description": "Plan de paiement demandé (annuel, mensuel, 2/3/4 versements...).",
+     "type": "TEXT",
+     "usage": "soumission",
+     "relations": []
+    },
+    {
+     "nom": "code_courtier_assureur",
+     "libelle": "Code du courtier chez l'assureur",
+     "description": "Code du courtier auprès de l'assureur destinataire de la demande de prix.",
+     "type": "TEXT",
+     "usage": "soumission",
+     "relations": []
+    },
+    {
+     "nom": "courtier_placement_id",
+     "libelle": "Courtier de placement",
+     "description": "Utilisateur responsable du placement du dossier.",
+     "type": "INTEGER",
+     "usage": "gestion",
+     "relations": [
+      "users.id"
+     ]
+    },
+    {
+     "nom": "signataire_nom",
+     "libelle": "Signataire — nom",
+     "description": "Nom du signataire de la demande de prix.",
+     "type": "TEXT",
+     "usage": "soumission",
+     "relations": []
+    },
+    {
+     "nom": "signataire_titre",
+     "libelle": "Signataire — titre",
+     "description": "Titre du signataire de la demande de prix.",
+     "type": "TEXT",
+     "usage": "soumission",
+     "relations": []
+    },
+    {
+     "nom": "date_signature",
+     "libelle": "Date de signature",
+     "description": "Date de signature de la demande de prix.",
+     "type": "TEXT",
+     "usage": "soumission",
+     "relations": []
+    },
+    {
+     "nom": "remarques_diverses",
+     "libelle": "Remarques diverses",
+     "description": "Remarques diverses au bas de la demande de prix.",
+     "type": "TEXT",
+     "usage": "soumission",
+     "relations": []
+    },
+    {
+     "nom": "circonstances_speciales",
+     "libelle": "Circonstances spéciales",
+     "description": "Circonstances spéciales à déclarer à l'assureur.",
+     "type": "TEXT",
+     "usage": "soumission",
+     "relations": []
+    },
+    {
+     "nom": "commentaires_courtier",
+     "libelle": "Commentaires du courtier",
+     "description": "Commentaires internes du courtier sur le dossier.",
+     "type": "TEXT",
+     "usage": "gestion",
+     "relations": []
+    },
+    {
+     "nom": "antecedents",
+     "libelle": "Antécédents communs (bloc source)",
+     "description": "Bloc d'antécédents communs saisi dans la combinée (JSON) — source de la synchronisation vers les 3 produits.",
+     "type": "TEXT",
+     "usage": "technique",
+     "relations": []
+    },
+    {
+     "nom": "archive",
+     "libelle": "Archivé",
+     "description": "Drapeau d'archivage (règle d'or : rien ne se supprime).",
+     "type": "INTEGER",
+     "usage": "technique",
+     "relations": []
+    },
+    {
+     "nom": "cree_par",
+     "libelle": "Créé par",
+     "description": "Utilisateur créateur du dossier.",
+     "type": "INTEGER",
+     "usage": "technique",
+     "relations": [
+      "users.id"
+     ]
+    },
+    {
+     "nom": "cree_le",
+     "libelle": "Créé le",
+     "description": "Date de création.",
+     "type": "TEXT",
+     "usage": "technique",
+     "relations": []
+    },
+    {
+     "nom": "maj_le",
+     "libelle": "Mis à jour le",
+     "description": "Date de dernière mise à jour.",
+     "type": "TEXT",
+     "usage": "technique",
+     "relations": []
+    }
+   ]
+  },
+  {
+   "nom": "combine_liens",
+   "domaine": "combine",
+   "versionnage": false,
+   "description": "Lien entre un dossier combiné et la soumission de chacun de ses produits (biens, RC, perte d'exploitation) — un lien par produit.",
+   "colonnes": [
+    {
+     "nom": "id",
+     "libelle": "Identifiant",
+     "description": "Clé primaire.",
+     "type": "INTEGER",
+     "usage": "technique",
+     "relations": []
+    },
+    {
+     "nom": "cabinet_id",
+     "libelle": "Cabinet",
+     "description": "Cabinet propriétaire (cloisonnement).",
+     "type": "INTEGER",
+     "usage": "technique",
+     "relations": [
+      "cabinets.id"
+     ]
+    },
+    {
+     "nom": "dossier_id",
+     "libelle": "Dossier combiné",
+     "description": "Dossier combiné propriétaire du lien.",
+     "type": "INTEGER",
+     "usage": "technique",
+     "relations": [
+      "combine_dossiers.id"
+     ]
+    },
+    {
+     "nom": "produit",
+     "libelle": "Produit",
+     "description": "Produit du volet lié.",
+     "type": "TEXT",
+     "usage": "technique",
+     "relations": [],
+     "valeurs": [
+      "biens",
+      "rc",
+      "perte_exploitation"
+     ]
+    },
+    {
+     "nom": "soumission_id",
+     "libelle": "Soumission liée",
+     "description": "Identifiant de la soumission du produit dans sa propre table.",
+     "type": "INTEGER",
+     "usage": "technique",
+     "relations": []
+    },
+    {
+     "nom": "cree_le",
+     "libelle": "Créé le",
+     "description": "Date de création.",
      "type": "TEXT",
      "usage": "technique",
      "relations": []

@@ -86,6 +86,8 @@
         <input type="text" name="occupation" maxlength="200" placeholder="Ex. : Boulangerie — fournil"></div>
       <div><label>Chiffre d’affaires du lieu ($)</label>
         <input type="number" name="chiffre_affaires" min="0" step="0.01"></div>
+      <div><label>Montant de perte d’exploitation du lieu ($)</label>
+        <input type="number" name="montant_pe" min="0" step="0.01"></div>
       <div><label>Superficie (m²)</label>
         <input type="number" name="superficie" min="0" step="0.01"></div>
       <div><label>Année de construction</label>
@@ -127,6 +129,8 @@
             <input type="text" name="occupation" maxlength="200" value="<%= e.occupation || '' %>"></div>
           <div><label>Chiffre d’affaires du lieu ($)</label>
             <input type="number" name="chiffre_affaires" min="0" step="0.01" value="<%= e.chiffre_affaires !== null && e.chiffre_affaires !== undefined ? e.chiffre_affaires : '' %>"></div>
+          <div><label>Montant de perte d’exploitation du lieu ($)</label>
+            <input type="number" name="montant_pe" min="0" step="0.01" value="<%= e.montant_pe !== null && e.montant_pe !== undefined ? e.montant_pe : '' %>"></div>
           <div><label>Superficie (m²)</label>
             <input type="number" name="superficie" min="0" step="0.01" value="<%= e.superficie !== null && e.superficie !== undefined ? e.superficie : '' %>"></div>
           <div><label>Année de construction</label>
@@ -159,6 +163,15 @@
       <input type="number" id="franchise-jours" name="franchise_jours" min="0" step="1" value="<%= g && g.franchise_jours !== null && g.franchise_jours !== undefined ? g.franchise_jours : '' %>"></div>
     <div><label for="prime">Prime ($, si connue)</label>
       <input type="number" id="prime" name="prime" min="0" step="0.01" value="<%= g && g.prime !== null && g.prime !== undefined ? g.prime : '' %>"></div>
+    <div><label for="formule-pe">Formule</label>
+      <select id="formule-pe" name="formule">
+        <option value="">—</option>
+        <% (typeof FORMULES_PE !== 'undefined' ? FORMULES_PE : ['pertes_loyers', 'benefice_brut', 'formule_etendue']).forEach((f) => { %><option value="<%= f %>"<%= g && g.formule === f ? ' selected' : '' %>><%= ({pertes_loyers: 'Pertes de loyers', benefice_brut: 'Bénéfice brut', formule_etendue: 'Formule étendue'})[f] %></option><% }) %>
+      </select></div>
+    <div><label for="rp-pe">Règle proportionnelle (%)</label>
+      <input type="number" id="rp-pe" name="regle_proportionnelle" min="0" max="100" step="0.01" value="<%= g && g.regle_proportionnelle != null ? g.regle_proportionnelle : '' %>"></div>
+    <div><label for="hc-pe">Honoraires de comptables ($)</label>
+      <input type="number" id="hc-pe" name="honoraires_comptables" min="0" step="0.01" value="<%= g && g.honoraires_comptables != null ? g.honoraires_comptables : '' %>"></div>
     <div style="grid-column:1/-1"><span class="petit">Période d’indemnité</span><br>
       <% PERIODES_INDEMNITE_MOIS.forEach((mois, i) => { %>
       <span class="case" style="display:inline-flex;margin-right:12px"><input type="radio" id="periode-<%= i %>" name="periode_indemnite_mois" value="<%= mois %>"<%= g && Number(g.periode_indemnite_mois) === mois ? ' checked' : '' %>><label for="periode-<%= i %>"><%= NOMS_PERIODE_INDEMNITE[mois] %></label></span>

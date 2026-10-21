@@ -39,4 +39,27 @@
 </table></div>
 <p class="petit">Le lien de capture est le formulaire public à mettre dans vos publicités. Préfixez-le de l'adresse du serveur (ex. : https://votre-serveur/capture/…). Seul l'admin de ce panneau peut le voir et le régénérer.</p>
 </div>
+
+<div class="carte">
+  <h3>✉️ En-tête d’envoi (propositions et demandes de prix)</h3>
+  <p class="petit">Les coordonnées du cabinet imprimées en en-tête des propositions — notamment la proposition combinée (demande de prix aux assureurs). Un formulaire par cabinet.</p>
+  <% cabinets.forEach((c) => { %>
+  <details class="details-inline">
+    <summary class="btn btn-secondaire btn-petit"><%= c.nom %></summary>
+    <form method="post" action="/admin/cabinets/<%= c.id %>/entete">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+      <div class="grille-form">
+        <div><label>Adresse</label><input type="text" name="adresse" value="<%= c.adresse || '' %>"></div>
+        <div><label>Ville</label><input type="text" name="ville" value="<%= c.ville || '' %>"></div>
+        <div><label>Code postal</label><input type="text" name="code_postal" value="<%= c.code_postal || '' %>"></div>
+        <div><label>Téléphone</label><input type="text" name="telephone" value="<%= c.telephone || '' %>"></div>
+        <div><label>Télécopieur</label><input type="text" name="telecopieur" value="<%= c.telecopieur || '' %>"></div>
+        <div><label>Site Web</label><input type="text" name="site_web" value="<%= c.site_web || '' %>"></div>
+        <div><label>Courriel</label><input type="email" name="courriel" value="<%= c.courriel || '' %>"></div>
+      </div>
+      <button class="btn btn-petit" type="submit">Enregistrer l'en-tête</button>
+    </form>
+  </details>
+  <% }) %>
+</div>
 <%- include('../partials/bas') %>
