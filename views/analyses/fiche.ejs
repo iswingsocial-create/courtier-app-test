@@ -122,7 +122,7 @@
           <td><input type="checkbox" name="inclure_<%= i %>" <%= c.confiance !== 'basse' ? 'checked' : '' %>></td>
           <td><%= c.libelle %> <span class="petit">(<%= c.table %>.<%= c.colonne %>)</span></td>
           <td><input type="text" name="valeur_<%= i %>" value="<%= c.valeur %>" style="width:100%;"></td>
-          <td><span style="font-weight:bold;color:<%= c.confiance === 'haute' ? '#1a7f1a' : c.confiance === 'moyenne' ? '#b8860b' : '#c0392b' %>;"><%= c.confiance %></span></td>
+          <td><span class="badge-conf <%= c.confiance %>" style="font-weight:bold;color:<%= c.confiance === 'haute' ? '#1a7f1a' : c.confiance === 'moyenne' ? '#b8860b' : '#c0392b' %>;"><%= c.confiance %></span></td>
           <td class="petit"><%= c.extrait || '—' %><% if (c.source) { %> <em>(<%= c.source %>)</em><% } %></td>
         </tr>
       <% }); %>
@@ -142,7 +142,7 @@
             <% colsL.forEach(function ([cle, cm]) { %>
               <td><input type="text" name="liste_<%= type %>_<%= i %>_<%= cle %>" value="<%= item.champs[cle] != null ? item.champs[cle] : '' %>" style="width:100%;"></td>
             <% }); %>
-            <td><span style="font-weight:bold;color:<%= item.confiance === 'haute' ? '#1a7f1a' : item.confiance === 'moyenne' ? '#b8860b' : '#c0392b' %>;"><%= item.confiance %></span></td>
+            <td><span class="badge-conf <%= item.confiance %>" style="font-weight:bold;color:<%= item.confiance === 'haute' ? '#1a7f1a' : item.confiance === 'moyenne' ? '#b8860b' : '#c0392b' %>;"><%= item.confiance %></span></td>
           </tr>
         <% }); %>
         </tbody>

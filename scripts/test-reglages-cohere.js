@@ -141,7 +141,7 @@ async function loginComme(email, mdp) {
 
   // Badge de l'assistant : reflète le mode réel
   r = await req(jar, 'GET', '/assistant');
-  test('badge assistant : « Cohere (Canada) » quand le mode effectif est cohere', /Moteur : Cohere \(Canada\)/.test(r.texte));
+  test('badge assistant : « Cohere » (sans mention Canada — résidence non garantie) quand le mode effectif est cohere', /Moteur : Cohere(?! \(Canada\))/.test(r.texte));
 
   // ---- 9. Repli local du moteur d'analyse (fausse clé → Cohere refuse) --------------------------------------
   ra = await moteur.analyser("Proposition d'assurance automobile FPQ1\nAssureur : Beneva\nPrime : 1 875 $", { cabinetId: cabA });

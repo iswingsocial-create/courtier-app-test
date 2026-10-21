@@ -84,20 +84,26 @@ test('anti-écrasement : champs communs conservés après un enregistrement prod
 test('catalogue : 17 questions copropriété + 7 entrepreneur',
   combine.QUESTIONS_SECTORIELLES.filter((q) => q.secteur === 'copropriete').length === 17
   && combine.QUESTIONS_SECTORIELLES.filter((q) => q.secteur === 'entrepreneur').length === 7);
+test('catalogue : 37 questions bijouterie (formulaire JM), codes uniques, secteur sélectionnable',
+  combine.QUESTIONS_SECTORIELLES.filter((q) => q.secteur === 'bijouterie').length === 37
+  && new Set(combine.QUESTIONS_SECTORIELLES.map((q) => q.code)).size === combine.QUESTIONS_SECTORIELLES.length
+  && combine.SECTEURS_QUESTIONS.some(([s]) => s === 'bijouterie'));
 const n = combine.definirReponsesSectorielles(clientId, cab, admin, {
   copro_carnet_entretien: 'Oui, tenu par le gestionnaire depuis 2022',
   copro_fonds_prevoyance: 'Étude 2024 — fonds à 82 % de la cible',
   entr_licence_rbq: 'RBQ 5678-1234-01',
+  bjo_mix_activites: 'Détail 70 %, réparation 20 %, fabrication 10 %',
   code_inexistant: 'ignoré',
 });
-test('réponses enregistrées (code inconnu ignoré)', n === 3);
+test('réponses enregistrées (code inconnu ignoré)', n === 4);
 const reps = combine.obtenirReponsesSectorielles(clientId, cab);
 test('réponses relues avec leur question',
-  reps.length === 3 && reps.find((r) => r.code_question === 'copro_carnet_entretien').question === 'Carnet d\u2019entretien'
-  && reps.find((r) => r.code_question === 'entr_licence_rbq').reponse === 'RBQ 5678-1234-01');
+  reps.length === 4 && reps.find((r) => r.code_question === 'copro_carnet_entretien').question === 'Carnet d\u2019entretien'
+  && reps.find((r) => r.code_question === 'entr_licence_rbq').reponse === 'RBQ 5678-1234-01'
+  && !!reps.find((r) => r.code_question === 'bjo_mix_activites'));
 combine.definirReponsesSectorielles(clientId, cab, admin, { copro_fonds_prevoyance: 'Étude 2026 — fonds à 95 %' });
 const reps2 = combine.obtenirReponsesSectorielles(clientId, cab);
-test('mise à jour sans doublon', reps2.length === 3
+test('mise à jour sans doublon', reps2.length === 4
   && reps2.find((r) => r.code_question === 'copro_fonds_prevoyance').reponse.includes('95 %'));
 const cab2 = bd.prepare('INSERT INTO cabinets (nom) VALUES (?)').run('Cabinet Voisin').lastInsertRowid;
 test('cloisonnement : réponses invisibles depuis un autre cabinet',

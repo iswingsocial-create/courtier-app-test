@@ -22,7 +22,7 @@
     { id: 'gestion', libelle: '🗂️ Gestion', liens: [['/assureurs', 'Assureurs'], ['/factures', 'Facturation'], ['/taches', 'Tâches'], ['/import', 'Import'], ['/exports', 'Exports']] },
   ];
   if (utilisateur.role === 'admin') {
-    SECTIONS_MENU.push({ id: 'admin', libelle: '⚙️ Admin', liens: [['/admin/utilisateurs', 'Admin'], ['/admin/journal', 'Journal']] });
+    SECTIONS_MENU.push({ id: 'admin', libelle: '⚙️ Admin', liens: [['/admin/utilisateurs', 'Admin'], ['/admin/journal', 'Journal'], ['/admin/cohere', '🔑 Clé IA'], ['/admin/cabinets', 'Cabinets'], ['/admin/dictionnaire', 'Dictionnaire']] });
   }
   const cheminMenu = (typeof cheminActuel !== 'undefined' && cheminActuel) ? cheminActuel : '';
   const estCourant = (url) => url === '/echeances'

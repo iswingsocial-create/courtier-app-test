@@ -163,3 +163,32 @@ footer { text-align: center; color: var(--texte-doux); font-size: .85rem; paddin
 /* Exports : radios et cases à cocher en ligne */
 .radio-ligne { display: flex; gap: 18px; margin: 8px 0; flex-wrap: wrap; }
 .radio-ligne label { margin: 0; font-weight: 400; display: flex; align-items: center; gap: 6px; }
+
+/* Revue visuelle 2026-10-21 — cohérence des états et des tableaux.
+   Ajouts seulement : aucune classe existante n'est renommée ni retirée. */
+/* « badge-j » nu = état en attente / à confirmer (vérifications d'avenants,
+   lignes de rapport) : il n'avait aucun style — ambre doux, comme j60. */
+.badge-j { background: #fef3c7; color: #92400e; }
+/* Pastilles de confiance (écran de révision des analyses) : fond doux
+   assorti à la couleur du texte déjà en place (haute/moyenne/basse). */
+.badge-conf { display: inline-block; padding: 1px 9px; border-radius: 999px; font-size: .8rem; background: #f3f4f6; }
+.badge-conf.haute { background: #dcf2dc; }
+.badge-conf.moyenne { background: #fdf0d5; }
+.badge-conf.basse { background: #fbe3e3; }
+/* Tableaux : alignement haut, alternance légère, survol conservé,
+   en-têtes figés dans les conteneurs défilants. */
+th, td { vertical-align: top; }
+tbody tr:nth-child(even) > td { background: #fafbfc; }
+tbody tr:hover > td { background: #f3f6fb; }
+.tableau-deroulant thead th { position: sticky; top: 0; background: #fff; z-index: 1; }
+/* Cartes : respiration régulière sous les titres. */
+.carte h2, .carte h3 { margin-bottom: 10px; }
+/* Accessibilité : focus visible au clavier sur liens, boutons et sections. */
+a:focus-visible, button:focus-visible, summary:focus-visible { outline: 2px solid var(--primaire); outline-offset: 2px; }
+/* Petits écrans : marges et tableaux resserrés, sans débordement. */
+@media (max-width: 760px) {
+  .conteneur { padding: 10px; }
+  .carte { padding: 14px; }
+  table { font-size: .9rem; }
+  th, td { padding: 8px 6px; }
+}

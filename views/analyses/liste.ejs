@@ -6,7 +6,7 @@
   <p class="petit">Polices d'assureur, propositions déjà remplies, scans ou photos :
     le texte est extrait (texte natif du PDF ou <strong>OCR 100 % local</strong> pour les images —
     rien ne sort du serveur), le moteur propose les champs, puis <strong>vous révisez avant
-    toute insertion</strong>. Moteur actif : <strong><%= moteur.mode === 'cohere' ? 'Cohere (Canada)' : moteur.mode === 'augure' ? 'Augure (Canada)' : 'local (règles)' %></strong>
+    toute insertion</strong>. Moteur actif : <strong><%= moteur.mode === 'cohere' ? 'Cohere' : moteur.mode === 'augure' ? 'Augure (Canada)' : 'local (règles)' %></strong>
     (choix du cabinet : <%= moteur.choix %><%= (moteur.clePresente || moteur.cleAugurePresente) ? ', clé présente' : ', aucune clé' %>).</p>
   <% if (ok === 'echec') { %><p class="alerte">⚠️ Le dernier document n'a pas pu être analysé (voir son statut dans la liste).</p><% } %>
   <form method="post" action="/analyses" enctype="multipart/form-data" id="form-analyse">

@@ -10,7 +10,7 @@
   <h3>État</h3>
   <p>
     Moteur choisi : <strong><%= reglage.moteur %></strong> ·
-    Moteur effectif : <strong><%= effectif.mode === 'cohere' ? 'Cohere (Canada)' : effectif.mode === 'augure' ? 'Augure (Canada)' : 'local (règles)' %></strong><br>
+    Moteur effectif : <strong><%= effectif.mode === 'cohere' ? 'Cohere' : effectif.mode === 'augure' ? 'Augure (Canada)' : 'local (règles)' %></strong><br>
     Clé du cabinet : <% if (reglage.cleCabinetPresente) { %><span class="badge badge-ok">Enregistrée</span> <%= reglage.masque %><% } else { %>aucune<% } %><br>
     Clé d'environnement (COHERE_API_KEY) : <%= reglage.cleEnvPresente ? 'présente' : 'absente' %>
   </p>
@@ -49,8 +49,11 @@
     <button type="submit">Appliquer</button>
   </form>
   <p class="petit">Le moteur choisi s'applique à l'analyse de documents, à l'assistant IA et aux brouillons.
-    En mode Cohere ou Augure, le texte extrait et le dictionnaire du produit détecté sont envoyés au
-    fournisseur (Canada) en JSON strict ; la réponse est validée contre le dictionnaire avant d'être proposée.</p>
+    En mode externe, le texte extrait et le dictionnaire du produit détecté sont envoyés au fournisseur
+    choisi en JSON strict ; la réponse est validée contre le dictionnaire et ancrée au document avant
+    d'être proposée. <strong>Augure est un fournisseur entièrement canadien</strong> (données au Canada).
+    Pour <strong>Cohere</strong>, la résidence des données au Canada n'est pas garantie sur l'API
+    standard : si la conformité Loi 25 de votre ordre l'exige, préférez Augure ou le mode local.</p>
 </div>
 
 <div class="carte">

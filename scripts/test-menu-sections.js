@@ -60,7 +60,7 @@ async function loginComme(email, mdp) {
   return { jar, ok: r.statut === 302 };
 }
 
-// Les 28 liens historiques (URL, libellé) — aucun ne doit disparaître.
+// Les 31 liens historiques (URL, libellé) — aucun ne doit disparaître.
 const LIENS = [
   ['/echeances', 'Échéances'],
   ['/clients', 'Entreprises'], ['/leads', 'Leads'],
@@ -71,6 +71,7 @@ const LIENS = [
   ['/ouverture', '🎙️ Ouvrir un dossier'], ['/analyses', '📥 Analyser un document'], ['/assistant', 'Assistant IA'],
   ['/assureurs', 'Assureurs'], ['/factures', 'Facturation'], ['/taches', 'Tâches'], ['/import', 'Import'], ['/exports', 'Exports'],
   ['/admin/utilisateurs', 'Admin'], ['/admin/journal', 'Journal'],
+  ['/admin/cohere', '🔑 Clé IA'], ['/admin/cabinets', 'Cabinets'], ['/admin/dictionnaire', 'Dictionnaire'],
 ];
 const SECTIONS = [
   ['clients', '👥 Clients'], ['soumissions', '📝 Soumissions'], ['polices', '🛡️ Polices'],
@@ -91,6 +92,7 @@ const PAGE_SECTION = {
   '/assureurs': 'gestion', '/factures': 'gestion', '/taches': 'gestion', '/import': 'gestion',
   '/exports': 'gestion',
   '/admin/utilisateurs': 'admin', '/admin/journal': 'admin',
+  '/admin/cohere': 'admin', '/admin/cabinets': 'admin', '/admin/dictionnaire': 'admin',
 };
 
 function blocNav(html) {
@@ -158,7 +160,8 @@ const nb = (txt, motif) => txt.split(motif).length - 1;
   const navC = blocNav(r.texte);
   test('courtier : nav présente avec 6 sections (sans Admin)', navC.length > 0 && nb(navC, 'data-section=') === 6, String(nb(navC, 'data-section=')));
   test('courtier : aucune trace de la section Admin ni de ses liens',
-    !navC.includes('data-section="admin"') && !navC.includes('href="/admin/utilisateurs"') && !navC.includes('href="/admin/journal"'));
+    !navC.includes('data-section="admin"') && !navC.includes('href="/admin/utilisateurs"') && !navC.includes('href="/admin/journal"')
+    && !navC.includes('href="/admin/cohere"') && !navC.includes('href="/admin/cabinets"') && !navC.includes('href="/admin/dictionnaire"'));
   const manquants = LIENS.filter(([u]) => !u.startsWith('/admin'))
     .filter(([url]) => nb(navC, `href="${url}"`) !== 1).map(([url]) => url);
   test('courtier : les 26 liens non-admin sont tous présents exactement une fois',
