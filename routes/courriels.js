@@ -278,7 +278,7 @@ router.post('/rediger-ia', async (req, res) => {
   if (!contexte) return res.status(400).json({ erreur: 'Décrivez le sujet du courriel.' });
   try {
     const { sujet, contenu, source } = await genererCourrielLibre({
-      destinataire, contexte, ton, nomCourtier: req.utilisateur.nom,
+      destinataire, contexte, ton, nomCourtier: req.utilisateur.nom, cabinetId: res.locals.cabinetId,
     });
     journal(res.locals.cabinetId, req.utilisateur.id, 'courriel_ia_redige', `Brouillon IA (source : ${source})`);
     res.json({ sujet, contenu, source });

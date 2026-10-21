@@ -93,6 +93,7 @@ router.post('/ia', async (req, res) => {
   const objet = String(req.body.objet || '').trim();
   const { contenu, source } = await genererContenuCampagne({
     nom: nom || 'Campagne', secteurs, nomCabinet: res.locals.utilisateur.cabinet_nom, nomCourtier: req.utilisateur.nom,
+    cabinetId: res.locals.cabinetId,
   });
   res.render('campagnes/formulaire', {
     erreur: null, campagne: { nom, secteurs, objet, contenu },

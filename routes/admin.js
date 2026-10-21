@@ -176,6 +176,7 @@ router.get('/dictionnaire', (req, res) => {
 // La clé est chiffrée au repos (lib/reglages-ia.js) et n'apparaît jamais en clair.
 const reglagesIA = require('../lib/reglages-ia');
 const placesGoogle = require('../lib/places-google');
+const augure = require('../lib/augure');
 
 function rendreCohere(req, res, extra = {}) {
   const cabinetId = res.locals.cabinetId;
@@ -183,12 +184,16 @@ function rendreCohere(req, res, extra = {}) {
     reglage: reglagesIA.obtenirReglage(cabinetId),
     effectif: reglagesIA.moteurEffectif(cabinetId),
     reglageGoogle: placesGoogle.obtenirReglageGoogle(cabinetId),
+    reglageAugure: augure.obtenirReglageAugure(cabinetId),
     message: extra.message || null,
     ok: !!extra.ok,
     resultatTest: extra.resultatTest || null,
     messageGoogle: extra.messageGoogle || null,
     okGoogle: !!extra.okGoogle,
     resultatTestGoogle: extra.resultatTestGoogle || null,
+    messageAugure: extra.messageAugure || null,
+    okAugure: !!extra.okAugure,
+    resultatTestAugure: extra.resultatTestAugure || null,
   });
 }
 
@@ -222,6 +227,39 @@ router.post('/cohere/tester', async (req, res) => {
   journal(res.locals.cabinetId, req.utilisateur.id, 'analyse_reglage_test',
     `Test de connexion Cohere : ${resultatTest.ok ? 'réussi' : 'échec'} — ${resultatTest.message}`);
   rendreCohere(req, res, { resultatTest });
+});
+
+// --- Moteur IA Augure (canadien) ---------------------------------------------
+// Même pattern que les clés Cohere et Google : chiffrée au repos
+// (lib/augure.js), jamais affichée en clair, réservée à l'admin.
+router.post('/cohere/augure/cle', (req, res) => {
+  try {
+    augure.definirCleAugure(res.locals.cabinetId, req.utilisateur.id, req.body.cle);
+    rendreCohere(req, res, { messageAugure: 'Clé API Augure enregistrée (chiffrée).', okAugure: true });
+  } catch (e) {
+    rendreCohere(req, res, { messageAugure: e.message });
+  }
+});
+
+router.post('/cohere/augure/effacer', (req, res) => {
+  augure.effacerCleAugure(res.locals.cabinetId, req.utilisateur.id);
+  rendreCohere(req, res, { messageAugure: 'Clé Augure du cabinet retirée.', okAugure: true });
+});
+
+router.post('/cohere/augure/modele', (req, res) => {
+  try {
+    augure.definirModeleAugure(res.locals.cabinetId, req.utilisateur.id, String(req.body.modele || ''));
+    rendreCohere(req, res, { messageAugure: 'Modèle Augure mis à jour.', okAugure: true });
+  } catch (e) {
+    rendreCohere(req, res, { messageAugure: e.message });
+  }
+});
+
+router.post('/cohere/augure/tester', async (req, res) => {
+  const resultatTestAugure = await augure.testerConnexionAugure(res.locals.cabinetId);
+  journal(res.locals.cabinetId, req.utilisateur.id, 'augure_reglage_test',
+    `Test de connexion Augure : ${resultatTestAugure.ok ? 'réussi' : 'échec'} — ${resultatTestAugure.message}`);
+  rendreCohere(req, res, { resultatTestAugure });
 });
 
 // --- Clé Google Maps (Places) — ouverture de dossier à la voix ---------------

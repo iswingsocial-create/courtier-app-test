@@ -42,7 +42,7 @@ router.post('/generer/:policeId', async (req, res) => {
 
   const { sujet, contenu, source } = await genererBrouillonRenouvellement({
     client, police, protections, primeTotale, manquantes, joursRestants: jours,
-    nomCourtier: req.utilisateur.nom,
+    nomCourtier: req.utilisateur.nom, cabinetId: res.locals.cabinetId,
   });
 
   const r = bd.prepare(`

@@ -224,6 +224,7 @@ router.post('/:id/relance', async (req, res) => {
   };
   const { sujet, contenu, source } = await genererBrouillonRelance({
     client, facture, joursRetard: joursRetard(facture.date_echeance), nomCourtier: req.utilisateur.nom,
+    cabinetId: res.locals.cabinetId,
   });
   const r = bd.prepare(`
     INSERT INTO brouillons (cabinet_id, facture_id, type, sujet, contenu, statut)

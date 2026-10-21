@@ -10,7 +10,7 @@
   <h3>État</h3>
   <p>
     Moteur choisi : <strong><%= reglage.moteur %></strong> ·
-    Moteur effectif : <strong><%= effectif.mode === 'cohere' ? 'Cohere (Canada)' : 'local (règles)' %></strong><br>
+    Moteur effectif : <strong><%= effectif.mode === 'cohere' ? 'Cohere (Canada)' : effectif.mode === 'augure' ? 'Augure (Canada)' : 'local (règles)' %></strong><br>
     Clé du cabinet : <% if (reglage.cleCabinetPresente) { %><span class="badge badge-ok">Enregistrée</span> <%= reglage.masque %><% } else { %>aucune<% } %><br>
     Clé d'environnement (COHERE_API_KEY) : <%= reglage.cleEnvPresente ? 'présente' : 'absente' %>
   </p>
@@ -41,15 +41,16 @@
     <input type="hidden" name="_csrf" value="<%= csrfToken %>">
     <label for="moteur">Choix du moteur</label>
     <select id="moteur" name="moteur">
-      <option value="auto" <%= reglage.moteur === 'auto' ? 'selected' : '' %>>Auto — Cohere si une clé est présente, sinon local</option>
+      <option value="auto" <%= reglage.moteur === 'auto' ? 'selected' : '' %>>Auto — Augure si sa clé est présente, sinon Cohere, sinon local</option>
+      <option value="augure" <%= reglage.moteur === 'augure' ? 'selected' : '' %>>Augure — IA canadienne (repli local en cas d'erreur)</option>
       <option value="cohere" <%= reglage.moteur === 'cohere' ? 'selected' : '' %>>Cohere — toujours l'IA (repli local en cas d'erreur)</option>
       <option value="local" <%= reglage.moteur === 'local' ? 'selected' : '' %>>Local — règles seulement, aucun appel externe</option>
     </select>
     <button type="submit">Appliquer</button>
   </form>
-  <p class="petit">Le moteur choisi s'applique à l'analyse de documents et à l'assistant IA.
-    En mode Cohere, le texte extrait et le dictionnaire du produit détecté sont envoyés à Cohere (Canada)
-    en JSON strict ; la réponse est validée contre le dictionnaire avant d'être proposée.</p>
+  <p class="petit">Le moteur choisi s'applique à l'analyse de documents, à l'assistant IA et aux brouillons.
+    En mode Cohere ou Augure, le texte extrait et le dictionnaire du produit détecté sont envoyés au
+    fournisseur (Canada) en JSON strict ; la réponse est validée contre le dictionnaire avant d'être proposée.</p>
 </div>
 
 <div class="carte">
@@ -60,6 +61,66 @@
   </form>
   <% if (resultatTest) { %>
     <p style="margin-top:10px;"><%= resultatTest.ok ? '✅' : '⚠️' %> <%= resultatTest.message %></p>
+  <% } %>
+</div>
+
+<h2 style="margin-top:28px;">🇨🇦 Clé Augure (IA canadienne)</h2>
+<% if (typeof messageAugure !== 'undefined' && messageAugure) { %><div class="alerte <%= okAugure ? 'alerte-succes' : 'alerte-erreur' %>"><%= messageAugure %></div><% } %>
+
+<div class="carte">
+  <h3>État</h3>
+  <p>
+    Clé du cabinet : <% if (reglageAugure.cleCabinetPresente) { %><span class="badge badge-ok">Enregistrée</span> <%= reglageAugure.masque %><% } else { %>aucune<% } %><br>
+    Clé d'environnement (AUGURE_API_KEY) : <%= reglageAugure.cleEnvPresente ? 'présente' : 'absente' %><br>
+    Modèle du cabinet : <strong><%= reglageAugure.modele %></strong>
+  </p>
+  <p class="petit"><strong>Augure AI</strong> est un fournisseur d'inférence <strong>entièrement canadien</strong>
+    (aucun fournisseur américain ; entente de traitement des données — DPA — disponible). Son API est
+    <strong>compatible OpenAI</strong>. La clé est stockée <strong>chiffrée AES-256-GCM</strong>, comme les clés
+    Cohere et Google, et n'apparaît jamais en clair. Quand Augure est le moteur effectif, la mention
+    « Propulsé par Augure » s'affiche dans le pied de page de l'application (condition du fournisseur).</p>
+</div>
+
+<div class="carte">
+  <h3>Enregistrer ou remplacer la clé</h3>
+  <form method="post" action="/admin/cohere/augure/cle" class="grille-form">
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+    <label for="cle-augure">Clé API Augure</label>
+    <input type="password" id="cle-augure" name="cle" autocomplete="off" placeholder="Collez la clé Augure du cabinet" required>
+    <button type="submit">💾 Enregistrer la clé (chiffrée)</button>
+  </form>
+  <% if (reglageAugure.cleCabinetPresente) { %>
+  <form method="post" action="/admin/cohere/augure/effacer" class="inline" style="margin-top:10px;">
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+    <button class="btn btn-secondaire btn-petit" type="submit">Retirer la clé du cabinet</button>
+  </form>
+  <% } %>
+</div>
+
+<div class="carte">
+  <h3>Modèle Augure</h3>
+  <form method="post" action="/admin/cohere/augure/modele" class="grille-form">
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+    <label for="modele-augure">Modèle utilisé par le cabinet</label>
+    <select id="modele-augure" name="modele">
+      <% for (const m of reglageAugure.modeles) { %>
+      <option value="<%= m.id %>" <%= reglageAugure.modele === m.id ? 'selected' : '' %>><%= m.nom %> — <%= m.description %> · contexte <%= m.contexte %> · <%= m.prixEntree.toFixed(2).replace('.', ',') %> $ / <%= m.prixSortie.toFixed(2).replace('.', ',') %> $ CAD par 1M de jetons</option>
+      <% } %>
+    </select>
+    <button type="submit">Appliquer</button>
+  </form>
+  <p class="petit">Ossington 5 (défaut) équilibre raisonnement et coût. Rosedale 1 vise les
+    raisonnements longs (contexte 1M) ; Tofino 3 est le plus léger et le moins cher.</p>
+</div>
+
+<div class="carte">
+  <h3>Tester la connexion</h3>
+  <form method="post" action="/admin/cohere/augure/tester">
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+    <button type="submit">📡 Tester la connexion à Augure</button>
+  </form>
+  <% if (typeof resultatTestAugure !== 'undefined' && resultatTestAugure) { %>
+    <p style="margin-top:10px;"><%= resultatTestAugure.ok ? '✅' : '⚠️' %> <%= resultatTestAugure.message %></p>
   <% } %>
 </div>
 

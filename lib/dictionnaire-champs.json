@@ -8706,7 +8706,7 @@
   {
    "nom": "reglages_ia",
    "domaine": "analyse_ia",
-   "description": "Réglages du cabinet : clé API Cohere chiffrée au repos, choix du moteur d'analyse, et clé API Google Places chiffrée (enrichissement Google Maps). Les clés n'apparaissent jamais en clair (ni journaux, ni réponses, ni tests).",
+   "description": "Réglages du cabinet : clé API Cohere chiffrée au repos, choix du moteur d'analyse, clé API Google Places chiffrée (enrichissement Google Maps) et moteur IA canadien Augure (clé chiffrée + modèle choisi). Les clés n'apparaissent jamais en clair (ni journaux, ni réponses, ni tests).",
    "versionnage": false,
    "colonnes": [
     {
@@ -8728,13 +8728,14 @@
     {
      "nom": "moteur",
      "libelle": "Moteur choisi",
-     "description": "Choix du moteur : local (règles, hors ligne), cohere (IA Cohere), auto (Cohere si une clé est présente, sinon local).",
+     "description": "Choix du moteur : local (règles, hors ligne), cohere (IA Cohere), augure (IA canadienne Augure), auto (Augure si sa clé est présente, sinon Cohere si sa clé l'est, sinon local).",
      "type": "TEXT",
      "usage": "gestion",
      "relations": [],
      "valeurs": [
       "local",
       "cohere",
+      "augure",
       "auto"
      ]
     },
@@ -8753,6 +8754,30 @@
      "type": "TEXT",
      "usage": "technique",
      "relations": []
+    },
+    {
+     "nom": "cle_augure_chiffree",
+     "libelle": "Clé Augure chiffrée",
+     "description": "Clé API Augure (IA canadienne, API compatible OpenAI) chiffrée AES-256-GCM (lib/chiffrement.js, même mécanisme que les clés Cohere et Google). Jamais stockée ni affichée en clair ; seuls les 4 derniers caractères sont montrés, masqués.",
+     "type": "TEXT",
+     "usage": "technique",
+     "relations": []
+    },
+    {
+     "nom": "modele_augure",
+     "libelle": "Modèle Augure",
+     "description": "Modèle Augure choisi pour les appels du cabinet (analyse, assistant, brouillons). Défaut : ossington-5 (raisonnement rapide). Tarifs CAD par 1M de jetons entrée/sortie : ossington-5 1,50/3,00 ; ossington-4 2,00/5,00 ; ossington-4-1 2,50/6,00 ; rosedale-1 2,50/6,00 ; tofino-3 0,60/2,00 ; open-glm-5-3 3,00/7,00.",
+     "type": "TEXT",
+     "usage": "gestion",
+     "relations": [],
+     "valeurs": [
+      "ossington-5",
+      "ossington-4",
+      "ossington-4-1",
+      "rosedale-1",
+      "tofino-3",
+      "open-glm-5-3"
+     ]
     }
    ]
   },

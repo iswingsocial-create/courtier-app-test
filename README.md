@@ -57,6 +57,8 @@ Données démo : Constructions Méthot inc. (CGL + biens), Resto Le Petit Four i
 | `COOKIE_SECURE`  | (désactivé)         | Mettre à `1` derrière HTTPS (cookies `Secure`)           |
 | `COHERE_API_KEY` | (absent)            | Clé API Cohere — sans elle, les brouillons utilisent un modèle de texte local |
 | `COHERE_MODEL`   | `command-a-03-2025` | Modèle Cohere utilisé pour les brouillons                |
+| `AUGURE_API_KEY` | (absent)            | Clé API Augure (IA canadienne) de repli — le réglage du cabinet (Admin → Clé IA) a priorité |
+| `AUGURE_BASE_URL` | `https://api.augureai.ca/v1` | Base de l'API Augure — surchargée par les tests (harnais local, aucun appel réel) |
 | `CHEMIN_BD`      | `./courtier.db`     | Chemin du fichier SQLite                                 |
 | `MS_CLIENT_ID` / `MS_CLIENT_SECRET` / `MS_REDIRECT_URI` | (absent) | OAuth Microsoft 365 (création auto des liens Teams) — voir « Microsoft 365 » |
 | `MS_TENANT`      | `common`            | Locataire Azure AD pour l'OAuth Microsoft                |
@@ -4716,6 +4718,27 @@ Demande de Patrick : « réorganise le menu pour qu'il soit plus naturel, moins 
 Mécanique : `<details>`/`<summary>` natifs stylés dans `public/style.css` — **aucun JavaScript requis**, tous les liens restent présents dans le HTML. La section de la page courante est **ouverte par défaut**, son libellé est marqué (`summary.courant`, souligné) et le lien courant est surligné (`a.actif`), à partir de `res.locals.cheminActuel` posé par `lib/middleware.js`. Mobile d'abord : sous 760 px, la nav passe en pleine largeur en colonne (zones tactiles ≥ 40 px) ; sur écran large, les sections sont en ligne dans la barre et le panneau se déplie en surimpression. Aucune URL ni aucun libellé n'a changé, aucun lien perdu.
 
 Test : `scripts/test-menu-sections.js` (101 vérifications — chaque page principale répond, les 7 en-têtes de section présents, les 28 liens historiques présents exactement une fois avec la bonne URL, section courante marquée page par page, section Admin absente pour un rôle non-admin). Captures 127 (mobile, menu fermé), 128 (mobile, Soumissions dépliée), 129 (bureau, panneau en surimpression).
+
+## Moteur IA Augure (canadien)
+
+**Augure AI** (augureai.ca) est un fournisseur d'inférence **entièrement canadien** — aucun fournisseur américain, entente de traitement des données (DPA) disponible. Son API est **compatible OpenAI** : `POST https://api.augureai.ca/v1/chat/completions`, authentification par clé Bearer, aucun SDK requis. Il est intégré comme troisième moteur IA de l'application, en symétrique de Cohere, sans rien changer au moteur local.
+
+**Réglage** — **Admin → 🔑 Clé IA (Cohere)**, section « 🇨🇦 Clé Augure (IA canadienne) », admin seulement :
+
+- **Clé API du cabinet** : stockée **chiffrée AES-256-GCM** (colonne `reglages_ia.cle_augure_chiffree`, même mécanisme que les clés Cohere et Google), affichée **masquée** (4 derniers caractères), jamais journalisée en clair ; boutons enregistrer / retirer / « Tester la connexion » (GET `/models`, repli sur un micro-appel chat). Une clé d'environnement `AUGURE_API_KEY` peut aussi servir au déploiement (le réglage du cabinet a priorité).
+- **Modèle du cabinet** (colonne `reglages_ia.modele_augure`, défaut `ossington-5`), prix en CAD par 1M de jetons entrée/sortie : `ossington-5` raisonnement rapide, contexte 256K (1,50/3,00) · `ossington-4` (2,00/5,00) · `ossington-4-1` (2,50/6,00) · `rosedale-1` raisonnement premium multi-étapes, contexte 1M (2,50/6,00) · `tofino-3` léger rapide (0,60/2,00) · `open-glm-5-3` aperçu poids ouverts (3,00/7,00).
+
+**Choix du moteur** (même sélecteur qu'avant, `lib/reglages-ia.js`) : **Local / Cohere / Augure / Auto**. **Auto = Augure si sa clé est configurée, sinon Cohere si la sienne l'est, sinon Local.** En cas d'erreur d'appel du moteur externe, repli sur le moteur local, **signalé** dans le résultat comme pour Cohere.
+
+**Points d'appel** (`lib/augure.js` : `appelerAugure({ cle, modele, systeme, prompt, jsonMode })`, température 0, `response_format: { type: 'json_object' }` en mode JSON avec réessai sans `response_format` si le fournisseur le refuse) :
+
+- **Analyse de documents** (`analyserAugure` dans `lib/analyse-document.js`) : même prompt JSON strict et même validation contre le dictionnaire que Cohere (fonctions partagées) — champs inconnus rejetés ; erreur → repli local signalé.
+- **Commandes de l'assistant** (`interpreterAugure` dans `lib/commandes-ia.js` et `lib/assistant.js`) : même contrat JSON que `interpreterCohere` (prompt et parseur factorisés).
+- **Brouillons IA** (`lib/ia.js`) : les 4 générateurs (renouvellement, relance, campagne, courriel libre) passent par Augure quand il est le moteur effectif du cabinet (les routes transmettent `cabinetId`) ; source affichée : `augure`.
+
+**Mention de marque** : condition du fournisseur, le pied de page (`views/partials/bas.ejs`) affiche « Propulsé par Augure » **uniquement quand le moteur effectif du cabinet est Augure** (texte sobre, aucun logo externe ; `res.locals.moteurAugure` posé par `lib/middleware.js`).
+
+**Tests** — aucun appel réel à Augure : base surchargeable par `AUGURE_BASE_URL` (défaut `https://api.augureai.ca/v1`) et harnais local au format OpenAI. `scripts/test-augure-reglage.js` (35 vérifications : client, erreurs 401/429/400, clé chiffrée et masquée, 403 non-admin, modèle persisté, `moteurEffectif` dans chaque configuration) et `scripts/test-augure-moteur.js` (24 vérifications : analyse flotte via Augure, JSON invalide → repli local signalé, commande interprétée, brouillon généré, moteur Local → zéro appel au harnais, mention de marque présente/absente). Captures 130 (Admin, section Augure) et 131 (analyse « Moteur : augure »).
 
 ## Volontairement non inclus (phases suivantes)
 
