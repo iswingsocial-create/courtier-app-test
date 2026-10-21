@@ -35,6 +35,20 @@
     <div><label for="date_effet">Date d’effet *</label><input type="date" id="date_effet" name="date_effet" required value="<%= police.date_effet || '' %>"></div>
     <div><label for="date_echeance">Date d’échéance *</label><input type="date" id="date_echeance" name="date_echeance" required value="<%= police.date_echeance || '' %>"></div>
     <div><label for="franchise">Franchise ($)</label><input type="number" id="franchise" name="franchise" step="0.01" min="0" value="<%= police.franchise != null ? police.franchise : 0 %>"></div>
+    <div><label for="grossiste_nom">Grossiste / intermédiaire (si placement via un grossiste)</label><input type="text" id="grossiste_nom" name="grossiste_nom" value="<%= police.grossiste_nom || '' %>" placeholder="Ex. Soplex Solutions d’assurances"></div>
+    <div><label for="grossiste_contrat">Nº du contrat-cadre du grossiste</label><input type="text" id="grossiste_contrat" name="grossiste_contrat" value="<%= police.grossiste_contrat || '' %>" placeholder="Ex. BAS002"></div>
+    <div><label for="mode_facturation">Méthode de facturation</label>
+      <select id="mode_facturation" name="mode_facturation">
+        <option value="">— Non précisée —</option>
+        <option value="perception_assure" <%= police.mode_facturation === 'perception_assure' ? 'selected' : '' %>>Perception assuré</option>
+        <option value="facturation_agence" <%= police.mode_facturation === 'facturation_agence' ? 'selected' : '' %>>Facturation agence</option>
+        <option value="directe" <%= police.mode_facturation === 'directe' ? 'selected' : '' %>>Facturation directe au client</option>
+      </select></div>
+    <div><label for="responsabilite_proportionnelle">Souscription partagée</label>
+      <select id="responsabilite_proportionnelle" name="responsabilite_proportionnelle">
+        <option value="0" <%= !police.responsabilite_proportionnelle ? 'selected' : '' %>>Non — assureur unique</option>
+        <option value="1" <%= police.responsabilite_proportionnelle ? 'selected' : '' %>>Oui — responsabilité proportionnelle (participants au registre)</option>
+      </select></div>
     <div><label for="statut">Statut</label>
       <select id="statut" name="statut">
         <% Object.keys(NOMS_STATUTS).forEach((s) => { %>

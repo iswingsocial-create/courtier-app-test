@@ -8,6 +8,7 @@
 
 </div>
 <%- include('../partials/manques', { sectionDemandes }) %>
+<%- include('../partials/mise-en-marche', { sectionMarche }) %>
 
 
 <div class="carte">
@@ -158,6 +159,27 @@
   </form>
 </div>
 
+<div class="carte" id="exposition">
+  <h2>🗄️ Exposition aux données (questionnaire type CFC)</h2>
+  <p class="petit">Une ligne par élément, séparateur « | ». Types de données : <em>type | nombre d’enregistrements</em>.
+  Revenus par territoire : <em>territoire | montant $</em> (ex. Canada, États-Unis, Europe — sur 3 ans si connu, en notes).</p>
+  <form method="post" action="/cyber/<%= s.id %>/exposition">
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+    <div class="grille-form">
+      <div><label for="nb_enregistrements">Nombre total d’enregistrements traités</label>
+        <input type="number" id="nb_enregistrements" name="nb_enregistrements" min="0" value="<%= s.nb_enregistrements != null ? s.nb_enregistrements : '' %>"></div>
+      <div><label for="responsable_securite">Responsable de la sécurité (nom et titre)</label>
+        <input type="text" id="responsable_securite" name="responsable_securite" value="<%= s.responsable_securite || '' %>"></div>
+      <div style="grid-column:1/-1"><label for="types_donnees">Types de données — une ligne par type (type | nombre)</label>
+        <textarea id="types_donnees" name="types_donnees" rows="3"><%= (s.types_donnees || []).map((t) => [t.type, t.nombre].filter((x) => x !== null && x !== undefined && x !== '').join(' | ')).join('\n') %></textarea></div>
+      <div style="grid-column:1/-1"><label for="normes">Normes et cadres suivis — une par ligne (SOC 2, ISO 27001, PCI DSS…)</label>
+        <textarea id="normes" name="normes" rows="2"><%= (s.normes || []).map((n) => n.norme || '').join('\n') %></textarea></div>
+      <div style="grid-column:1/-1"><label for="revenus_territoires">Revenus par territoire — une ligne par territoire (territoire | montant $)</label>
+        <textarea id="revenus_territoires" name="revenus_territoires" rows="3"><%= (s.revenus_territoires || []).map((r) => [r.territoire, r.montant].filter((x) => x !== null && x !== undefined && x !== '').join(' | ')).join('\n') %></textarea></div>
+    </div>
+    <div class="actions"><button class="btn btn-petit" type="submit">Enregistrer l’exposition</button></div>
+  </form>
+</div>
 <div class="carte" id="antecedents">
   <h2>📋 Antécédents d’assurance</h2>
   <% const a = s.antecedents; %>

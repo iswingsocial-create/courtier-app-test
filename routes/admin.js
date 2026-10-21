@@ -146,9 +146,9 @@ router.post('/utilisateurs', async (req, res) => {
 
   const hash = await bcrypt.hash(motDePasse, 12);
   bd.prepare(`
-    INSERT INTO users (cabinet_id, email, mot_de_passe_hash, role, nom, doit_changer_mot_de_passe)
-    VALUES (?, ?, ?, ?, ?, 1)
-  `).run(cabinet_id, email, hash, role, nom);
+    INSERT INTO users (cabinet_id, email, mot_de_passe_hash, role, nom, doit_changer_mot_de_passe, code_interne)
+    VALUES (?, ?, ?, ?, ?, 1, ?)
+  `).run(cabinet_id, email, hash, role, nom, String(req.body.code_interne || '').trim() || null);
   journal(cabinet_id, req.utilisateur.id, 'utilisateur_cree', `Utilisateur ${email} (${role})`);
   res.redirect('/admin/utilisateurs');
 });
@@ -314,6 +314,15 @@ router.post('/utilisateurs/:id/reinitialiser', async (req, res) => {
 });
 
 // --- Désactiver / réactiver un utilisateur (règle d'or : on ne supprime jamais un compte) ---------------
+router.post('/utilisateurs/:id/code-interne', (req, res) => {
+  const cible = bd.prepare('SELECT * FROM users WHERE id = ?').get(Number(req.params.id));
+  if (!cible) return res.status(404).render('erreur', { titre: 'Introuvable', message: 'Utilisateur introuvable.' });
+  bd.prepare('UPDATE users SET code_interne = ? WHERE id = ?')
+    .run(String(req.body.code_interne || '').trim() || null, cible.id);
+  journal(cible.cabinet_id, req.utilisateur.id, 'utilisateur_code_interne', `Code interne de l’utilisateur id ${cible.id}`);
+  res.redirect('/admin/utilisateurs');
+});
+
 router.post('/utilisateurs/:id/desactiver', (req, res) => {
   const cible = bd.prepare('SELECT * FROM users WHERE id = ?').get(Number(req.params.id));
   if (!cible) return res.status(404).render('erreur', { titre: 'Introuvable', message: 'Utilisateur introuvable.' });

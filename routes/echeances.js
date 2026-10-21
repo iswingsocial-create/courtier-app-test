@@ -96,11 +96,61 @@ router.get('/', (req, res) => {
     ORDER BY r.date_heure LIMIT 10
   `).all(res.locals.cabinetId, maintenant, dans7j);
 
+  // Relances de mise en marché dues (F15) : envois en attente dont la
+  // date de relance est échue — le suivi des marchés vit ici aussi.
+  const marche = require('../lib/marche');
+  const relancesMarche = marche.relancesDues(res.locals.cabinetId, req);
+
+  // Suivis sans faute (documents réels) : tout ce qui porte une date
+  // d'échéance dans les documents reçus remonte ici — certificats de
+  // continuation de cautionnement à renouveler, prélèvements de
+  // financement de prime à venir ou en retard, avis d'assureur reçus
+  // mais pas encore transmis au client.
+  const certificatsEcheance = bd.prepare(`
+    SELECT cc.*, c.raison_sociale AS entreprise, p.numero_police
+    FROM caut_certificats cc JOIN clients c ON c.id = cc.client_id
+    LEFT JOIN polices p ON p.id = cc.police_id
+    WHERE cc.cabinet_id = ? AND cc.archive = 0 AND cc.date_fin IS NOT NULL${clausePortefeuille(req, 'c')}
+    ORDER BY cc.date_fin
+  `).all(res.locals.cabinetId)
+    .map((cc) => ({ ...cc, jours: joursRestants(cc.date_fin) }))
+    .filter((cc) => cc.jours <= 90);
+
+  const ajust = require('../lib/ajustements-documents');
+  const { financementPolice } = require('./registre-police');
+  const financementsActifs = bd.prepare(`
+    SELECT pf.police_id, p.numero_police, p.statut AS police_statut, c.raison_sociale AS entreprise
+    FROM police_financements pf JOIN polices p ON p.id = pf.police_id
+    JOIN clients c ON c.id = p.client_id
+    WHERE pf.cabinet_id = ? AND pf.archive = 0 AND p.statut != 'resiliee'${clausePortefeuille(req, 'c')}
+  `).all(res.locals.cabinetId);
+  const prelevementsAVenir = [];
+  for (const f of financementsActifs) {
+    const fin = financementPolice(f.police_id);
+    if (!fin) continue;
+    const prochain = ajust.prochainPrelevement(fin, aujourdhui());
+    if (!prochain || !prochain.date) continue;
+    const jours = joursRestants(prochain.date);
+    if (prochain.en_retard || jours <= 30) {
+      prelevementsAVenir.push({ ...f, prochain, jours });
+    }
+  }
+  prelevementsAVenir.sort((a, b) => a.jours - b.jours);
+
+  const avisNonTransmis = bd.prepare(`
+    SELECT a.*, c.raison_sociale AS entreprise, p.numero_police
+    FROM avis_transmissions a JOIN clients c ON c.id = a.client_id
+    LEFT JOIN polices p ON p.id = a.police_id
+    WHERE a.cabinet_id = ? AND a.archive = 0 AND a.transmis_le IS NULL${clausePortefeuille(req, 'c')}
+    ORDER BY a.recu_le
+  `).all(res.locals.cabinetId);
+
   res.render('echeances/tableau', {
     echus, j30, j60, j90, plusLoin,
     stats: { nbClients: nbEntreprises, nbPolices, nbBrouillons, nbTachesRetard },
-    rappelsRec, tachesRetard, comptesRetard, totalRetard, reunionsAVenir,
-    NOMS_LIGNES, NOMS_STATUTS,
+    rappelsRec, tachesRetard, comptesRetard, totalRetard, reunionsAVenir, relancesMarche,
+    certificatsEcheance, prelevementsAVenir, avisNonTransmis,
+    NOMS_LIGNES, NOMS_STATUTS, NOMS_STATUTS_ENVOI: marche.NOMS_STATUTS_ENVOI,
     mMdp: req.query.mdp === 'ok',
   });
 });

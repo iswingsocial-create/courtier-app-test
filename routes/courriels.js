@@ -326,10 +326,12 @@ router.post('/envoyer', async (req, res) => {
 router.get('/:id', (req, res) => {
   const courriel = bd.prepare(`
     SELECT c.*, cl.raison_sociale AS client_raison_sociale, cc.nom AS compte_nom,
-           p.numero_police AS police_numero, p.ligne AS police_ligne
+           p.numero_police AS police_numero, p.ligne AS police_ligne,
+           me.marche_nom AS envoi_marche
     FROM courriels c
     LEFT JOIN clients cl ON cl.id = c.client_id
     LEFT JOIN courriel_comptes cc ON cc.id = c.compte_id
+    LEFT JOIN marche_envois me ON me.id = c.envoi_id
     LEFT JOIN polices p ON p.id = c.police_id
     WHERE c.id = ? AND c.cabinet_id = ?
   `).get(req.params.id, res.locals.cabinetId);
@@ -346,7 +348,12 @@ router.get('/:id', (req, res) => {
   const policesClient = courriel.client_id ? bd.prepare(
     'SELECT id, numero_police, ligne, assureur FROM polices WHERE cabinet_id = ? AND client_id = ? ORDER BY date_echeance DESC'
   ).all(res.locals.cabinetId, courriel.client_id) : [];
-  res.render('courriels/voir', { courriel, corpsHtml, clients, policesClient, echapperHtml, badgeClassement, NOMS_METHODES_CLASSEMENT });
+  // Envois de mise en marché du même client (liaison fine : réponse d'un
+  // assureur à une demande de prix, F15).
+  const envoisClient = courriel.client_id ? bd.prepare(
+    'SELECT id, marche_nom, statut FROM marche_envois WHERE cabinet_id = ? AND client_id = ? AND archive = 0 ORDER BY id DESC'
+  ).all(res.locals.cabinetId, courriel.client_id) : [];
+  res.render('courriels/voir', { courriel, corpsHtml, clients, policesClient, envoisClient, echapperHtml, badgeClassement, NOMS_METHODES_CLASSEMENT });
 });
 
 router.post('/:id/lu', (req, res) => {
@@ -362,7 +369,8 @@ router.post('/:id/non-lu', (req, res) => {
 router.post('/:id/lier', (req, res) => {
   const courriel = bd.prepare('SELECT * FROM courriels WHERE id = ? AND cabinet_id = ?').get(req.params.id, res.locals.cabinetId);
   if (!courriel) return res.status(404).render('erreur', { titre: 'Introuvable', message: 'Courriel introuvable.' });
-  const client = req.body.client_id
+  // `let` : un envoi de mise en marché choisi plus bas impose son client.
+  let client = req.body.client_id
     ? bd.prepare('SELECT id FROM clients WHERE id = ? AND cabinet_id = ?').get(req.body.client_id, res.locals.cabinetId)
     : null;
   if (client && clientHorsPortefeuille(res.locals.cabinetId, req.utilisateur, client.id)) return reponseHorsPortefeuille(res);
@@ -373,14 +381,36 @@ router.post('/:id/lier', (req, res) => {
     police = bd.prepare('SELECT id, numero_police FROM polices WHERE id = ? AND cabinet_id = ? AND client_id = ?')
       .get(req.body.police_id, res.locals.cabinetId, client.id) || null;
   }
+  // Envoi de mise en marché (F15) : accepté seulement s'il appartient au
+  // cabinet ; l'envoi impose alors son client (jamais de rattachement
+  // croisé entre clients).
+  let envoi = null;
+  if (req.body.envoi_id) {
+    envoi = bd.prepare('SELECT id, marche_nom, client_id FROM marche_envois WHERE id = ? AND cabinet_id = ?')
+      .get(req.body.envoi_id, res.locals.cabinetId) || null;
+    if (envoi) {
+      const clientEnvoi = bd.prepare('SELECT id FROM clients WHERE id = ? AND cabinet_id = ?')
+        .get(envoi.client_id, res.locals.cabinetId);
+      if (clientEnvoi) {
+        if (clientHorsPortefeuille(res.locals.cabinetId, req.utilisateur, clientEnvoi.id)) return reponseHorsPortefeuille(res);
+        client = clientEnvoi;
+        // La police choisie ne survit que si elle appartient au client de l'envoi.
+        if (police && !bd.prepare('SELECT id FROM polices WHERE id = ? AND client_id = ?').get(police.id, client.id)) police = null;
+      } else envoi = null;
+    }
+  }
   // Lien manuel : classement_methode = 'manuel' — le classement automatique
   // ne le réécrira jamais. Un déliage manuel pose aussi 'manuel' (avec
   // client_id NULL) pour que le reclassement en lot respecte ce choix.
-  bd.prepare('UPDATE courriels SET client_id = ?, police_id = ?, classement_methode = ?, classement_detail = ? WHERE id = ?')
-    .run(client ? client.id : null, police ? police.id : null, 'manuel',
+  bd.prepare('UPDATE courriels SET client_id = ?, police_id = ?, envoi_id = ?, classement_methode = ?, classement_detail = ? WHERE id = ?')
+    .run(client ? client.id : null, police ? police.id : null, envoi ? envoi.id : null, 'manuel',
       police ? police.numero_police : null, courriel.id);
   journal(res.locals.cabinetId, req.utilisateur.id, 'courriel_lie',
-    `Courriel « ${courriel.sujet} » lié à ${client ? 'entreprise id ' + client.id : 'aucune entreprise'}${police ? ' — police ' + police.numero_police : ''}`);
+    `Courriel « ${courriel.sujet} » lié à ${client ? 'entreprise id ' + client.id : 'aucune entreprise'}${police ? ' — police ' + police.numero_police : ''}${envoi ? ' — envoi de mise en marché #' + envoi.id + ' (' + envoi.marche_nom + ')' : ''}`);
+  if (envoi) {
+    require('../lib/marche').evenement(res.locals.cabinetId, envoi.id, req.utilisateur.id, 'courriel',
+      `Courriel lié manuellement à cet envoi : « ${courriel.sujet || '(sans sujet)'} »`);
+  }
   res.redirect('/courriels/' + courriel.id);
 });
 

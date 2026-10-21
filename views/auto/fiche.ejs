@@ -8,6 +8,7 @@
 
 </div>
 <%- include('../partials/manques', { sectionDemandes }) %>
+<%- include('../partials/mise-en-marche', { sectionMarche }) %>
 
 
 <div class="carte">
@@ -164,6 +165,8 @@
       <div><label>Usage</label><select name="usage"><option value="">—</option><option value="promenade">Promenade</option><option value="navette">Navette travail</option><option value="affaires">Affaires</option></select></div>
       <div><label>Km annuel</label><input type="number" name="km_annuel" min="0"></div>
       <div><label>% hors Québec</label><input type="number" name="pct_hors_quebec" min="0" max="100"></div>
+      <div><label>Rayon d’opération (km)</label><input type="number" name="rayon_operation_km" min="0"></div>
+      <div><label>% aux États-Unis</label><input type="number" name="pct_etats_unis" min="0" max="100"></div>
       <div><label>Stationnement</label><input type="text" name="stationnement" maxlength="80" placeholder="Garage, entrée, rue…"></div>
       <% if (s.conducteurs.filter((c) => !c.archive).length) { %>
       <div><label>Conducteur principal</label><select name="conducteur_principal_id"><option value="">—</option>
@@ -231,6 +234,21 @@
   </form>
   <% }) %>
 </div>
+<div class="carte" id="fpq4">
+  <h2>🔧 Volet FPQ-4 — garagistes / remorquage</h2>
+  <p class="petit">Volet du dossier combiné auto (FPQ-1 + FPQ-4) : responsabilité du garagiste, véhicules des clients en garde, terrain et sécurité, avenants 4-xx, employés par catégorie.</p>
+  <p><a class="btn btn-petit" href="/auto/<%= s.id %>/fpq4">Ouvrir la fiche FPQ-4</a></p>
+  <form method="post" action="/auto/<%= s.id %>/mode-facturation" class="ligne-form">
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+    <label>Mode de facturation
+      <select name="mode_facturation">
+        <option value=""<%= !s.mode_facturation ? ' selected' : '' %>>— À préciser —</option>
+        <option value="agence"<%= s.mode_facturation === 'agence' ? ' selected' : '' %>>Facturation agence</option>
+        <option value="directe"<%= s.mode_facturation === 'directe' ? ' selected' : '' %>>Facturation directe</option>
+      </select></label>
+    <button class="btn btn-petit btn-secondaire" type="submit">Enregistrer</button>
+  </form>
+</div>
 <div class="carte" id="antecedents">
   <h2>📋 Antécédents d’assurance</h2>
   <% const a = s.antecedents; %>
@@ -247,6 +265,9 @@
     <div class="case"><input type="checkbox" id="resil" name="resiliation_ant"<%= a && a.resiliation_ant ? ' checked' : '' %>><label for="resil">Résiliation par un assureur</label></div>
     <div><label for="resil-det">Détails résiliation</label>
       <input type="text" id="resil-det" name="resiliation_details" maxlength="200" value="<%= a && a.resiliation_details ? a.resiliation_details : '' %>"></div>
+    <div class="case"><input type="checkbox" id="perte-totale" name="perte_totale"<%= a && a.perte_totale ? ' checked' : '' %>><label for="perte-totale">Véhicule déclaré perte totale</label></div>
+    <div><label for="perte-totale-det">Détails perte totale</label>
+      <input type="text" id="perte-totale-det" name="perte_totale_details" maxlength="200" value="<%= a && a.perte_totale_details ? a.perte_totale_details : '' %>"></div>
     <div class="case"><input type="checkbox" id="nonpaye" name="non_paiement_ant"<%= a && a.non_paiement_ant ? ' checked' : '' %>><label for="nonpaye">Annulation pour non-paiement</label></div>
     <div class="case"><input type="checkbox" id="faillite" name="faillite"<%= a && a.faillite ? ' checked' : '' %>><label for="faillite">Faillite</label></div>
     <div class="case"><input type="checkbox" id="casier" name="casier_judiciaire"<%= a && a.casier_judiciaire ? ' checked' : '' %>><label for="casier">Casier judiciaire</label></div>

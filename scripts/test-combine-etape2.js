@@ -118,8 +118,8 @@ test('couverture de gicleurs invalide rejetée (CHECK)', rejete);
 const sortie = execFileSync('node', [path.join(__dirname, 'generer-dictionnaire.js')], {
   encoding: 'utf8', env: { ...process.env, CHEMIN_BD: process.env.CHEMIN_BD },
 });
-test('dictionnaire complet et cohérent — état final (88 tables, 1199 colonnes)',
-  /88 tables, 1199 colonnes/.test(sortie), sortie.trim().slice(0, 120));
+test('dictionnaire complet et cohérent — état final (99 tables, 1391 colonnes)',
+  /99 tables, 1391 colonnes/.test(sortie), sortie.trim().slice(0, 120));
 
 console.log(`\n${total - echecs}/${total} tests réussis`);
 if (echecs) { console.log(`💥 ${echecs} échec(s)`); process.exit(1); }

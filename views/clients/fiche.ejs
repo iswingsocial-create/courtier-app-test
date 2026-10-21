@@ -59,6 +59,7 @@
               <div><label>Titre / fonction</label><input type="text" name="titre" value="<%= ct.titre || '' %>"></div>
               <div><label>Courriel</label><input type="email" name="courriel" value="<%= ct.courriel || '' %>"></div>
               <div><label>Téléphone</label><input type="tel" name="telephone" value="<%= ct.telephone || '' %>"></div>
+              <div><label>Civilité</label><input type="text" name="civilite" value="<%= ct.civilite || '' %>" placeholder="M., Mme…"></div>
             </div>
             <button class="btn btn-petit" type="submit">Enregistrer</button>
           </form>
@@ -88,6 +89,7 @@
         <div><label>Titre / fonction</label><input type="text" name="titre" placeholder="ex. : contrôleur"></div>
         <div><label>Courriel</label><input type="email" name="courriel"></div>
         <div><label>Téléphone</label><input type="tel" name="telephone"></div>
+        <div><label>Civilité</label><input type="text" name="civilite" placeholder="M., Mme…"></div>
       </div>
       <button class="btn btn-petit" type="submit">Ajouter</button>
     </form>
@@ -110,6 +112,48 @@
 </div>
 
 <div class="carte">
+  <h3>📨 Avis d’assureur à transmettre au client (<%= (typeof avisClient !== 'undefined' ? avisClient : []).length %>)</h3>
+  <p class="petit">Les avis génériques de l’assureur ou du grossiste (ex. « Message important — Renouvellement » rappelant de déclarer les changements) se consignent ici : tant qu’un avis n’est pas marqué transmis, il remonte au tableau des échéances.</p>
+  <% const avisL = (typeof avisClient !== 'undefined' ? avisClient : []); %>
+  <% if (avisL.length) { %>
+  <div class="tableau-deroulant"><table>
+    <thead><tr><th>Reçu le</th><th>Émetteur</th><th>Avis</th><th>Police</th><th>Transmis</th><th></th></tr></thead>
+    <tbody>
+    <% avisL.forEach((a) => { %>
+      <tr><td><%= a.recu_le || '—' %></td><td><%= a.emetteur || '—' %></td><td><%= a.titre || '—' %></td>
+      <td><%= a.numero_police || '—' %></td>
+      <td><%= a.transmis_le ? a.transmis_le + (a.moyen ? ' (' + a.moyen + ')' : '') : '<strong>à transmettre</strong>' %></td>
+      <td><% if (!a.transmis_le) { %>
+        <form method="post" action="/clients/<%= client.id %>/avis/<%= a.id %>/transmettre" class="inline">
+          <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+          <input type="hidden" name="moyen" value="courriel">
+          <button class="lien" type="submit">marquer transmis</button></form>
+      <% } %></td></tr>
+    <% }) %>
+    </tbody>
+  </table></div>
+  <% } else { %><p class="petit">Aucun avis en attente pour cette entreprise.</p><% } %>
+  <details>
+    <summary class="btn btn-petit">+ Enregistrer un avis reçu</summary>
+    <form method="post" action="/clients/<%= client.id %>/avis">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+      <div class="grille-form">
+        <div><label>Émetteur</label><input type="text" name="emetteur" placeholder="Ex. Équipe de souscription du grossiste"></div>
+        <div><label>Titre de l’avis</label><input type="text" name="titre" placeholder="Ex. Message important — Renouvellement"></div>
+        <div><label>Reçu le</label><input type="date" name="recu_le"></div>
+        <div><label>Police concernée</label>
+          <select name="police_id">
+            <option value="">— Aucune / toutes —</option>
+            <% polices.forEach((p) => { %><option value="<%= p.id %>"><%= p.numero_police %></option><% }) %>
+          </select></div>
+        <div><label><input type="checkbox" name="deja_transmis" value="1"> Déjà transmis au client</label></div>
+      </div>
+      <button class="btn btn-petit" type="submit">Enregistrer l’avis</button>
+    </form>
+  </details>
+</div>
+
+<div class="carte" id="polices">
   <h3>📄 Polices par assureur (<%= polices.length %>)</h3>
   <% if (!polices.length) { %><p class="petit">Aucune police. <a href="/polices/nouvelle?client=<%= client.id %>">Créez-en une</a>.</p><% } else { %>
   <% policesParAssureur.forEach((g) => { %>

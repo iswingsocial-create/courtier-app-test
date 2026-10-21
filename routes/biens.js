@@ -8,6 +8,7 @@
  */
 const express = require('express');
 const demandesInfos = require('../lib/demandes-infos');
+const marche = require('../lib/marche');
 
 const bd = require('../lib/bd');
 const biens = require('../lib/biens');
@@ -195,6 +196,7 @@ router.get('/:id', (req, res) => {
   const alarmes = {};
   for (const b of s.batiments) alarmes[b.id] = combine.obtenirAlarme(b.id, res.locals.cabinetId);
   res.render('biens/fiche', { sectionDemandes: demandesInfos.sectionPourFiche('biens', s, req.utilisateur.cabinet_id),
+    sectionMarche: marche.sectionPourCible(req.utilisateur.cabinet_id, { produit: 'biens', soumissionId: s.id }), NOMS_STATUTS_ENVOI: marche.NOMS_STATUTS_ENVOI,
     s,
     clientNom: client ? client.raison_sociale : '—',
     versions,
@@ -557,6 +559,16 @@ router.post('/:id/batiment/:bid/garanties', (req, res) => {
       regle_proportionnelle: numD('regle_proportionnelle'),
       franchise_contenu: numD('franchise_contenu'),
       regle_proportionnelle_contenu: numD('regle_proportionnelle_contenu'),
+      crime: {
+        detournements_employes: numD('crime_detournements'),
+        vol_effraction: numD('crime_vol_effraction'),
+        contrefacon_billets: numD('crime_contrefacon_billets'),
+        contrefacon_cartes: numD('crime_contrefacon_cartes'),
+        destruction_argent_titres: numD('crime_destruction'),
+        coffre_fort_argent: numD('crime_coffre_fort'),
+      },
+      comptes_clients_montant: numD('comptes_clients_montant'),
+      chantier_montant: numD('chantier_montant'),
     });
   } catch (e) {
     return pageErreur(res, 400, 'Enregistrement impossible', e.message);

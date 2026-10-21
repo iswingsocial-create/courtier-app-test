@@ -1,0 +1,70 @@
+<%- include('../partials/haut', { titre: 'Envoyer à un marché' }) %>
+<div class="entete-page">
+  <h1>📤 Envoyer à un marché</h1>
+  <a class="btn btn-secondaire btn-petit" href="/mise-en-marche">← Registre</a>
+</div>
+
+<div class="carte">
+  <dl class="dl">
+    <dt>Dossier</dt><dd><strong><%= cible.titre %></strong></dd>
+    <dt>Client</dt><dd><%= cible.clientNom || '—' %></dd>
+  </dl>
+  <% if (envoisExistants.length) { %>
+    <p class="petit">⚠️ Ce dossier a déjà été transmis à : <%= envoisExistants.map((e) => `${e.marche_nom} (${NOMS_STATUTS_ENVOI[e.statut] || e.statut})`).join(', ') %>. Vous pouvez créer un envoi à un autre marché.</p>
+  <% } %>
+</div>
+
+<div class="carte">
+  <form method="post" action="/mise-en-marche/nouveau">
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+    <input type="hidden" name="produit" value="<%= cible.produit %>">
+    <input type="hidden" name="soumission_id" value="<%= cible.soumissionId || '' %>">
+    <input type="hidden" name="combine_dossier_id" value="<%= cible.combineDossierId || '' %>">
+
+    <h3>Marché</h3>
+    <label>Assureur / grossiste (annuaire)
+      <select name="assureur_id" id="assureur_id">
+        <option value="">— Marché hors annuaire (nom libre ci-dessous) —</option>
+        <% assureurs.forEach((a) => { %>
+          <option value="<%= a.id %>"<%= assureurChoisi && assureurChoisi.id === a.id ? ' selected' : '' %>><%= a.nom %></option>
+        <% }); %>
+      </select>
+    </label>
+    <label>Nom du marché (si hors annuaire)
+      <input type="text" name="marche_nom" value="<%= assureurChoisi ? assureurChoisi.nom : '' %>" placeholder="Ex. : Grossiste XYZ">
+    </label>
+    <p class="petit">Le souscripteur se pré-remplit depuis le contact « nouvelles affaires » de l'assureur choisi (annuaire Assureurs) ; ajustez au besoin.</p>
+
+    <h3>Souscripteur destinataire</h3>
+    <label>Nom
+      <input type="text" name="souscripteur_nom" value="<%= assureurChoisi ? (assureurChoisi.na_nom || '') : '' %>">
+    </label>
+    <label>Courriel
+      <input type="email" name="souscripteur_courriel" value="<%= assureurChoisi ? (assureurChoisi.na_courriel || '') : '' %>">
+    </label>
+    <label>Autorité de l'intermédiaire (si grossiste — vérification, F15)
+      <input type="text" name="autorite_intermediaire" placeholder="Optionnel">
+    </label>
+
+    <h3>Transmission</h3>
+    <label>Version de la proposition transmise
+      <input type="text" name="version_proposition" value="<%= versionDefaut || '' %>">
+    </label>
+    <label>Documents transmis (un par ligne)
+      <textarea name="documents" rows="3"><%= documentsDefaut.join('\n') %></textarea>
+    </label>
+    <label>Date de relance prévue
+      <input type="date" name="date_relance">
+    </label>
+    <label>Prochaine action
+      <input type="text" name="prochaine_action" placeholder="Ex. : vérifier la réception avec le souscripteur">
+    </label>
+    <label>Échéance de la prochaine action
+      <input type="date" name="prochaine_action_echeance">
+    </label>
+
+    <p class="petit">À la création : l'envoi est inscrit au registre en <strong>brouillon</strong> et le courriel « demande de prix » est préparé (modifiable) — <strong>rien ne part sans votre clic</strong> sur la fiche de l'envoi.</p>
+    <button class="btn" type="submit">Créer l'envoi (brouillon)</button>
+  </form>
+</div>
+<%- include('../partials/bas') %>

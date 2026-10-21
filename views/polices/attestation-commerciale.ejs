@@ -1,0 +1,73 @@
+<% if (!impression) { %>
+<%- include('../partials/haut', { titre: 'Attestation d’assurance commerciale — ' + police.numero_police }) %>
+<div class="entete-page">
+  <h1>📜 Attestation d’assurance commerciale</h1>
+  <div class="actions" style="margin-top:0">
+    <a class="btn btn-secondaire btn-petit" href="/polices/<%= police.id %>/registre">← Registre complet</a>
+  </div>
+</div>
+<div class="carte">
+  <p class="petit">Le certificat est généré à partir des données de la police (assuré, emplacements, protections avec limites et franchises, bénéficiaires). Chaque émission est conservée au registre de la police. Les champs ci-dessous complètent ce que la police ne porte pas : le destinataire du certificat, le signataire et ses initiales.</p>
+  <form method="post" action="/polices/<%= police.id %>/attestation-commerciale">
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+    <div class="grille-form">
+      <div><label for="destinataire">Destinataire du certificat</label><input type="text" id="destinataire" name="destinataire" placeholder="Ex. À qui de droit, ou le nom du tiers"></div>
+      <div><label for="signataire_nom">Signataire (nom)</label><input type="text" id="signataire_nom" name="signataire_nom"></div>
+      <div><label for="signataire_titre">Signataire (titre)</label><input type="text" id="signataire_titre" name="signataire_titre" placeholder="Ex. Courtier en assurance de dommages"></div>
+      <div><label for="initiales">Initiales de l’émetteur</label><input type="text" id="initiales" name="initiales" maxlength="6"></div>
+    </div>
+    <label for="mentions">Mentions du certificat (une par ligne — laisser vide pour les mentions par défaut)</label>
+    <textarea id="mentions" name="mentions" rows="4" placeholder="<%= MENTIONS_DEFAUT.join('\n') %>"></textarea>
+    <div class="actions"><button class="btn" type="submit">Générer l’attestation</button></div>
+  </form>
+</div>
+<%- include('../partials/bas') %>
+<% } else { %>
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Attestation d’assurance commerciale — <%= police.numero_police %></title>
+<link rel="stylesheet" href="/attestation.css">
+</head>
+<body>
+<div class="actions noprint"><button class="btn" id="btn-imprimer">🖨️ Imprimer</button></div>
+<div class="page">
+  <p class="sous-titre"><%= cabinet.nom %><% if (cabinet.adresse) { %><br><%= [cabinet.adresse, cabinet.ville, cabinet.code_postal].filter(Boolean).join(', ') %><% } %><% if (cabinet.telephone) { %><br>Téléphone : <%= cabinet.telephone %><% } %><% if (cabinet.telecopieur) { %> · Télécopieur : <%= cabinet.telecopieur %><% } %></p>
+  <h1>Attestation d’assurance commerciale</h1>
+  <% if (saisie.destinataire) { %><p><strong>Destinataire :</strong> <%= saisie.destinataire %></p><% } %>
+  <dl>
+    <dt>Assuré</dt><dd><strong><%= client.raison_sociale %></strong>
+      <% if (client.adresse || client.ville) { %><br><%= [client.adresse, client.ville, client.province || 'Québec', client.code_postal].filter(Boolean).join(', ') %><% } %></dd>
+    <dt>Lieux et activités assurés</dt><dd>
+      <% if (emplacements.length) { %><% emplacements.forEach((e) => { %><%= [e.adresse, e.ville, e.code_postal].filter(Boolean).join(', ') %><%= e.occupation ? ' — ' + e.occupation : '' %><br><% }) %>
+      <% } else { %><%= [client.adresse, client.ville, client.code_postal].filter(Boolean).join(', ') || '—' %><%= client.description_activites ? ' — ' + client.description_activites : '' %><% } %></dd>
+    <dt>Période d’assurance</dt><dd>du <%= police.date_effet %> au <%= police.date_echeance %></dd>
+    <dt>Assureur</dt><dd><%= police.assureur %><% if (police.grossiste_nom) { %> (par l’intermédiaire de <%= police.grossiste_nom %>)<% } %></dd>
+    <dt>Numéro de police</dt><dd><strong><%= police.numero_police %></strong></dd>
+    <dt>Genre d’assurance</dt><dd><%= NOMS_LIGNES[police.ligne] %></dd>
+    <% if (beneficiaires.length) { %><dt>Bénéficiaire / créancier</dt><dd><% beneficiaires.forEach((b) => { %><strong><%= b.nom %></strong><%= b.qualite ? ' — ' + b.qualite : '' %><br><%= [b.adresse, b.ville, b.code_postal].filter(Boolean).join(', ') %><%= b.clause_preavis ? '<br>Clause de préavis : ' + b.clause_preavis : '' %><br><% }) %></dd><% } %>
+  </dl>
+  <h2>Garanties</h2>
+  <table>
+    <thead><tr><th>Garantie</th><th>Formulaire</th><th>Limite</th><th>Franchise</th></tr></thead>
+    <tbody>
+    <% if (protections.length) { %><% protections.forEach((p) => { %>
+      <tr><td><%= p.libelle %></td><td><%= p.code_formulaire || '—' %></td>
+      <td><%= p.limite != null ? Number(p.limite).toLocaleString('fr-CA') + ' $' : '—' %></td>
+      <td><%= p.franchise != null ? Number(p.franchise).toLocaleString('fr-CA') + ' $' : '—' %></td></tr>
+    <% }) %><% } else { %>
+      <tr><td><%= NOMS_LIGNES[police.ligne] %></td><td>—</td><td>—</td><td><%= police.franchise != null ? Number(police.franchise).toLocaleString('fr-CA') + ' $' : '—' %></td></tr>
+    <% } %>
+    </tbody>
+  </table>
+  <% const mentions = saisie.mentions ? saisie.mentions.split(/\r?\n/).filter(Boolean) : MENTIONS_DEFAUT; %>
+  <% mentions.forEach((m) => { %><p class="pied"><%= m %></p><% }) %>
+  <p class="pied">Émise le <%= saisie.date_emission %> par <%= cabinet.nom %>.<% if (saisie.signataire_nom) { %><br><br><%= saisie.signataire_nom %><%= saisie.signataire_titre ? ', ' + saisie.signataire_titre : '' %><%= saisie.initiales ? ' (' + saisie.initiales + ')' : '' %><% } %></p>
+</div>
+<div class="actions noprint"><a class="btn" href="/polices/<%= police.id %>/registre">← Retour au registre</a></div>
+<script src="/attestation.js"></script>
+</body>
+</html>
+<% } %>

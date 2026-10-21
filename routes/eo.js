@@ -12,6 +12,7 @@
  */
 const express = require('express');
 const demandesInfos = require('../lib/demandes-infos');
+const marche = require('../lib/marche');
 
 const bd = require('../lib/bd');
 const eo = require('../lib/eo');
@@ -201,7 +202,8 @@ router.get('/:id', (req, res) => {
     assureurs = bd.prepare('SELECT id, nom FROM assureurs WHERE cabinet_id = ? AND archive = 0 ORDER BY nom')
       .all(res.locals.cabinetId);
   }
-  res.render('eo/fiche', { sectionDemandes: demandesInfos.sectionPourFiche('eo', s, req.utilisateur.cabinet_id), 
+  res.render('eo/fiche', { sectionDemandes: demandesInfos.sectionPourFiche('eo', s, req.utilisateur.cabinet_id),
+    sectionMarche: marche.sectionPourCible(req.utilisateur.cabinet_id, { produit: 'eo', soumissionId: s.id }), NOMS_STATUTS_ENVOI: marche.NOMS_STATUTS_ENVOI, 
     s,
     clientNom: client ? client.raison_sociale : '—',
     versions,
@@ -288,6 +290,7 @@ router.post('/:id/garanties', (req, res) => {
       base,
       avenants,
       prime: lireNombrePositif(req.body.prime),
+      date_retroactivite: (req.body.date_retroactivite || '').trim() || null,
     });
   } catch (e) {
     return pageErreur(res, 400, 'Enregistrement impossible', e.message);

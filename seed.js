@@ -81,12 +81,15 @@ function semer() {
   };
 
   const tx = bd.transaction(() => {
-    // Cabinet démo + admin (mot de passe à changer au premier login)
+    // Cabinet démo + admin. Compte de TEST : aucun changement de mot de
+    // passe forcé à la première connexion (demande de Patrick, 2026-10-21 —
+    // friction retirée jusqu'au déploiement sur le serveur réel ; les
+    // comptes créés via l'Admin gardent la règle du changement forcé).
     const cab = bd.prepare('INSERT INTO cabinets (nom, token_capture) VALUES (?, ?)').run('Cabinet Démo', bd.genererJetonCapture());
     const hash = bcrypt.hashSync('ChangeMoi123!', 12);
     bd.prepare(`
       INSERT INTO users (cabinet_id, email, mot_de_passe_hash, role, nom, doit_changer_mot_de_passe)
-      VALUES (?, ?, ?, 'admin', ?, 1)
+      VALUES (?, ?, ?, 'admin', ?, 0)
     `).run(cab.lastInsertRowid, 'admin@demo.ca', hash, 'Administrateur Démo');
     const adminId = bd.prepare('SELECT id FROM users WHERE email = ?').get('admin@demo.ca').id;
 

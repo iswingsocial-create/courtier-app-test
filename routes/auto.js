@@ -7,6 +7,7 @@
  */
 const express = require('express');
 const demandesInfos = require('../lib/demandes-infos');
+const marche = require('../lib/marche');
 
 const bd = require('../lib/bd');
 const fpq1 = require('../lib/fpq1');
@@ -185,7 +186,8 @@ router.get('/:id', (req, res) => {
     assureurs = bd.prepare('SELECT id, nom FROM assureurs WHERE cabinet_id = ? AND archive = 0 ORDER BY nom')
       .all(res.locals.cabinetId);
   }
-  res.render('auto/fiche', { sectionDemandes: demandesInfos.sectionPourFiche('auto', s, req.utilisateur.cabinet_id), 
+  res.render('auto/fiche', { sectionDemandes: demandesInfos.sectionPourFiche('auto', s, req.utilisateur.cabinet_id),
+    sectionMarche: marche.sectionPourCible(req.utilisateur.cabinet_id, { produit: 'auto', soumissionId: s.id }), NOMS_STATUTS_ENVOI: marche.NOMS_STATUTS_ENVOI, 
     s,
     clientNom: client ? client.raison_sociale : '—',
     versions,
@@ -315,6 +317,8 @@ router.post('/:id/vehicule', (req, res) => {
       usage: (req.body.usage || '').trim() || null,
       km_annuel: req.body.km_annuel ? Number(req.body.km_annuel) : null,
       pct_hors_quebec: req.body.pct_hors_quebec ? Number(req.body.pct_hors_quebec) : null,
+      rayon_operation_km: req.body.rayon_operation_km ? Number(req.body.rayon_operation_km) : null,
+      pct_etats_unis: req.body.pct_etats_unis ? Number(req.body.pct_etats_unis) : null,
       stationnement: (req.body.stationnement || '').trim() || null,
       remisage_hiver: req.body.remisage_hiver === 'on',
       modifications: parseLignesTexte(req.body.modifications),
@@ -414,6 +418,8 @@ router.post('/:id/antecedents', (req, res) => {
       annees_assurance_continue: req.body.annees_assurance_continue ? Number(req.body.annees_assurance_continue) : null,
       resiliation_ant: req.body.resiliation_ant === 'on',
       resiliation_details: (req.body.resiliation_details || '').trim() || null,
+      perte_totale: req.body.perte_totale === 'on',
+      perte_totale_details: (req.body.perte_totale_details || '').trim() || null,
       non_paiement_ant: req.body.non_paiement_ant === 'on',
       faillite: req.body.faillite === 'on',
       casier_judiciaire: req.body.casier_judiciaire === 'on',
@@ -425,6 +431,97 @@ router.post('/:id/antecedents', (req, res) => {
   }
   noterAvenantPolice(s.id, res.locals.cabinetId, req.utilisateur.id, `Avenant — antécédents modifiés (soumission auto #${s.id})`);
   res.redirect('/auto/' + s.id + '#antecedents');
+});
+
+// --- Mode de facturation de la soumission (formulaire FPQ-1 réel) --------------------------------------
+router.post('/:id/mode-facturation', (req, res) => {
+  const s = soumissionAutorisee(req, res, false);
+  if (!s) return;
+  const mode = ['agence', 'directe'].includes(req.body.mode_facturation) ? req.body.mode_facturation : null;
+  bd.prepare('UPDATE auto_soumissions SET mode_facturation = ? WHERE id = ? AND cabinet_id = ?')
+    .run(mode, s.id, res.locals.cabinetId);
+  fpq1.creerVersionSoumission(s.id, res.locals.cabinetId, req.utilisateur.id);
+  res.redirect('/auto/' + s.id + '#fpq4');
+});
+
+// --- Volet FPQ-4 « garagistes » (dossier combiné auto : FPQ-1 + FPQ-4) -----------------------------------
+// Verdict de la cartographie (REFERENCE-FPQ1-FPQ4.md) : pas un produit
+// autonome — un volet rattaché à la soumission FPQ-1 de l'entreprise de
+// remorquage/garage. Les blocs suivent le formulaire réel : garanties
+// du garagiste, véhicules des clients en garde (chapitre C), terrain et
+// sécurité, avenants 4-xx, employés par catégorie.
+const FPQ4_SECTIONS = [
+  { cle: 'garage', titre: 'Responsabilité du garagiste', champs: [
+    ['limite_rc', 'Limite de responsabilité civile du garage ($)', 'nombre'],
+    ['franchise_rc', 'Franchise ($)', 'nombre'],
+    ['limite_dommages_vehicules', 'Limite — dommages aux véhicules des clients ($)', 'nombre'],
+    ['franchise_dommages_vehicules', 'Franchise — dommages aux véhicules ($)', 'nombre'],
+  ] },
+  { cle: 'garde', titre: 'Véhicules des clients en garde (chapitre C)', champs: [
+    ['nb_vehicules_max', 'Nombre maximal de véhicules en garde', 'nombre'],
+    ['valeur_max_par_vehicule', 'Valeur maximale par véhicule ($)', 'nombre'],
+    ['valeur_max_totale', 'Valeur maximale totale en garde ($)', 'nombre'],
+    ['risques_couverts', 'Risques couverts (vol, incendie, collision…)', 'texte'],
+  ] },
+  { cle: 'terrain', titre: 'Terrain et sécurité', champs: [
+    ['terrain_cloture', 'Terrain clôturé', 'oui_non'],
+    ['eclairage', 'Éclairage du terrain', 'oui_non'],
+    ['gardien', 'Gardien / surveillance', 'oui_non'],
+    ['gestion_cles', 'Gestion des clés (armoire, registre…)', 'texte'],
+    ['plaques_x', 'Plaques X utilisées', 'oui_non'],
+    ['capacite_interieure', 'Capacité intérieure (nb de véhicules)', 'nombre'],
+    ['capacite_exterieure', 'Capacité extérieure (nb de véhicules)', 'nombre'],
+  ] },
+  { cle: 'employes', titre: 'Employés par catégorie', champs: [
+    ['mecaniciens', 'Mécaniciens', 'nombre'],
+    ['chauffeurs_remorqueurs', 'Chauffeurs / remorqueurs', 'nombre'],
+    ['commis', 'Commis / bureau', 'nombre'],
+    ['autres', 'Autres employés', 'nombre'],
+  ] },
+];
+const FPQ4_AVENANTS = ['4-34', '4-70', '4-74', '4-82A', '4-82B', '4-82C', '4-82D'];
+
+function lireFicheFpq4(soumissionId, cabinetId) {
+  const f = bd.prepare('SELECT * FROM fpq4_fiches WHERE soumission_id = ? AND cabinet_id = ? AND archive = 0')
+    .get(soumissionId, cabinetId);
+  if (!f) return null;
+  try { return { ...f, donnees: JSON.parse(f.donnees_json || '{}') }; }
+  catch (e) { return { ...f, donnees: {} }; }
+}
+
+router.get('/:id/fpq4', (req, res) => {
+  const s = soumissionAutorisee(req, res, true);
+  if (!s) return;
+  const fiche = lireFicheFpq4(s.id, res.locals.cabinetId);
+  res.render('auto/fpq4', { s, fiche, FPQ4_SECTIONS, FPQ4_AVENANTS });
+});
+
+router.post('/:id/fpq4', (req, res) => {
+  const s = soumissionAutorisee(req, res, false);
+  if (!s) return;
+  const donnees = { sections: {}, avenants: {}, prime_totale: null, notes: null };
+  for (const section of FPQ4_SECTIONS) {
+    donnees.sections[section.cle] = {};
+    for (const [cle, , type] of section.champs) {
+      const brut = req.body[section.cle + '_' + cle];
+      if (type === 'nombre') donnees.sections[section.cle][cle] = brut ? Number(brut) : null;
+      else if (type === 'oui_non') donnees.sections[section.cle][cle] = brut === 'on' ? 1 : 0;
+      else donnees.sections[section.cle][cle] = (brut || '').trim() || null;
+    }
+  }
+  for (const a of FPQ4_AVENANTS) donnees.avenants[a] = req.body['avenant_' + a.replace('-', '_')] === 'on' ? 1 : 0;
+  donnees.prime_totale = req.body.prime_totale ? Number(req.body.prime_totale) : null;
+  donnees.notes = (req.body.notes_fpq4 || '').trim() || null;
+  const existante = lireFicheFpq4(s.id, res.locals.cabinetId);
+  if (existante) {
+    bd.prepare("UPDATE fpq4_fiches SET donnees_json = ?, maj_le = datetime('now') WHERE id = ? AND cabinet_id = ?")
+      .run(JSON.stringify(donnees), existante.id, res.locals.cabinetId);
+  } else {
+    bd.prepare('INSERT INTO fpq4_fiches (cabinet_id, soumission_id, donnees_json) VALUES (?, ?, ?)')
+      .run(res.locals.cabinetId, s.id, JSON.stringify(donnees));
+  }
+  journal(res.locals.cabinetId, req.utilisateur.id, 'fpq4_fiche_enregistree', `Volet FPQ-4 de la soumission auto #${s.id}`);
+  res.redirect('/auto/' + s.id + '/fpq4');
 });
 
 // --- Changer le statut -------------------------------------------------------------------------------

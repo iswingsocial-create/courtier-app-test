@@ -8,6 +8,7 @@
  */
 const express = require('express');
 const demandesInfos = require('../lib/demandes-infos');
+const marche = require('../lib/marche');
 
 const bd = require('../lib/bd');
 const rc = require('../lib/rc');
@@ -177,7 +178,8 @@ router.get('/:id', (req, res) => {
     assureurs = bd.prepare('SELECT id, nom FROM assureurs WHERE cabinet_id = ? AND archive = 0 ORDER BY nom')
       .all(res.locals.cabinetId);
   }
-  res.render('rc/fiche', { sectionDemandes: demandesInfos.sectionPourFiche('rc', s, req.utilisateur.cabinet_id), 
+  res.render('rc/fiche', { sectionDemandes: demandesInfos.sectionPourFiche('rc', s, req.utilisateur.cabinet_id),
+    sectionMarche: marche.sectionPourCible(req.utilisateur.cabinet_id, { produit: 'rc', soumissionId: s.id }), NOMS_STATUTS_ENVOI: marche.NOMS_STATUTS_ENVOI, 
     s,
     clientNom: client ? client.raison_sociale : '—',
     versions,
@@ -333,6 +335,9 @@ router.post('/:id/exploitation/:eid/garanties', (req, res) => {
       rc_auto_non_proprietaires: numR('rc_auto_non_proprietaires'),
       umbrella_montant: numR('umbrella_montant'),
       umbrella_retention: numR('umbrella_retention'),
+      umbrella_agregat_type: (req.body.umbrella_agregat_type || '').trim() || null,
+      umbrella_sous_jacentes: parseLignesJson(req.body.umbrella_sous_jacentes_json,
+        ['type', 'assureur', 'numero_police', 'limite', 'date_expiration']),
       produits_travaux_termines_montant: numR('produits_travaux_termines_montant'),
       pollution_montant: numR('pollution_montant'),
     });

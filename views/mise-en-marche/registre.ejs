@@ -1,0 +1,84 @@
+<%- include('../partials/haut', { titre: 'Mise en marché' }) %>
+<div class="entete-page">
+  <h1>🎯 Mise en marché</h1>
+</div>
+<p class="petit">Registre des envois aux marchés (F15) : à qui chaque soumission a été transmise, où elle en est, ce que le marché a répondu — et quelles relances sont dues. Un envoi se crée depuis la fiche d'une soumission ou d'un dossier combiné (« 📤 Envoyer à un marché »).</p>
+
+<div class="grille-stats">
+  <div class="stat"><div class="nombre"><%= indicateurs.enCours %></div><div class="etiquette">Envois en cours</div></div>
+  <div class="stat"><div class="nombre" style="<%= indicateurs.relancesDues ? 'color:#c0392b' : '' %>"><%= indicateurs.relancesDues %></div><div class="etiquette"><a href="/mise-en-marche?relances=1">Relances dues</a></div></div>
+  <div class="stat"><div class="nombre"><%= indicateurs.offresRecues %></div><div class="etiquette">Offres reçues</div></div>
+  <div class="stat"><div class="nombre"><%= indicateurs.refus %></div><div class="etiquette">Refus</div></div>
+  <div class="stat"><div class="nombre"><%= indicateurs.total %></div><div class="etiquette">Envois au registre</div></div>
+</div>
+
+<div class="carte">
+  <form method="get" action="/mise-en-marche" class="filtres" style="display:flex;gap:8px;flex-wrap:wrap;align-items:end;">
+    <label>Statut
+      <select name="statut">
+        <option value="">Tous</option>
+        <% for (const s of Object.keys(NOMS_STATUTS_ENVOI)) { %>
+          <option value="<%= s %>"<%= filtres.statut === s ? ' selected' : '' %>><%= NOMS_STATUTS_ENVOI[s] %></option>
+        <% } %>
+      </select>
+    </label>
+    <label>Marché (annuaire)
+      <select name="assureur_id">
+        <option value="">Tous</option>
+        <% assureurs.forEach((a) => { %>
+          <option value="<%= a.id %>"<%= filtres.assureurId === a.id ? ' selected' : '' %>><%= a.nom %></option>
+        <% }); %>
+      </select>
+    </label>
+    <label>Marché (nom)
+      <input type="text" name="marche" value="<%= filtres.marcheNom || '' %>" placeholder="Rechercher…">
+    </label>
+    <label>Client
+      <select name="client_id">
+        <option value="">Tous</option>
+        <% clients.forEach((c) => { %>
+          <option value="<%= c.id %>"<%= filtres.clientId === c.id ? ' selected' : '' %>><%= c.raison_sociale %></option>
+        <% }); %>
+      </select>
+    </label>
+    <label style="display:flex;gap:6px;align-items:center;">
+      <input type="checkbox" name="relances" value="1"<%= filtres.relancesDues ? ' checked' : '' %>> Relances dues seulement
+    </label>
+    <button class="btn btn-petit" type="submit">Filtrer</button>
+    <a class="btn btn-petit btn-secondaire" href="/mise-en-marche">Réinitialiser</a>
+  </form>
+</div>
+
+<div class="carte">
+  <% if (!envois.length) { %>
+    <p>Aucun envoi ne correspond à ces filtres. Les envois se créent depuis la fiche d'une soumission ou d'un dossier combiné, bouton « 📤 Envoyer à un marché ».</p>
+  <% } else { %>
+  <div class="tableau-deroulant"><table>
+    <thead><tr>
+      <th>Statut</th><th>Marché</th><th>Client</th><th>Dossier</th><th>Transmis le</th><th>Relance</th><th>Offre / refus</th><th></th>
+    </tr></thead>
+    <tbody>
+    <% const CLASSES_STATUT = { brouillon: 'badge-gris', envoye: 'badge-bleu', en_analyse: 'badge-violet', questions: 'badge-j60', offre_recue: 'badge-vert', refuse: 'badge-echu', accepte: 'badge-ok', annule: 'badge-gris' }; %>
+    <% envois.forEach((e) => { %>
+      <tr>
+        <td><span class="badge <%= CLASSES_STATUT[e.statut] || 'badge-gris' %>"><%= NOMS_STATUTS_ENVOI[e.statut] || e.statut %></span>
+          <% if (e.relanceDue) { %><br><span class="badge badge-echu" style="margin-top:4px;">🔔 Relance due</span><% } %></td>
+        <td><strong><%= e.marche_nom %></strong><% if (e.souscripteur_nom) { %><br><span class="petit"><%= e.souscripteur_nom %></span><% } %></td>
+        <td><%= e.client_nom || '—' %></td>
+        <td><%= e.produit === 'combinee' ? 'Combinée' : (NOMS_PRODUITS[e.produit] || e.produit) %> #<%= e.produit === 'combinee' ? e.combine_dossier_id : e.soumission_id %></td>
+        <td><%= e.transmis_le ? e.transmis_le.slice(0, 10) : '—' %></td>
+        <td><% if (e.date_relance) { %><%= e.date_relance %><% if (e.nb_relances) { %><br><span class="petit"><%= e.nb_relances %> relance(s)</span><% } %><% } else { %>—<% } %></td>
+        <td>
+          <% if (e.statut === 'offre_recue' || e.offre_prime != null) { %>💰 <%= e.offre_prime != null ? Number(e.offre_prime).toLocaleString('fr-CA') + ' $' : '' %><% if (e.offre_validite) { %><br><span class="petit">valide jusqu'au <%= e.offre_validite %></span><% } %>
+          <% } else if (e.statut === 'refuse') { %>⛔ <%= (e.motif_refus || '').slice(0, 60) %>
+          <% } else if (e.statut === 'questions') { %>❓ <%= (e.questions_en_attente || '').slice(0, 60) %>
+          <% } else { %>—<% } %>
+        </td>
+        <td><a class="btn btn-petit btn-secondaire" href="/mise-en-marche/<%= e.id %>">Ouvrir</a></td>
+      </tr>
+    <% }); %>
+    </tbody>
+  </table></div>
+  <% } %>
+</div>
+<%- include('../partials/bas') %>

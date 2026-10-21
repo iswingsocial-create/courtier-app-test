@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Certificat de continuation de cautionnement — <%= cert.numero || '' %></title>
+<link rel="stylesheet" href="/attestation.css">
+</head>
+<body>
+<div class="actions noprint"><button class="btn" id="btn-imprimer">🖨️ Imprimer</button></div>
+<div class="page">
+  <p class="sous-titre"><%= cabinet.nom %><% if (cabinet.adresse) { %><br><%= [cabinet.adresse, cabinet.ville, cabinet.code_postal].filter(Boolean).join(', ') %><% } %></p>
+  <h1>Certificat de continuation de cautionnement</h1>
+  <dl>
+    <dt>Nom du cabinet de courtage</dt><dd><%= cabinet.nom %></dd>
+    <dt>Cautionnement numéro</dt><dd><strong><%= cert.numero || '—' %></strong></dd>
+    <dt>Date de début de la prolongation</dt><dd><%= cert.date_debut || '—' %></dd>
+    <dt>Date de fin de la prolongation</dt><dd><%= cert.date_fin || '—' %></dd>
+    <dt>Nom du débiteur principal</dt><dd><strong><%= client ? client.raison_sociale : '—' %></strong></dd>
+    <dt>Bénéficiaire</dt><dd><%= cert.beneficiaire || '—' %></dd>
+    <dt>Montant de couverture</dt><dd><%= cert.montant != null ? Number(cert.montant).toLocaleString('fr-CA') + ' $' : '—' %></dd>
+  </dl>
+  <% if (cert.mention_non_transmission) { %><p class="pied"><strong>Note :</strong> ce certificat de continuation ne doit pas être transmis au bénéficiaire.</p><% } %>
+  <p class="pied"><% if (cert.mandataire_nom) { %>Signé par : <%= cert.mandataire_nom %><%= cert.mandataire_titre ? ', ' + cert.mandataire_titre : '' %><br><% } %>Émis le <%= new Date().toISOString().slice(0, 10) %>.</p>
+</div>
+<div class="actions noprint"><a class="btn" href="/cautionnement/<%= cert.soumission_id %>">← Retour à la soumission</a></div>
+<script src="/attestation.js"></script>
+</body>
+</html>

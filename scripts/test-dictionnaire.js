@@ -217,7 +217,7 @@ async function connexion(jar, email, mdp) {
   // Domaine Perte d'exploitation : les tables sont regroupées sous le domaine « pe » (étape 1/10 PE)
   const peTables = dico.tables.filter((x) => x.domaine === 'pe').map((x) => x.nom);
   test('domaine « Perte d\'exploitation » présent', dico.domaines.pe === "Perte d'exploitation");
-  test('5 tables dans le domaine pe', peTables.length === 5, peTables.join(', '));
+  test('6 tables dans le domaine pe', peTables.length === 6, peTables.join(', '));
   test('soumissions pe marquée versionnée', dico.tables.some((x) => x.nom === 'pe_soumissions' && x.versionnage));
   test('versions pe marquée versionnée', dico.tables.some((x) => x.nom === 'pe_soumission_versions' && x.versionnage));
   // Valeurs autorisées des CHECK documentées (étape 1/10 PE)
@@ -301,7 +301,7 @@ async function connexion(jar, email, mdp) {
   // Domaine Cautionnement : les tables sont regroupées sous le domaine « cautionnement » (étape 1/10 cautionnement)
   const cautTables = dico.tables.filter((x) => x.domaine === 'cautionnement').map((x) => x.nom);
   test('domaine « Cautionnement » présent', dico.domaines.cautionnement === 'Cautionnement');
-  test('5 tables dans le domaine cautionnement', cautTables.length === 5, cautTables.join(', '));
+  test('6 tables dans le domaine cautionnement', cautTables.length === 6, cautTables.join(', '));
   test('soumissions cautionnement marquée versionnée', dico.tables.some((x) => x.nom === 'caut_soumissions' && x.versionnage));
   test('versions cautionnement marquée versionnée', dico.tables.some((x) => x.nom === 'caut_soumission_versions' && x.versionnage));
   // Valeurs autorisées des CHECK documentées (étape 1/10 cautionnement)

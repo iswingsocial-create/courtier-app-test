@@ -17,6 +17,7 @@
  */
 const express = require('express');
 const demandesInfos = require('../lib/demandes-infos');
+const marche = require('../lib/marche');
 
 const bd = require('../lib/bd');
 const caut = require('../lib/cautionnement');
@@ -279,7 +280,10 @@ router.get('/:id', (req, res) => {
     'SELECT id, raison_sociale FROM clients WHERE cabinet_id = ? AND archive = 0'
     + clausePortefeuille(req, 'clients') + ' ORDER BY raison_sociale'
   ).all(res.locals.cabinetId);
-  res.render('cautionnement/fiche', { sectionDemandes: demandesInfos.sectionPourFiche('cautionnement', s, req.utilisateur.cabinet_id), 
+  const certificats = bd.prepare('SELECT * FROM caut_certificats WHERE soumission_id = ? AND archive = 0 ORDER BY date_fin')
+    .all(s.id);
+  res.render('cautionnement/fiche', { certificats, sectionDemandes: demandesInfos.sectionPourFiche('cautionnement', s, req.utilisateur.cabinet_id),
+    sectionMarche: marche.sectionPourCible(req.utilisateur.cabinet_id, { produit: 'cautionnement', soumissionId: s.id }), NOMS_STATUTS_ENVOI: marche.NOMS_STATUTS_ENVOI, 
     s,
     clientNom: client ? client.raison_sociale : '—',
     versions,
@@ -292,6 +296,62 @@ router.get('/:id', (req, res) => {
     reclamationsTexte: serialiserReclamations(s.antecedents ? s.antecedents.reclamations_5ans : null),
     consentementActif,
   });
+});
+
+// --- Certificats de cautionnement (continuation, ex. bénéficiaire RBQ) -------------------------
+// Un certificat émis se suit par sa date de fin : elle alimente le
+// tableau des échéances (suivis sans faute). Le certificat de
+// continuation type prolonge un cautionnement d'un an.
+router.post('/:id/certificats', (req, res) => {
+  const s = soumissionAutorisee(req, res, false);
+  if (!s) return;
+  if (!s.client_id) return pageErreur(res, 400, 'Client requis', 'Rattachez d’abord la soumission à une entreprise.');
+  const police = policeLiee(s.id, res.locals.cabinetId);
+  bd.prepare(`
+    INSERT INTO caut_certificats (cabinet_id, client_id, police_id, soumission_id, numero, type,
+      beneficiaire, montant, date_debut, date_fin, mandataire_nom, mandataire_titre, mention_non_transmission)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `).run(res.locals.cabinetId, s.client_id, police ? police.id : null, s.id,
+    String(req.body.numero || '').trim() || null,
+    String(req.body.type || 'continuation').trim() || 'continuation',
+    String(req.body.beneficiaire || '').trim() || null,
+    lireNombrePositif(req.body.montant),
+    req.body.date_debut || null, req.body.date_fin || null,
+    String(req.body.mandataire_nom || '').trim() || null,
+    String(req.body.mandataire_titre || '').trim() || null,
+    req.body.mention_non_transmission ? 1 : 0);
+  journal(res.locals.cabinetId, req.utilisateur.id, 'caut_certificat_cree',
+    `Certificat de cautionnement sur soumission id ${s.id} (fin ${req.body.date_fin || '—'})`);
+  res.redirect('/cautionnement/' + s.id);
+});
+
+router.post('/certificats/:cid/archiver', (req, res) => {
+  const cert = bd.prepare('SELECT * FROM caut_certificats WHERE id = ? AND cabinet_id = ?')
+    .get(req.params.cid, res.locals.cabinetId);
+  if (!cert) return pageErreur(res, 404, 'Introuvable', 'Certificat introuvable.');
+  bd.prepare('UPDATE caut_certificats SET archive = 1 WHERE id = ?').run(cert.id);
+  journal(res.locals.cabinetId, req.utilisateur.id, 'caut_certificat_archive', `Certificat id ${cert.id} archivé`);
+  res.redirect('/cautionnement/' + cert.soumission_id);
+});
+
+router.post('/certificats/:cid/transmis', (req, res) => {
+  const cert = bd.prepare('SELECT * FROM caut_certificats WHERE id = ? AND cabinet_id = ?')
+    .get(req.params.cid, res.locals.cabinetId);
+  if (!cert) return pageErreur(res, 404, 'Introuvable', 'Certificat introuvable.');
+  bd.prepare('UPDATE caut_certificats SET transmis_le = ? WHERE id = ?')
+    .run(req.body.transmis_le || new Date().toISOString().slice(0, 10), cert.id);
+  journal(res.locals.cabinetId, req.utilisateur.id, 'caut_certificat_transmis', `Certificat id ${cert.id} marqué transmis`);
+  res.redirect('/cautionnement/' + cert.soumission_id);
+});
+
+router.get('/certificats/:cid/impression', (req, res) => {
+  const cert = bd.prepare('SELECT * FROM caut_certificats WHERE id = ? AND cabinet_id = ?')
+    .get(req.params.cid, res.locals.cabinetId);
+  if (!cert) return pageErreur(res, 404, 'Introuvable', 'Certificat introuvable.');
+  const client = bd.prepare('SELECT * FROM clients WHERE id = ? AND cabinet_id = ?')
+    .get(cert.client_id, res.locals.cabinetId);
+  const cabinet = bd.prepare('SELECT * FROM cabinets WHERE id = ?').get(res.locals.cabinetId);
+  res.render('cautionnement/certificat-continuation', { cert, client, cabinet });
 });
 
 // --- Modifier l'en-tête ---------------------------------------------------------------------

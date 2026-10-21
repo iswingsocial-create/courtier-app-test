@@ -22,6 +22,7 @@
           <option value="<%= r %>" <%= valeurs.role === r ? 'selected' : '' %>><%= NOMS_ROLES[r] %></option>
         <% }) %>
       </select></div>
+    <div><label for="code_interne">Code interne (système de gestion, ex. code représentant)</label><input type="text" id="code_interne" name="code_interne" value="<%= valeurs.code_interne || '' %>"></div>
     <div><label for="mdp">Mot de passe temporaire *</label><input type="password" id="mdp" name="mot_de_passe" required autocomplete="new-password">
       <p class="petit">Min. 10 caractères. L’utilisateur devra le changer au premier login.</p></div>
   </div>

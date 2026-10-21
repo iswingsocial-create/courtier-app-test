@@ -8,6 +8,7 @@
 
 </div>
 <%- include('../partials/manques', { sectionDemandes }) %>
+<%- include('../partials/mise-en-marche', { sectionMarche }) %>
 
 
 <div class="carte" id="entete">
@@ -262,5 +263,52 @@
     <% }) %>
     </tbody>
   </table></div>
+</div>
+<div class="carte" id="certificats">
+  <div class="entete-page"><h2>📜 Certificats émis (<%= (typeof certificats !== 'undefined' ? certificats : []).length %>)</h2></div>
+  <p class="petit">Les certificats de cautionnement émis (continuation, ex. pour la Régie du bâtiment du Québec) se suivent ici par leur <strong>date de fin</strong> — elle remonte automatiquement au tableau des échéances avant l’expiration.</p>
+  <% const certs = (typeof certificats !== 'undefined' ? certificats : []); %>
+  <% if (certs.length) { %>
+  <div class="tableau-deroulant"><table>
+    <thead><tr><th>Nº</th><th>Type</th><th>Bénéficiaire</th><th>Montant</th><th>Prolongation</th><th>Transmis</th><th></th></tr></thead>
+    <tbody>
+    <% certs.forEach((c) => { %>
+      <tr><td><strong><%= c.numero || '—' %></strong></td><td><%= c.type %></td>
+      <td><%= c.beneficiaire || '—' %></td>
+      <td><%= c.montant != null ? Number(c.montant).toLocaleString('fr-CA') + ' $' : '—' %></td>
+      <td><%= c.date_debut || '—' %> → <strong><%= c.date_fin || '—' %></strong></td>
+      <td><%= c.transmis_le || '—' %></td>
+      <td>
+        <a class="btn btn-petit btn-secondaire" href="/cautionnement/certificats/<%= c.id %>/impression" target="_blank" rel="noopener">Imprimer</a>
+        <form method="post" action="/cautionnement/certificats/<%= c.id %>/transmis" class="inline">
+          <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+          <button class="lien" type="submit">marquer transmis</button></form>
+        <form method="post" action="/cautionnement/certificats/<%= c.id %>/archiver" class="inline" data-confirm="Archiver ce certificat ?">
+          <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+          <button class="lien" type="submit">archiver</button></form>
+      </td></tr>
+    <% }) %>
+    </tbody>
+  </table></div>
+  <% } else { %><p class="petit">Aucun certificat enregistré pour cette soumission.</p><% } %>
+  <h3>Enregistrer un certificat</h3>
+  <form method="post" action="/cautionnement/<%= s.id %>/certificats" class="grille-form">
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+    <div><label for="cert_numero">Nº de cautionnement</label><input type="text" id="cert_numero" name="numero"></div>
+    <div><label for="cert_type">Type</label>
+      <select id="cert_type" name="type">
+        <option value="continuation">Continuation (prolongation)</option>
+        <option value="emission">Émission initiale</option>
+        <option value="autre">Autre certificat</option>
+      </select></div>
+    <div><label for="cert_beneficiaire">Bénéficiaire</label><input type="text" id="cert_beneficiaire" name="beneficiaire" placeholder="Ex. Régie du bâtiment du Québec (RBQ)"></div>
+    <div><label for="cert_montant">Montant de couverture ($)</label><input type="number" id="cert_montant" name="montant" step="0.01" min="0"></div>
+    <div><label for="cert_debut">Début de la prolongation</label><input type="date" id="cert_debut" name="date_debut"></div>
+    <div><label for="cert_fin">Fin de la prolongation</label><input type="date" id="cert_fin" name="date_fin"></div>
+    <div><label for="cert_mandataire">Mandataire signataire</label><input type="text" id="cert_mandataire" name="mandataire_nom"></div>
+    <div><label for="cert_titre">Titre du mandataire</label><input type="text" id="cert_titre" name="mandataire_titre" placeholder="Ex. Mandataire"></div>
+    <div><label><input type="checkbox" name="mention_non_transmission" value="1"> Ne doit pas être transmis au bénéficiaire</label></div>
+    <div class="actions"><button class="btn btn-petit" type="submit">Enregistrer le certificat</button></div>
+  </form>
 </div>
 <%- include('../partials/bas') %>

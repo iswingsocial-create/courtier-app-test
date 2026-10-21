@@ -1,0 +1,126 @@
+<%- include('../partials/haut', { titre: 'Registre complet — ' + police.numero_police }) %>
+<div class="entete-page">
+  <h1>📑 Registre complet de la police</h1>
+  <div class="actions" style="margin-top:0">
+    <a class="btn btn-secondaire btn-petit" href="/echeances/police/<%= police.id %>">← Fiche de révision</a>
+  </div>
+</div>
+
+<div class="carte">
+  <h3><%= police.client_raison_sociale %> — police <%= police.numero_police %> (<%= NOMS_LIGNES[police.ligne] %>)</h3>
+  <dl class="dl">
+    <dt>Assureur</dt><dd><%= police.assureur %></dd>
+    <% if (police.grossiste_nom) { %><dt>Grossiste</dt><dd><%= police.grossiste_nom %><%= police.grossiste_contrat ? ' — contrat-cadre nº ' + police.grossiste_contrat : '' %></dd><% } %>
+    <% if (police.mode_facturation) { %><dt>Méthode de facturation</dt><dd><%= MODES_FACTURATION[police.mode_facturation] || police.mode_facturation %></dd><% } %>
+    <dt>Souscription partagée</dt><dd><%= police.responsabilite_proportionnelle ? 'Oui — la responsabilité de chaque assureur participant est limitée à sa proportion assurée.' : 'Non — assureur unique.' %></dd>
+  </dl>
+  <p class="petit">Le grossiste, la méthode de facturation et le drapeau de souscription partagée se modifient dans le formulaire de la police (bouton « Nouvelle version » de la fiche de révision).</p>
+</div>
+
+<div class="carte">
+  <h3>🤝 Assureurs participants (souscription partagée)</h3>
+  <p class="petit">Une ligne par participant <strong>et par section de garantie</strong> : sur les polices de grossiste réelles, les parts diffèrent d’une section à l’autre (ex. Biens partagé entre 5 assureurs, Vol à un seul). La part de sinistre de chaque participant est plafonnée à sa proportion assurée.</p>
+  <% if (participants.length) { %>
+  <div class="tableau-deroulant"><table>
+    <thead><tr><th>Section</th><th>Assureur participant</th><th>Contrat-cadre</th><th>Part</th><th>Prime (part)</th><th>Représentant autorisé</th><th></th></tr></thead>
+    <tbody>
+    <% participants.forEach((p) => { %>
+      <tr><td><%= p.section || 'Ensemble de la police' %></td><td><strong><%= p.assureur_nom %></strong></td>
+      <td><%= p.numero_contrat || '—' %></td><td><%= p.part_pct != null ? p.part_pct + ' %' : '—' %></td>
+      <td><%= p.prime_part != null ? Number(p.prime_part).toLocaleString('fr-CA') + ' $' : '—' %></td>
+      <td><%= p.representant || '—' %></td>
+      <td><form method="post" action="/polices/<%= police.id %>/participants/<%= p.id %>/retirer" class="inline" data-confirm="Archiver ce participant ?">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+        <button class="lien" type="submit">archiver</button></form></td></tr>
+    <% }) %>
+    </tbody>
+  </table></div>
+  <p>
+    <% Object.entries(validation.sections).forEach(([s, total]) => { %>
+      <span class="badge <%= Math.abs(total - 100) <= 0.05 ? 'badge-ok' : 'badge-echu' %>"><%= s %> : <%= total %> %</span>
+    <% }) %>
+  </p>
+  <% if (!validation.valide) { %><div class="alerte alerte-erreur"><%= validation.erreurs.join(' ') %></div><% } %>
+  <% } else { %><p class="petit">Aucun participant enregistré : la police est portée par l’assureur unique ci-dessus.</p><% } %>
+
+  <h4>Ajouter un participant</h4>
+  <form method="post" action="/polices/<%= police.id %>/participants" class="grille-form">
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+    <div><label for="section">Section de garantie</label>
+      <select id="section" name="section">
+        <option value="">Ensemble de la police</option>
+        <% SECTIONS_PARTICIPANTS.forEach((s) => { %><option value="<%= s %>"><%= s %></option><% }) %>
+      </select></div>
+    <div><label for="assureur_nom">Assureur participant *</label><input type="text" id="assureur_nom" name="assureur_nom" required></div>
+    <div><label for="numero_contrat">Nº du contrat-cadre</label><input type="text" id="numero_contrat" name="numero_contrat"></div>
+    <div><label for="part_pct">Proportion assurée (%) *</label><input type="number" id="part_pct" name="part_pct" step="0.1" min="0" max="100" required></div>
+    <div><label for="prime_part">Prime — part de cet assureur ($)</label><input type="number" id="prime_part" name="prime_part" step="0.01" min="0"></div>
+    <div><label for="representant">Représentant autorisé</label><input type="text" id="representant" name="representant"></div>
+    <div class="actions"><button class="btn btn-petit" type="submit">Ajouter le participant</button></div>
+  </form>
+</div>
+
+<div class="carte">
+  <h3>💳 Financement de prime (calendrier de prélèvements)</h3>
+  <% if (financement) { %>
+  <dl class="dl">
+    <dt>Organisme / assureur</dt><dd><%= financement.organisme || '—' %></dd>
+    <dt>Nº de cotation</dt><dd><%= financement.numero_cotation || '—' %></dd>
+    <dt>Taux annuel</dt><dd><%= financement.taux_annuel != null ? financement.taux_annuel + ' %' : '—' %></dd>
+    <dt>Prime brute</dt><dd><%= financement.prime_brute != null ? Number(financement.prime_brute).toLocaleString('fr-CA') + ' $' : '—' %></dd>
+    <dt>Acompte initial</dt><dd><%= financement.acompte != null ? Number(financement.acompte).toLocaleString('fr-CA') + ' $' : '—' %></dd>
+    <dt>Montant financé</dt><dd><%= financement.montant_finance != null ? Number(financement.montant_finance).toLocaleString('fr-CA') + ' $' : '—' %></dd>
+    <% if (prochain) { %><dt>Prochain prélèvement</dt><dd><strong><%= prochain.date %></strong> — <%= Number(prochain.paiement).toLocaleString('fr-CA') %> $ (versement <%= prochain.numero %>)<% if (prochain.en_retard) { %> <span class="badge badge-echu">en retard</span><% } %></dd>
+    <% } else { %><dt>Échéancier</dt><dd><span class="badge badge-ok">Tous les versements sont acquittés</span></dd><% } %>
+  </dl>
+  <% if (echeancier && echeancier.length) { %>
+  <div class="tableau-deroulant"><table>
+    <thead><tr><th>Date</th><th>#</th><th>Solde d’ouverture</th><th>Paiement</th><th>Intérêt</th><th>Capital</th><th>Intérêts cumulatifs</th><th>Solde</th><th>Payé</th></tr></thead>
+    <tbody>
+    <% echeancier.forEach((l) => { const paye = financement.versements_payes.includes(l.numero); %>
+      <tr<% if (prochain && prochain.numero === l.numero) { %> style="font-weight:bold"<% } %>>
+      <td><%= l.date || '—' %></td><td><%= l.numero %></td>
+      <td><%= Number(l.solde_ouverture).toLocaleString('fr-CA') %> $</td>
+      <td><%= Number(l.paiement).toLocaleString('fr-CA') %> $</td>
+      <td><%= Number(l.interet).toLocaleString('fr-CA') %> $</td>
+      <td><%= Number(l.capital).toLocaleString('fr-CA') %> $</td>
+      <td><%= Number(l.interets_cumulatifs).toLocaleString('fr-CA') %> $</td>
+      <td><%= Number(l.solde).toLocaleString('fr-CA') %> $</td>
+      <td><form method="post" action="/polices/<%= police.id %>/financement/paiement" class="inline">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+        <input type="hidden" name="numero" value="<%= l.numero %>">
+        <input type="hidden" name="paye" value="<%= paye ? '0' : '1' %>">
+        <button class="lien" type="submit"><%= paye ? '✅ payé (annuler)' : 'marquer payé' %></button></form></td></tr>
+    <% }) %>
+    </tbody>
+  </table></div>
+  <p class="petit">Échéancier calculé par l’outil (intérêt au prorata des jours, jours/365) à des fins de suivi — en cas d’écart de quelques cents, le calendrier officiel de l’organisme de financement prévaut et se conserve dans les documents de la police.</p>
+  <% } %>
+  <% } else { %><p class="petit">Aucun financement de prime enregistré pour cette police.</p><% } %>
+
+  <h4><%= financement ? 'Modifier les paramètres du financement' : 'Enregistrer un financement de prime' %></h4>
+  <form method="post" action="/polices/<%= police.id %>/financement" class="grille-form">
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+    <div><label for="organisme">Organisme de financement</label><input type="text" id="organisme" name="organisme" value="<%= financement ? (financement.organisme || '') : '' %>"></div>
+    <div><label for="numero_cotation">Nº de cotation</label><input type="text" id="numero_cotation" name="numero_cotation" value="<%= financement ? (financement.numero_cotation || '') : '' %>"></div>
+    <div><label for="taux_annuel">Taux annuel (%)</label><input type="number" id="taux_annuel" name="taux_annuel" step="0.001" min="0" value="<%= financement && financement.taux_annuel != null ? financement.taux_annuel : '' %>"></div>
+    <div><label for="prime_brute">Prime brute ($)</label><input type="number" id="prime_brute" name="prime_brute" step="0.01" min="0" value="<%= financement && financement.prime_brute != null ? financement.prime_brute : '' %>"></div>
+    <div><label for="acompte">Acompte initial ($)</label><input type="number" id="acompte" name="acompte" step="0.01" min="0" value="<%= financement && financement.acompte != null ? financement.acompte : '' %>"></div>
+    <div><label for="montant_finance">Montant financé ($) — vide = prime − acompte</label><input type="number" id="montant_finance" name="montant_finance" step="0.01" min="0" value="<%= financement && financement.montant_finance != null ? financement.montant_finance : '' %>"></div>
+    <div><label for="nb_versements">Nombre de versements</label><input type="number" id="nb_versements" name="nb_versements" step="1" min="1" value="<%= financement && financement.nb_versements != null ? financement.nb_versements : '' %>"></div>
+    <div><label for="montant_versement">Montant par versement ($)</label><input type="number" id="montant_versement" name="montant_versement" step="0.01" min="0" value="<%= financement && financement.montant_versement != null ? financement.montant_versement : '' %>"></div>
+    <div><label for="premiere_date">Date du premier versement</label><input type="date" id="premiere_date" name="premiere_date" value="<%= financement ? (financement.premiere_date || '') : '' %>"></div>
+    <div class="actions"><button class="btn btn-petit" type="submit">Enregistrer le financement</button></div>
+  </form>
+</div>
+
+<div class="carte">
+  <h3>📜 Certificats émis pour cette police (<%= certificats.length %>)</h3>
+  <% if (certificats.length) { %>
+  <ul><% certificats.forEach((c) => { %>
+    <li>Attestation d’assurance commerciale — <%= c.emis_le || '' %><%= c.destinataire ? ' · destinataire : ' + c.destinataire : '' %><%= c.signataire_nom ? ' · signée par ' + c.signataire_nom : '' %></li>
+  <% }) %></ul>
+  <% } else { %><p class="petit">Aucun certificat émis depuis l’outil pour cette police.</p><% } %>
+  <div class="actions"><a class="btn btn-petit" href="/polices/<%= police.id %>/attestation-commerciale">📜 Générer une attestation d’assurance commerciale</a></div>
+</div>
+<%- include('../partials/bas') %>

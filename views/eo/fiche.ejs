@@ -8,6 +8,7 @@
 
 </div>
 <%- include('../partials/manques', { sectionDemandes }) %>
+<%- include('../partials/mise-en-marche', { sectionMarche }) %>
 
 
 <div class="carte">
@@ -139,6 +140,8 @@
       <input type="number" id="fr" name="franchise" min="0" step="0.01" value="<%= g && g.franchise !== null ? g.franchise : '' %>"></div>
     <div><label for="prime">Prime ($, si connue)</label>
       <input type="number" id="prime" name="prime" min="0" step="0.01" value="<%= g && g.prime !== null ? g.prime : '' %>"></div>
+    <div><label for="date_retro">Date de rétroactivité (base réclamations présentées)</label>
+      <input type="date" id="date_retro" name="date_retroactivite" value="<%= g && g.date_retroactivite ? g.date_retroactivite : '' %>"></div>
     <div style="grid-column:1/-1"><span class="petit">Base de garantie</span><br>
       <% BASES_GARANTIE.forEach((b, i) => { %>
       <span class="case" style="display:inline-flex;margin-right:12px"><input type="radio" id="base-<%= i %>" name="base" value="<%= b %>"<%= g && g.base === b ? ' checked' : '' %>><label for="base-<%= i %>"><%= NOMS_BASE_GARANTIE[b] %></label></span>

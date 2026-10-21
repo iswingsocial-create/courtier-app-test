@@ -256,8 +256,8 @@ const POLICE_FLOTTE = [
     v1.vehicules[0].champs.annee === 2022 && v1.vehicules[0].champs.champ_inconnu === undefined);
   const v2 = moteur.validerListesCohere({ batiments: [{ champs: { adresse: '1 rue X' } }] }, 'flotte', lignes);
   test('Cohere : liste incompatible avec le produit rejetée', !v2.batiments);
-  test('META_LISTES : 9 types de listes couvrant les 9 produits',
-    Object.keys(moteur.META_LISTES).length === 9
+  test('META_LISTES : 10 types de listes couvrant les 9 produits (+ participants, niveau police)',
+    Object.keys(moteur.META_LISTES).length === 10
     && ['auto', 'flotte', 'biens', 'rc', 'cyber', 'eo', 'do', 'pe', 'cautionnement']
       .every((p) => Object.values(moteur.META_LISTES).some((m) => m.produits.includes(p))));
 

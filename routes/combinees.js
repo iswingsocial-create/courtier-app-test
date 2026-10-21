@@ -10,6 +10,7 @@ const {
   exigeAuth, exigeMotDePasseChange, estCourtier, clientHorsPortefeuille,
 } = require('../lib/middleware');
 const combine = require('../lib/combine');
+const marche = require('../lib/marche');
 const biens = require('../lib/biens');
 const rc = require('../lib/rc');
 const pesoum = require('../lib/pe');
@@ -233,6 +234,7 @@ router.get('/:id', (req, res) => {
   res.render('combinees/fiche', {
     titre: `Soumission combinée — ${client ? client.raison_sociale : ''}`,
     d, client, batiments, alarmes, beneficiaires, peParBatiment, rcParBatiment,
+    sectionMarche: marche.sectionPourCible(cabinetId, { produit: 'combinee', combineDossierId: d.id }), NOMS_STATUTS_ENVOI: marche.NOMS_STATUTS_ENVOI,
     flottante: sB ? combine.listerArticlesFlottante(sB.id, cabinetId) : [],
     assures: combine.listerAssuresAdditionnels('combine', d.id, cabinetId),
     reponses, utilisateurs,
@@ -283,6 +285,10 @@ router.post('/:id/entete', (req, res) => {
       remarques_diverses: txt(req.body, 'remarques_diverses'),
       circonstances_speciales: txt(req.body, 'circonstances_speciales'),
       commentaires_courtier: txt(req.body, 'commentaires_courtier'),
+      courtier_connait_depuis: txt(req.body, 'courtier_connait_depuis'),
+      client_nouveau: req.body.client_nouveau === 'on',
+      transition_entite_nom: txt(req.body, 'transition_entite_nom'),
+      transition_note: txt(req.body, 'transition_note'),
       statut: req.body.statut || undefined,
     });
   } catch (e) { return erreur400(res, e); }

@@ -430,7 +430,7 @@ router.post('/:id/inserer', (req, res) => {
       if (clientIdChoisi && clientHorsPortefeuille(cabinetId, utilisateur, clientIdChoisi)) {
         return reponseHorsPortefeuille(res);
       }
-      const r = insertion.creerPolice(cabinetId, utilisateur, produit, valeurs, a, { clientId: clientIdChoisi || undefined });
+      const r = insertion.creerPolice(cabinetId, utilisateur, produit, valeurs, a, { clientId: clientIdChoisi || undefined, listes });
       const documentId = insertion.copierDocumentVersPolice(cabinetId, utilisateur, a, r.policeId);
       analyses.marquerInseree(a.id, cabinetId, utilisateur.id, {
         produit, policeId: r.policeId, documentId,

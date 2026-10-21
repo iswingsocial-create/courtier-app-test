@@ -12,6 +12,7 @@
  */
 const express = require('express');
 const demandesInfos = require('../lib/demandes-infos');
+const marche = require('../lib/marche');
 
 const bd = require('../lib/bd');
 const dosoum = require('../lib/do');
@@ -200,7 +201,8 @@ router.get('/:id', (req, res) => {
     assureurs = bd.prepare('SELECT id, nom FROM assureurs WHERE cabinet_id = ? AND archive = 0 ORDER BY nom')
       .all(res.locals.cabinetId);
   }
-  res.render('do/fiche', { sectionDemandes: demandesInfos.sectionPourFiche('do', s, req.utilisateur.cabinet_id), 
+  res.render('do/fiche', { sectionDemandes: demandesInfos.sectionPourFiche('do', s, req.utilisateur.cabinet_id),
+    sectionMarche: marche.sectionPourCible(req.utilisateur.cabinet_id, { produit: 'do', soumissionId: s.id }), NOMS_STATUTS_ENVOI: marche.NOMS_STATUTS_ENVOI, 
     s,
     clientNom: client ? client.raison_sociale : '—',
     versions,

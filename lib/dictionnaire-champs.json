@@ -24,7 +24,8 @@
   "flotte": "Flotte automobile",
   "cautionnement": "Cautionnement",
   "analyse_ia": "Analyse de documents IA",
-  "combine": "Soumission combinée"
+  "combine": "Soumission combinée",
+  "marche": "Mise en marché (registre des envois aux assureurs, F15)"
  },
  "tables": [
   {
@@ -234,6 +235,14 @@
      "description": "Horodatage de création.",
      "type": "TEXT",
      "usage": "technique",
+     "relations": []
+    },
+    {
+     "nom": "code_interne",
+     "libelle": "Code interne",
+     "description": "Code de l’utilisateur dans le système de gestion externe du cabinet (ex. code représentant des factures).",
+     "type": "TEXT",
+     "usage": "gestion",
      "relations": []
     }
    ]
@@ -589,6 +598,46 @@
      "type": "REAL",
      "usage": "soumission",
      "relations": []
+    },
+    {
+     "nom": "pays",
+     "libelle": "Pays",
+     "description": "Pays de l’adresse postale de l’entreprise.",
+     "type": "TEXT",
+     "usage": "gestion",
+     "relations": []
+    },
+    {
+     "nom": "telecopieur",
+     "libelle": "Télécopieur de l’entreprise",
+     "description": "Numéro de télécopieur de l’entreprise (encore demandé par les formulaires d’assureurs).",
+     "type": "TEXT",
+     "usage": "gestion",
+     "relations": []
+    },
+    {
+     "nom": "numero_client_externe",
+     "libelle": "Nº de client externe",
+     "description": "Numéro du client dans le système de gestion externe du cabinet (référence croisée des factures).",
+     "type": "TEXT",
+     "usage": "gestion",
+     "relations": []
+    },
+    {
+     "nom": "fin_exercice_mois",
+     "libelle": "Mois de fin d’exercice financier",
+     "description": "Mois (1 à 12) de fin d’exercice financier de l’entreprise (feuilles de calcul de perte d’exploitation).",
+     "type": "INTEGER",
+     "usage": "gestion",
+     "relations": []
+    },
+    {
+     "nom": "assure_via_entite",
+     "libelle": "Assuré via une autre entité",
+     "description": "Nom de l’entité sous laquelle l’entreprise est temporairement assurée (dossier en transition, ex. syndicat en formation).",
+     "type": "TEXT",
+     "usage": "gestion",
+     "relations": []
     }
    ]
   },
@@ -738,6 +787,14 @@
      "description": "Horodatage de création.",
      "type": "TEXT",
      "usage": "technique",
+     "relations": []
+    },
+    {
+     "nom": "civilite",
+     "libelle": "Civilité",
+     "description": "Civilité du contact (M., Mme…) pour les documents adressés.",
+     "type": "TEXT",
+     "usage": "gestion",
      "relations": []
     }
    ]
@@ -1054,6 +1111,43 @@
      "relations": [
       "combine_dossiers.id"
      ]
+    },
+    {
+     "nom": "grossiste_nom",
+     "libelle": "Grossiste / intermédiaire",
+     "description": "Intermédiaire de placement distinct de l’assureur émetteur (ex. grossiste type Soplex), quand la police est placée via un grossiste.",
+     "type": "TEXT",
+     "usage": "les_deux",
+     "relations": []
+    },
+    {
+     "nom": "grossiste_contrat",
+     "libelle": "N° de contrat-cadre du grossiste",
+     "description": "Numéro du contrat-cadre en vertu duquel la police est émise (mention « en vertu du contrat nº X » des polices de grossiste).",
+     "type": "TEXT",
+     "usage": "les_deux",
+     "relations": []
+    },
+    {
+     "nom": "mode_facturation",
+     "libelle": "Méthode de facturation",
+     "description": "Comment la prime est perçue : perception par l’assuré, facturation agence ou facturation directe.",
+     "type": "TEXT",
+     "usage": "gestion",
+     "relations": [],
+     "valeurs": [
+      "perception_assure",
+      "facturation_agence",
+      "directe"
+     ]
+    },
+    {
+     "nom": "responsabilite_proportionnelle",
+     "libelle": "Responsabilité proportionnelle",
+     "description": "1 = souscription partagée : chaque assureur participant n’est responsable qu’à hauteur de sa part (voir police_participants).",
+     "type": "INTEGER",
+     "usage": "gestion",
+     "relations": []
     }
    ]
   },
@@ -1103,6 +1197,38 @@
      "description": "Prime annuelle de la protection en dollars.",
      "type": "REAL",
      "usage": "soumission",
+     "relations": []
+    },
+    {
+     "nom": "limite",
+     "libelle": "Limite de la protection",
+     "description": "Limite propre à cette protection (en plus du libellé et de la prime).",
+     "type": "REAL",
+     "usage": "les_deux",
+     "relations": []
+    },
+    {
+     "nom": "franchise",
+     "libelle": "Franchise de la protection",
+     "description": "Franchise propre à cette protection.",
+     "type": "REAL",
+     "usage": "les_deux",
+     "relations": []
+    },
+    {
+     "nom": "regle_prop",
+     "libelle": "Règle proportionnelle de la protection",
+     "description": "Règle proportionnelle (%) propre à cette protection, telle qu’imprimée dans les déclarations.",
+     "type": "REAL",
+     "usage": "les_deux",
+     "relations": []
+    },
+    {
+     "nom": "code_formulaire",
+     "libelle": "Code de formulaire de l’assureur",
+     "description": "Code du formulaire/libellé de l’assureur pour cette garantie (ex. 034.0-8 chez Intact).",
+     "type": "TEXT",
+     "usage": "les_deux",
      "relations": []
     }
    ]
@@ -2747,6 +2873,16 @@
      "type": "TEXT",
      "usage": "gestion",
      "relations": []
+    },
+    {
+     "nom": "envoi_id",
+     "libelle": "Envoi de mise en marché",
+     "description": "Envoi du registre de mise en marché (F15) auquel ce courriel est rattaché : réponse d'un assureur au fil d'une demande de prix ou d'une relance (classement intelligent, méthode fil_marche), copie d'un envoi du cabinet, ou lien manuel. NULL si le courriel n'est rattaché à aucun envoi.",
+     "type": "INTEGER",
+     "usage": "gestion",
+     "relations": [
+      "marche_envois.id"
+     ]
     }
    ]
   },
@@ -3109,6 +3245,18 @@
      "usage": "gestion",
      "relations": [
       "users.id"
+     ]
+    },
+    {
+     "nom": "mode_facturation",
+     "libelle": "Mode de facturation",
+     "description": "Mode de facturation de la proposition FPQ-1 : agence ou directe.",
+     "type": "TEXT",
+     "usage": "soumission",
+     "relations": [],
+     "valeurs": [
+      "agence",
+      "directe"
      ]
     }
    ]
@@ -3672,6 +3820,22 @@
      "type": "TEXT",
      "usage": "technique",
      "relations": []
+    },
+    {
+     "nom": "rayon_operation_km",
+     "libelle": "Rayon d’opération (km)",
+     "description": "Rayon d’opération du véhicule (question clé des propositions remorquage/FPQ-1).",
+     "type": "REAL",
+     "usage": "soumission",
+     "relations": []
+    },
+    {
+     "nom": "pct_etats_unis",
+     "libelle": "% aux États-Unis",
+     "description": "Pourcentage d’utilisation du véhicule aux États-Unis.",
+     "type": "REAL",
+     "usage": "soumission",
+     "relations": []
     }
    ]
   },
@@ -3910,6 +4074,22 @@
      "description": "Horodatage de création.",
      "type": "TEXT",
      "usage": "technique",
+     "relations": []
+    },
+    {
+     "nom": "perte_totale",
+     "libelle": "Véhicule déclaré perte totale",
+     "description": "1 = un véhicule a déjà été déclaré perte totale (antécédent demandé par les propositions FPQ-1).",
+     "type": "INTEGER",
+     "usage": "soumission",
+     "relations": []
+    },
+    {
+     "nom": "perte_totale_details",
+     "libelle": "Détails de la perte totale",
+     "description": "Précisions sur la perte totale déclarée.",
+     "type": "TEXT",
+     "usage": "soumission",
      "relations": []
     }
    ]
@@ -5055,6 +5235,30 @@
      "type": "REAL",
      "usage": "soumission",
      "relations": []
+    },
+    {
+     "nom": "crime_json",
+     "libelle": "Section Crime (JSON)",
+     "description": "Limites de la section Crime par risque : détournements des employés, vol/effraction, contrefaçons (billets, cartes), destruction d’argent et titres, argent en coffre-fort.",
+     "type": "TEXT",
+     "usage": "soumission",
+     "relations": []
+    },
+    {
+     "nom": "comptes_clients_montant",
+     "libelle": "Comptes clients — montant ($)",
+     "description": "Montant d’assurance des comptes clients (comptes à recevoir).",
+     "type": "REAL",
+     "usage": "soumission",
+     "relations": []
+    },
+    {
+     "nom": "chantier_montant",
+     "libelle": "Chantier — montant ($)",
+     "description": "Montant de l’assurance chantier / risque de constructeur.",
+     "type": "REAL",
+     "usage": "soumission",
+     "relations": []
     }
    ]
   },
@@ -5764,6 +5968,22 @@
      "type": "REAL",
      "usage": "soumission",
      "relations": []
+    },
+    {
+     "nom": "umbrella_agregat_type",
+     "libelle": "Umbrella — type d’agrégat",
+     "description": "Type d’agrégat de la garantie umbrella (par emplacement, global…).",
+     "type": "TEXT",
+     "usage": "soumission",
+     "relations": []
+    },
+    {
+     "nom": "umbrella_sous_jacentes_json",
+     "libelle": "Umbrella — polices sous-jacentes (JSON)",
+     "description": "Polices primaires sous-jacentes à l’umbrella : type, assureur, nº de police, limite, date d’expiration (demande umbrella type Nexus).",
+     "type": "TEXT",
+     "usage": "soumission",
+     "relations": []
     }
    ]
   },
@@ -6126,6 +6346,46 @@
      "relations": [
       "users.id"
      ]
+    },
+    {
+     "nom": "nb_enregistrements",
+     "libelle": "Nombre d’enregistrements traités",
+     "description": "Volume total d’enregistrements de données traités (questionnaire cyber type CFC).",
+     "type": "INTEGER",
+     "usage": "soumission",
+     "relations": []
+    },
+    {
+     "nom": "types_donnees_json",
+     "libelle": "Types de données (JSON)",
+     "description": "Types de données traitées avec leur nombre d’enregistrements (données de paiement, santé, identifiants…).",
+     "type": "TEXT",
+     "usage": "soumission",
+     "relations": []
+    },
+    {
+     "nom": "responsable_securite",
+     "libelle": "Responsable de la sécurité",
+     "description": "Nom et titre de la personne responsable de la sécurité de l’information.",
+     "type": "TEXT",
+     "usage": "soumission",
+     "relations": []
+    },
+    {
+     "nom": "normes_json",
+     "libelle": "Normes suivies (JSON)",
+     "description": "Normes et cadres de sécurité suivis (SOC 2, ISO 27001, PCI DSS…).",
+     "type": "TEXT",
+     "usage": "soumission",
+     "relations": []
+    },
+    {
+     "nom": "revenus_territoires_json",
+     "libelle": "Revenus par territoire (JSON)",
+     "description": "Revenus répartis par territoire (Canada, États-Unis, Europe…) pour la tarification cyber/E&O TI.",
+     "type": "TEXT",
+     "usage": "soumission",
+     "relations": []
     }
    ]
   },
@@ -6820,6 +7080,14 @@
      "description": "Horodatage de création",
      "type": "TEXT",
      "usage": "technique",
+     "relations": []
+    },
+    {
+     "nom": "date_retroactivite",
+     "libelle": "Date de rétroactivité",
+     "description": "Date de rétroactivité de la garantie en base réclamations présentées.",
+     "type": "TEXT",
+     "usage": "soumission",
      "relations": []
     }
    ]
@@ -11161,6 +11429,38 @@
      "type": "TEXT",
      "usage": "technique",
      "relations": []
+    },
+    {
+     "nom": "courtier_connait_depuis",
+     "libelle": "Client connu du courtier depuis",
+     "description": "Déclaration du courtier de la proposition combinée : depuis quand le courtier connaît le client.",
+     "type": "TEXT",
+     "usage": "soumission",
+     "relations": []
+    },
+    {
+     "nom": "client_nouveau",
+     "libelle": "Nouveau client",
+     "description": "1 = nouveau client du cabinet (déclaration du courtier).",
+     "type": "INTEGER",
+     "usage": "soumission",
+     "relations": []
+    },
+    {
+     "nom": "transition_entite_nom",
+     "libelle": "Entité de transition",
+     "description": "Entité sous laquelle le dossier est assuré en attendant la transition (ex. ancienne entité propriétaire avant le syndicat de copropriété).",
+     "type": "TEXT",
+     "usage": "soumission",
+     "relations": []
+    },
+    {
+     "nom": "transition_note",
+     "libelle": "Note de transition",
+     "description": "Ce qui doit changer à la transition d’entité, et quand.",
+     "type": "TEXT",
+     "usage": "soumission",
+     "relations": []
     }
    ]
   },
@@ -11223,6 +11523,1417 @@
      "nom": "cree_le",
      "libelle": "Créé le",
      "description": "Date de création.",
+     "type": "TEXT",
+     "usage": "technique",
+     "relations": []
+    }
+   ]
+  },
+  {
+   "nom": "marche_envois",
+   "domaine": "marche",
+   "description": "Registre de mise en marché (formulaire F15 du référentiel métier) : une ligne = une transmission d'une soumission (un des 9 produits) ou d'un dossier combiné à UN marché (assureur ou grossiste). Trace le souscripteur, la version transmise, les documents, le statut (brouillon, envoyé, en analyse, questions, offre reçue, refusé, accepté, annulé), les questions en attente et leur responsable, les relances et l'offre reçue structurée (qui alimentera le comparateur de la phase 2). Règle d'or : jamais supprimé — l'annulation est un statut.",
+   "versionnage": false,
+   "colonnes": [
+    {
+     "nom": "id",
+     "libelle": "Identifiant",
+     "description": "Clé primaire de l'envoi.",
+     "type": "INTEGER",
+     "usage": "technique",
+     "relations": []
+    },
+    {
+     "nom": "cabinet_id",
+     "libelle": "Cabinet",
+     "description": "Cabinet propriétaire (cloisonnement strict).",
+     "type": "INTEGER",
+     "usage": "technique",
+     "relations": [
+      "cabinets.id"
+     ]
+    },
+    {
+     "nom": "produit",
+     "libelle": "Produit",
+     "description": "Produit de la soumission transmise (auto, biens, rc, cyber, eo, do, pe, flotte, cautionnement) ou combinee pour un dossier combiné.",
+     "type": "TEXT",
+     "usage": "gestion",
+     "relations": []
+    },
+    {
+     "nom": "soumission_id",
+     "libelle": "Soumission",
+     "description": "Identifiant de la soumission du produit dans sa table propre (sans clé étrangère : la table dépend du produit). NULL pour un dossier combiné.",
+     "type": "INTEGER",
+     "usage": "gestion",
+     "relations": []
+    },
+    {
+     "nom": "combine_dossier_id",
+     "libelle": "Dossier combiné",
+     "description": "Dossier combiné transmis, le cas échéant (produit = combinee).",
+     "type": "INTEGER",
+     "usage": "gestion",
+     "relations": [
+      "combine_dossiers.id"
+     ]
+    },
+    {
+     "nom": "client_id",
+     "libelle": "Client",
+     "description": "Client du dossier, dénormalisé pour les filtres du registre et le cloisonnement par portefeuille.",
+     "type": "INTEGER",
+     "usage": "gestion",
+     "relations": [
+      "clients.id"
+     ]
+    },
+    {
+     "nom": "assureur_id",
+     "libelle": "Assureur (annuaire)",
+     "description": "Marché choisi dans l'annuaire des assureurs, le cas échéant. NULL si le marché est hors annuaire (marché libre).",
+     "type": "INTEGER",
+     "usage": "gestion",
+     "relations": [
+      "assureurs.id"
+     ]
+    },
+    {
+     "nom": "marche_nom",
+     "libelle": "Marché",
+     "description": "Nom affiché du marché (assureur ou grossiste) : repris de l'annuaire ou saisi librement.",
+     "type": "TEXT",
+     "usage": "gestion",
+     "relations": []
+    },
+    {
+     "nom": "souscripteur_nom",
+     "libelle": "Souscripteur (nom)",
+     "description": "Nom du souscripteur destinataire, pré-rempli depuis le contact nouvelles affaires de l'assureur choisi.",
+     "type": "TEXT",
+     "usage": "gestion",
+     "relations": []
+    },
+    {
+     "nom": "souscripteur_courriel",
+     "libelle": "Souscripteur (courriel)",
+     "description": "Courriel du souscripteur destinataire, pré-rempli depuis le contact nouvelles affaires de l'assureur choisi.",
+     "type": "TEXT",
+     "usage": "gestion",
+     "relations": []
+    },
+    {
+     "nom": "statut",
+     "libelle": "Statut",
+     "description": "Étape de l'envoi : brouillon, envoye, en_analyse, questions, offre_recue, refuse, accepte, annule. Les transitions sont conservées dans marche_evenements et au journal d'audit.",
+     "type": "TEXT",
+     "usage": "gestion",
+     "relations": []
+    },
+    {
+     "nom": "version_proposition",
+     "libelle": "Version de la proposition",
+     "description": "Version de la proposition transmise (par exemple Version 3), figée au moment de la création de l'envoi.",
+     "type": "TEXT",
+     "usage": "gestion",
+     "relations": []
+    },
+    {
+     "nom": "documents_transmis",
+     "libelle": "Documents transmis",
+     "description": "Liste des documents transmis au marché (JSON : proposition générée, pièces du dossier), telle que déclarée à la création de l'envoi.",
+     "type": "TEXT",
+     "usage": "gestion",
+     "relations": []
+    },
+    {
+     "nom": "transmis_le",
+     "libelle": "Transmis le",
+     "description": "Date et heure de la transmission effective (envoi du courriel ou marquage manuel). NULL tant que l'envoi est en brouillon.",
+     "type": "TEXT",
+     "usage": "gestion",
+     "relations": []
+    },
+    {
+     "nom": "mode_transmission",
+     "libelle": "Mode de transmission",
+     "description": "courriel (demande de prix envoyée depuis l'application) ou manuel (transmission faite hors application, marquée à la main).",
+     "type": "TEXT",
+     "usage": "gestion",
+     "relations": []
+    },
+    {
+     "nom": "autorite_intermediaire",
+     "libelle": "Autorité de l'intermédiaire",
+     "description": "Vérification de l'autorité de l'intermédiaire (grossiste) à lier le risque, si pertinente (champ du formulaire F15).",
+     "type": "TEXT",
+     "usage": "gestion",
+     "relations": []
+    },
+    {
+     "nom": "questions_en_attente",
+     "libelle": "Questions en attente",
+     "description": "Questions du marché en attente de réponse (texte libre), posées via le statut questions.",
+     "type": "TEXT",
+     "usage": "gestion",
+     "relations": []
+    },
+    {
+     "nom": "questions_responsable",
+     "libelle": "Responsable de la réponse",
+     "description": "Qui doit répondre aux questions en attente : client, courtier ou assureur.",
+     "type": "TEXT",
+     "usage": "gestion",
+     "relations": []
+    },
+    {
+     "nom": "date_relance",
+     "libelle": "Date de relance",
+     "description": "Prochaine date de relance prévue auprès du marché. Les envois en attente dont cette date est échue apparaissent aux Échéances.",
+     "type": "TEXT",
+     "usage": "gestion",
+     "relations": []
+    },
+    {
+     "nom": "nb_relances",
+     "libelle": "Nombre de relances",
+     "description": "Compteur des relances transmises au marché pour cet envoi.",
+     "type": "INTEGER",
+     "usage": "gestion",
+     "relations": []
+    },
+    {
+     "nom": "derniere_relance_le",
+     "libelle": "Dernière relance le",
+     "description": "Date et heure de la dernière relance transmise.",
+     "type": "TEXT",
+     "usage": "gestion",
+     "relations": []
+    },
+    {
+     "nom": "motif_refus",
+     "libelle": "Motif de refus",
+     "description": "Motif du refus communiqué par le marché (statut refuse).",
+     "type": "TEXT",
+     "usage": "gestion",
+     "relations": []
+    },
+    {
+     "nom": "offre_prime",
+     "libelle": "Offre : prime proposée",
+     "description": "Prime annuelle proposée par le marché dans son offre reçue. Alimentera le comparateur de la phase 2.",
+     "type": "REAL",
+     "usage": "gestion",
+     "relations": []
+    },
+    {
+     "nom": "offre_limites",
+     "libelle": "Offre : limites et franchises",
+     "description": "Résumé des limites et franchises de l'offre reçue. Alimentera le comparateur de la phase 2.",
+     "type": "TEXT",
+     "usage": "gestion",
+     "relations": []
+    },
+    {
+     "nom": "offre_conditions",
+     "libelle": "Offre : conditions préalables",
+     "description": "Conditions préalables et conditions particulières de l'offre reçue.",
+     "type": "TEXT",
+     "usage": "gestion",
+     "relations": []
+    },
+    {
+     "nom": "offre_validite",
+     "libelle": "Offre : date de validité",
+     "description": "Date jusqu'à laquelle l'offre reçue demeure valide.",
+     "type": "TEXT",
+     "usage": "gestion",
+     "relations": []
+    },
+    {
+     "nom": "prochaine_action",
+     "libelle": "Prochaine action",
+     "description": "Prochaine action à poser sur cet envoi (texte libre, formulaire F15).",
+     "type": "TEXT",
+     "usage": "gestion",
+     "relations": []
+    },
+    {
+     "nom": "prochaine_action_echeance",
+     "libelle": "Prochaine action : échéance",
+     "description": "Date d'échéance de la prochaine action.",
+     "type": "TEXT",
+     "usage": "gestion",
+     "relations": []
+    },
+    {
+     "nom": "cree_par",
+     "libelle": "Créé par",
+     "description": "Utilisateur ayant créé l'envoi.",
+     "type": "INTEGER",
+     "usage": "technique",
+     "relations": [
+      "users.id"
+     ]
+    },
+    {
+     "nom": "archive",
+     "libelle": "Archivé",
+     "description": "Archivage doux (règle d'or : aucune suppression).",
+     "type": "INTEGER",
+     "usage": "technique",
+     "relations": []
+    },
+    {
+     "nom": "cree_le",
+     "libelle": "Créé le",
+     "description": "Date et heure de création.",
+     "type": "TEXT",
+     "usage": "technique",
+     "relations": []
+    },
+    {
+     "nom": "maj_le",
+     "libelle": "Modifié le",
+     "description": "Date et heure de dernière modification.",
+     "type": "TEXT",
+     "usage": "technique",
+     "relations": []
+    }
+   ]
+  },
+  {
+   "nom": "marche_evenements",
+   "domaine": "marche",
+   "description": "Fil chronologique des événements d'un envoi de mise en marché : création, transmission, changements de statut, questions, relances, offre reçue, refus, courriels liés et notes. Conservé intégralement (règle d'or), affiché sur la fiche de l'envoi.",
+   "versionnage": false,
+   "colonnes": [
+    {
+     "nom": "id",
+     "libelle": "Identifiant",
+     "description": "Clé primaire de l'événement.",
+     "type": "INTEGER",
+     "usage": "technique",
+     "relations": []
+    },
+    {
+     "nom": "cabinet_id",
+     "libelle": "Cabinet",
+     "description": "Cabinet propriétaire (cloisonnement strict).",
+     "type": "INTEGER",
+     "usage": "technique",
+     "relations": [
+      "cabinets.id"
+     ]
+    },
+    {
+     "nom": "envoi_id",
+     "libelle": "Envoi",
+     "description": "Envoi de mise en marché concerné.",
+     "type": "INTEGER",
+     "usage": "gestion",
+     "relations": [
+      "marche_envois.id"
+     ]
+    },
+    {
+     "nom": "user_id",
+     "libelle": "Auteur",
+     "description": "Utilisateur à l'origine de l'événement (NULL pour un événement système, par exemple un courriel classé automatiquement).",
+     "type": "INTEGER",
+     "usage": "technique",
+     "relations": [
+      "users.id"
+     ]
+    },
+    {
+     "nom": "type",
+     "libelle": "Type",
+     "description": "Nature de l'événement : creation, transmission, statut, question, relance, offre, refus, courriel, note.",
+     "type": "TEXT",
+     "usage": "gestion",
+     "relations": []
+    },
+    {
+     "nom": "detail",
+     "libelle": "Détail",
+     "description": "Description lisible de l'événement (ancien et nouveau statut, motif, extrait).",
+     "type": "TEXT",
+     "usage": "gestion",
+     "relations": []
+    },
+    {
+     "nom": "cree_le",
+     "libelle": "Créé le",
+     "description": "Date et heure de l'événement.",
+     "type": "TEXT",
+     "usage": "technique",
+     "relations": []
+    }
+   ]
+  },
+  {
+   "nom": "marche_courriels",
+   "domaine": "marche",
+   "description": "Brouillons de courriel d'un envoi de mise en marché (demande de prix initiale et relances), selon le patron de la boucle courriel : brouillon modifiable, envoi au clic seulement, mode simulé sans compte d'envoi actif (aucun courriel réel). L'envoi de la demande de prix fait passer l'envoi au statut envoye ; l'envoi d'une relance incrémente son compteur. Chaque brouillon est conservé.",
+   "versionnage": false,
+   "colonnes": [
+    {
+     "nom": "id",
+     "libelle": "Identifiant",
+     "description": "Clé primaire du brouillon.",
+     "type": "INTEGER",
+     "usage": "technique",
+     "relations": []
+    },
+    {
+     "nom": "cabinet_id",
+     "libelle": "Cabinet",
+     "description": "Cabinet propriétaire (cloisonnement strict).",
+     "type": "INTEGER",
+     "usage": "technique",
+     "relations": [
+      "cabinets.id"
+     ]
+    },
+    {
+     "nom": "envoi_id",
+     "libelle": "Envoi",
+     "description": "Envoi de mise en marché auquel le courriel se rattache.",
+     "type": "INTEGER",
+     "usage": "gestion",
+     "relations": [
+      "marche_envois.id"
+     ]
+    },
+    {
+     "nom": "type",
+     "libelle": "Type",
+     "description": "demande_prix (transmission initiale) ou relance.",
+     "type": "TEXT",
+     "usage": "gestion",
+     "relations": []
+    },
+    {
+     "nom": "destinataire",
+     "libelle": "Destinataire",
+     "description": "Adresse du souscripteur destinataire (pré-remplie depuis l'envoi, modifiable dans le brouillon).",
+     "type": "TEXT",
+     "usage": "gestion",
+     "relations": []
+    },
+    {
+     "nom": "sujet",
+     "libelle": "Sujet",
+     "description": "Sujet du courriel.",
+     "type": "TEXT",
+     "usage": "gestion",
+     "relations": []
+    },
+    {
+     "nom": "corps",
+     "libelle": "Corps",
+     "description": "Corps du courriel (texte).",
+     "type": "TEXT",
+     "usage": "gestion",
+     "relations": []
+    },
+    {
+     "nom": "statut",
+     "libelle": "Statut",
+     "description": "brouillon (rien n'est parti) ou envoye.",
+     "type": "TEXT",
+     "usage": "gestion",
+     "relations": []
+    },
+    {
+     "nom": "mode_envoi",
+     "libelle": "Mode d'envoi",
+     "description": "smtp (compte du cabinet) ou simule (aucun compte actif, aucun courriel réel).",
+     "type": "TEXT",
+     "usage": "gestion",
+     "relations": []
+    },
+    {
+     "nom": "message_id",
+     "libelle": "Identifiant du message",
+     "description": "Message-ID de l'envoi, qui permet au classement intelligent de rattacher les réponses de l'assureur à cet envoi.",
+     "type": "TEXT",
+     "usage": "technique",
+     "relations": []
+    },
+    {
+     "nom": "courriel_id",
+     "libelle": "Courriel envoyé",
+     "description": "Copie du courriel dans le module Courriels (dossier envoyes), le cas échéant.",
+     "type": "INTEGER",
+     "usage": "gestion",
+     "relations": [
+      "courriels.id"
+     ]
+    },
+    {
+     "nom": "cree_par",
+     "libelle": "Créé par",
+     "description": "Utilisateur ayant créé le brouillon.",
+     "type": "INTEGER",
+     "usage": "technique",
+     "relations": [
+      "users.id"
+     ]
+    },
+    {
+     "nom": "envoye_le",
+     "libelle": "Envoyé le",
+     "description": "Date et heure de l'envoi effectif (ou simulé).",
+     "type": "TEXT",
+     "usage": "gestion",
+     "relations": []
+    },
+    {
+     "nom": "archive",
+     "libelle": "Archivé",
+     "description": "Archivage doux (règle d'or : aucune suppression).",
+     "type": "INTEGER",
+     "usage": "technique",
+     "relations": []
+    },
+    {
+     "nom": "cree_le",
+     "libelle": "Créé le",
+     "description": "Date et heure de création.",
+     "type": "TEXT",
+     "usage": "technique",
+     "relations": []
+    },
+    {
+     "nom": "maj_le",
+     "libelle": "Modifié le",
+     "description": "Date et heure de dernière modification.",
+     "type": "TEXT",
+     "usage": "technique",
+     "relations": []
+    }
+   ]
+  },
+  {
+   "nom": "police_participants",
+   "domaine": "polices",
+   "versionnage": false,
+   "description": "Assureurs participants d’une police en souscription partagée (polices de grossiste) : un participant par section de garantie, avec sa part en %, sa part de prime et le nº de son contrat-cadre. La responsabilité de chacun est proportionnelle à sa part (jamais solidaire).",
+   "colonnes": [
+    {
+     "nom": "id",
+     "libelle": "Identifiant",
+     "description": "Clé primaire.",
+     "type": "INTEGER",
+     "usage": "technique",
+     "relations": []
+    },
+    {
+     "nom": "cabinet_id",
+     "libelle": "Cabinet",
+     "description": "Cabinet propriétaire (cloisonnement).",
+     "type": "INTEGER",
+     "usage": "technique",
+     "relations": [
+      "cabinets.id"
+     ]
+    },
+    {
+     "nom": "police_id",
+     "libelle": "Police",
+     "description": "Police en souscription partagée.",
+     "type": "INTEGER",
+     "usage": "technique",
+     "relations": [
+      "polices.id"
+     ]
+    },
+    {
+     "nom": "section",
+     "libelle": "Section de garantie",
+     "description": "Section de garantie visée par la part (Biens, Bris d’équipement, Vol, Responsabilité, Autre).",
+     "type": "TEXT",
+     "usage": "les_deux",
+     "relations": [],
+     "valeurs": [
+      "Biens",
+      "Bris d’équipement",
+      "Vol",
+      "Responsabilité",
+      "Autre"
+     ]
+    },
+    {
+     "nom": "assureur_nom",
+     "libelle": "Assureur participant",
+     "description": "Nom de l’assureur participant (ex. un syndicat du Lloyd’s).",
+     "type": "TEXT",
+     "usage": "les_deux",
+     "relations": []
+    },
+    {
+     "nom": "numero_contrat",
+     "libelle": "Nº de contrat-cadre",
+     "description": "Numéro du contrat-cadre du participant (« en vertu du contrat nº X »).",
+     "type": "TEXT",
+     "usage": "les_deux",
+     "relations": []
+    },
+    {
+     "nom": "part_pct",
+     "libelle": "Part assurée (%)",
+     "description": "Proportion de la section assurée par ce participant ; la somme par section doit faire 100 %.",
+     "type": "REAL",
+     "usage": "les_deux",
+     "relations": []
+    },
+    {
+     "nom": "prime_part",
+     "libelle": "Part de prime ($)",
+     "description": "Part de la prime de la section revenant à ce participant.",
+     "type": "REAL",
+     "usage": "les_deux",
+     "relations": []
+    },
+    {
+     "nom": "representant",
+     "libelle": "Représentant autorisé",
+     "description": "Représentant autorisé du participant (signature du tableau des souscripteurs).",
+     "type": "TEXT",
+     "usage": "gestion",
+     "relations": []
+    },
+    {
+     "nom": "archive",
+     "libelle": "Archivé",
+     "description": "1 = archivé (règle d’or : jamais de suppression).",
+     "type": "INTEGER",
+     "usage": "technique",
+     "relations": []
+    },
+    {
+     "nom": "cree_le",
+     "libelle": "Créé le",
+     "description": "Horodatage de création.",
+     "type": "TEXT",
+     "usage": "technique",
+     "relations": []
+    }
+   ]
+  },
+  {
+   "nom": "police_financements",
+   "domaine": "facturation",
+   "versionnage": false,
+   "description": "Financement de prime d’une police (calendrier de prélèvement de l’organisme de financement) : cotation, taux, acompte, montant financé et versements ; le suivi des versements payés alimente les échéances (prochain prélèvement).",
+   "colonnes": [
+    {
+     "nom": "id",
+     "libelle": "Identifiant",
+     "description": "Clé primaire.",
+     "type": "INTEGER",
+     "usage": "technique",
+     "relations": []
+    },
+    {
+     "nom": "cabinet_id",
+     "libelle": "Cabinet",
+     "description": "Cabinet propriétaire (cloisonnement).",
+     "type": "INTEGER",
+     "usage": "technique",
+     "relations": [
+      "cabinets.id"
+     ]
+    },
+    {
+     "nom": "police_id",
+     "libelle": "Police",
+     "description": "Police financée.",
+     "type": "INTEGER",
+     "usage": "technique",
+     "relations": [
+      "polices.id"
+     ]
+    },
+    {
+     "nom": "facture_id",
+     "libelle": "Facture",
+     "description": "Facture interne liée au financement.",
+     "type": "INTEGER",
+     "usage": "technique",
+     "relations": [
+      "factures.id"
+     ]
+    },
+    {
+     "nom": "numero_cotation",
+     "libelle": "Nº de cotation",
+     "description": "Numéro de cotation de l’organisme de financement.",
+     "type": "TEXT",
+     "usage": "gestion",
+     "relations": []
+    },
+    {
+     "nom": "organisme",
+     "libelle": "Organisme de financement",
+     "description": "Nom de l’organisme qui finance la prime.",
+     "type": "TEXT",
+     "usage": "gestion",
+     "relations": []
+    },
+    {
+     "nom": "taux_annuel",
+     "libelle": "Taux annuel (%)",
+     "description": "Taux d’intérêt annuel du financement.",
+     "type": "REAL",
+     "usage": "gestion",
+     "relations": []
+    },
+    {
+     "nom": "prime_brute",
+     "libelle": "Prime brute ($)",
+     "description": "Prime brute financée (avant acompte).",
+     "type": "REAL",
+     "usage": "gestion",
+     "relations": []
+    },
+    {
+     "nom": "acompte",
+     "libelle": "Acompte ($)",
+     "description": "Acompte payé à la signature.",
+     "type": "REAL",
+     "usage": "gestion",
+     "relations": []
+    },
+    {
+     "nom": "montant_finance",
+     "libelle": "Montant financé ($)",
+     "description": "Montant réellement financé (prime brute moins acompte).",
+     "type": "REAL",
+     "usage": "gestion",
+     "relations": []
+    },
+    {
+     "nom": "nb_versements",
+     "libelle": "Nombre de versements",
+     "description": "Nombre de prélèvements de l’échéancier.",
+     "type": "INTEGER",
+     "usage": "gestion",
+     "relations": []
+    },
+    {
+     "nom": "montant_versement",
+     "libelle": "Montant par versement ($)",
+     "description": "Montant de chaque prélèvement.",
+     "type": "REAL",
+     "usage": "gestion",
+     "relations": []
+    },
+    {
+     "nom": "premiere_date",
+     "libelle": "Date du premier prélèvement",
+     "description": "Date du premier versement ; les suivants sont mensuels.",
+     "type": "TEXT",
+     "usage": "gestion",
+     "relations": []
+    },
+    {
+     "nom": "versements_payes",
+     "libelle": "Versements payés (JSON)",
+     "description": "Liste JSON des numéros de versements marqués payés (suivi sans faute).",
+     "type": "TEXT",
+     "usage": "technique",
+     "relations": []
+    },
+    {
+     "nom": "archive",
+     "libelle": "Archivé",
+     "description": "1 = archivé (règle d’or : jamais de suppression).",
+     "type": "INTEGER",
+     "usage": "technique",
+     "relations": []
+    },
+    {
+     "nom": "cree_le",
+     "libelle": "Créé le",
+     "description": "Horodatage de création.",
+     "type": "TEXT",
+     "usage": "technique",
+     "relations": []
+    }
+   ]
+  },
+  {
+   "nom": "caut_certificats",
+   "domaine": "cautionnement",
+   "versionnage": false,
+   "description": "Certificats de continuation de cautionnement (prolongations annuelles, ex. licence RBQ) : bénéficiaire, montant, période prolongée, mandataire ; la date de fin alimente les échéances (alerte avant expiration).",
+   "colonnes": [
+    {
+     "nom": "id",
+     "libelle": "Identifiant",
+     "description": "Clé primaire.",
+     "type": "INTEGER",
+     "usage": "technique",
+     "relations": []
+    },
+    {
+     "nom": "cabinet_id",
+     "libelle": "Cabinet",
+     "description": "Cabinet propriétaire (cloisonnement).",
+     "type": "INTEGER",
+     "usage": "technique",
+     "relations": [
+      "cabinets.id"
+     ]
+    },
+    {
+     "nom": "client_id",
+     "libelle": "Entreprise",
+     "description": "Débiteur principal du cautionnement.",
+     "type": "INTEGER",
+     "usage": "technique",
+     "relations": [
+      "clients.id"
+     ]
+    },
+    {
+     "nom": "police_id",
+     "libelle": "Police",
+     "description": "Police de cautionnement liée.",
+     "type": "INTEGER",
+     "usage": "technique",
+     "relations": [
+      "polices.id"
+     ]
+    },
+    {
+     "nom": "soumission_id",
+     "libelle": "Soumission cautionnement",
+     "description": "Soumission de cautionnement liée.",
+     "type": "INTEGER",
+     "usage": "technique",
+     "relations": [
+      "caut_soumissions.id"
+     ]
+    },
+    {
+     "nom": "numero",
+     "libelle": "Nº de cautionnement",
+     "description": "Numéro du cautionnement prolongé.",
+     "type": "TEXT",
+     "usage": "les_deux",
+     "relations": []
+    },
+    {
+     "nom": "type",
+     "libelle": "Type de certificat",
+     "description": "Nature du certificat (continuation/prolongation).",
+     "type": "TEXT",
+     "usage": "gestion",
+     "relations": []
+    },
+    {
+     "nom": "beneficiaire",
+     "libelle": "Bénéficiaire",
+     "description": "Bénéficiaire du cautionnement (ex. Régie du bâtiment du Québec).",
+     "type": "TEXT",
+     "usage": "les_deux",
+     "relations": []
+    },
+    {
+     "nom": "montant",
+     "libelle": "Montant ($)",
+     "description": "Montant du cautionnement prolongé.",
+     "type": "REAL",
+     "usage": "les_deux",
+     "relations": []
+    },
+    {
+     "nom": "date_debut",
+     "libelle": "Début de la prolongation",
+     "description": "Début de la période prolongée.",
+     "type": "TEXT",
+     "usage": "les_deux",
+     "relations": []
+    },
+    {
+     "nom": "date_fin",
+     "libelle": "Fin de la prolongation",
+     "description": "Fin de la période prolongée — alimente les échéances pour ne jamais laisser expirer un certificat.",
+     "type": "TEXT",
+     "usage": "les_deux",
+     "relations": []
+    },
+    {
+     "nom": "mandataire_nom",
+     "libelle": "Mandataire — nom",
+     "description": "Nom du mandataire signataire du certificat.",
+     "type": "TEXT",
+     "usage": "gestion",
+     "relations": []
+    },
+    {
+     "nom": "mandataire_titre",
+     "libelle": "Mandataire — titre",
+     "description": "Titre du mandataire signataire.",
+     "type": "TEXT",
+     "usage": "gestion",
+     "relations": []
+    },
+    {
+     "nom": "mention_non_transmission",
+     "libelle": "Mention « ne pas transmettre »",
+     "description": "1 = le certificat porte la mention qu’il ne doit pas être transmis au bénéficiaire.",
+     "type": "INTEGER",
+     "usage": "gestion",
+     "relations": []
+    },
+    {
+     "nom": "transmis_le",
+     "libelle": "Transmis le",
+     "description": "Date de transmission effective, si elle a eu lieu.",
+     "type": "TEXT",
+     "usage": "gestion",
+     "relations": []
+    },
+    {
+     "nom": "archive",
+     "libelle": "Archivé",
+     "description": "1 = archivé (règle d’or : jamais de suppression).",
+     "type": "INTEGER",
+     "usage": "technique",
+     "relations": []
+    },
+    {
+     "nom": "cree_le",
+     "libelle": "Créé le",
+     "description": "Horodatage de création.",
+     "type": "TEXT",
+     "usage": "technique",
+     "relations": []
+    }
+   ]
+  },
+  {
+   "nom": "certificats_emis",
+   "domaine": "polices",
+   "versionnage": false,
+   "description": "Journal des certificats et attestations d’assurance émis depuis l’outil (attestation commerciale pour un destinataire, etc.) : qui, pour qui, signé par qui, avec les données figées de l’émission.",
+   "colonnes": [
+    {
+     "nom": "id",
+     "libelle": "Identifiant",
+     "description": "Clé primaire.",
+     "type": "INTEGER",
+     "usage": "technique",
+     "relations": []
+    },
+    {
+     "nom": "cabinet_id",
+     "libelle": "Cabinet",
+     "description": "Cabinet propriétaire (cloisonnement).",
+     "type": "INTEGER",
+     "usage": "technique",
+     "relations": [
+      "cabinets.id"
+     ]
+    },
+    {
+     "nom": "police_id",
+     "libelle": "Police",
+     "description": "Police attestée.",
+     "type": "INTEGER",
+     "usage": "technique",
+     "relations": [
+      "polices.id"
+     ]
+    },
+    {
+     "nom": "type",
+     "libelle": "Type de certificat",
+     "description": "Type de document émis (attestation_commerciale…).",
+     "type": "TEXT",
+     "usage": "gestion",
+     "relations": []
+    },
+    {
+     "nom": "destinataire",
+     "libelle": "Destinataire",
+     "description": "Personne ou organisation à qui l’attestation est adressée (créancier, donneur d’ouvrage…).",
+     "type": "TEXT",
+     "usage": "gestion",
+     "relations": []
+    },
+    {
+     "nom": "signataire_nom",
+     "libelle": "Signataire — nom",
+     "description": "Nom du signataire du certificat.",
+     "type": "TEXT",
+     "usage": "gestion",
+     "relations": []
+    },
+    {
+     "nom": "signataire_titre",
+     "libelle": "Signataire — titre",
+     "description": "Titre du signataire.",
+     "type": "TEXT",
+     "usage": "gestion",
+     "relations": []
+    },
+    {
+     "nom": "initiales",
+     "libelle": "Initiales",
+     "description": "Initiales apposées au certificat.",
+     "type": "TEXT",
+     "usage": "gestion",
+     "relations": []
+    },
+    {
+     "nom": "donnees_json",
+     "libelle": "Données figées (JSON)",
+     "description": "Données du certificat au moment de l’émission (preuve).",
+     "type": "TEXT",
+     "usage": "technique",
+     "relations": []
+    },
+    {
+     "nom": "emis_par",
+     "libelle": "Émis par",
+     "description": "Utilisateur ayant émis le certificat.",
+     "type": "INTEGER",
+     "usage": "technique",
+     "relations": [
+      "users.id"
+     ]
+    },
+    {
+     "nom": "emis_le",
+     "libelle": "Émis le",
+     "description": "Horodatage d’émission.",
+     "type": "TEXT",
+     "usage": "gestion",
+     "relations": []
+    },
+    {
+     "nom": "archive",
+     "libelle": "Archivé",
+     "description": "1 = archivé (règle d’or : jamais de suppression).",
+     "type": "INTEGER",
+     "usage": "technique",
+     "relations": []
+    },
+    {
+     "nom": "cree_le",
+     "libelle": "Créé le",
+     "description": "Horodatage de création.",
+     "type": "TEXT",
+     "usage": "technique",
+     "relations": []
+    }
+   ]
+  },
+  {
+   "nom": "avis_transmissions",
+   "domaine": "communications",
+   "versionnage": false,
+   "description": "Avis génériques d’assureur ou de grossiste « à transmettre au client » (ex. rappel de déclarer les changements au renouvellement) : réception consignée, transmission au client suivie — un avis non transmis remonte au tableau des échéances.",
+   "colonnes": [
+    {
+     "nom": "id",
+     "libelle": "Identifiant",
+     "description": "Clé primaire.",
+     "type": "INTEGER",
+     "usage": "technique",
+     "relations": []
+    },
+    {
+     "nom": "cabinet_id",
+     "libelle": "Cabinet",
+     "description": "Cabinet propriétaire (cloisonnement).",
+     "type": "INTEGER",
+     "usage": "technique",
+     "relations": [
+      "cabinets.id"
+     ]
+    },
+    {
+     "nom": "client_id",
+     "libelle": "Entreprise",
+     "description": "Client à qui l’avis doit être transmis.",
+     "type": "INTEGER",
+     "usage": "technique",
+     "relations": [
+      "clients.id"
+     ]
+    },
+    {
+     "nom": "police_id",
+     "libelle": "Police",
+     "description": "Police concernée, si l’avis en vise une.",
+     "type": "INTEGER",
+     "usage": "technique",
+     "relations": [
+      "polices.id"
+     ]
+    },
+    {
+     "nom": "document_id",
+     "libelle": "Document",
+     "description": "Document joint lié, le cas échéant.",
+     "type": "INTEGER",
+     "usage": "technique",
+     "relations": [
+      "documents.id"
+     ]
+    },
+    {
+     "nom": "emetteur",
+     "libelle": "Émetteur",
+     "description": "Assureur ou grossiste émetteur de l’avis.",
+     "type": "TEXT",
+     "usage": "gestion",
+     "relations": []
+    },
+    {
+     "nom": "titre",
+     "libelle": "Titre de l’avis",
+     "description": "Titre ou objet de l’avis.",
+     "type": "TEXT",
+     "usage": "gestion",
+     "relations": []
+    },
+    {
+     "nom": "recu_le",
+     "libelle": "Reçu le",
+     "description": "Date de réception de l’avis au cabinet.",
+     "type": "TEXT",
+     "usage": "gestion",
+     "relations": []
+    },
+    {
+     "nom": "transmis_le",
+     "libelle": "Transmis le",
+     "description": "Date de transmission au client ; vide = à transmettre (remonte aux échéances).",
+     "type": "TEXT",
+     "usage": "gestion",
+     "relations": []
+    },
+    {
+     "nom": "moyen",
+     "libelle": "Moyen de transmission",
+     "description": "Comment l’avis a été transmis (courriel, courrier…).",
+     "type": "TEXT",
+     "usage": "gestion",
+     "relations": []
+    },
+    {
+     "nom": "archive",
+     "libelle": "Archivé",
+     "description": "1 = archivé (règle d’or : jamais de suppression).",
+     "type": "INTEGER",
+     "usage": "technique",
+     "relations": []
+    },
+    {
+     "nom": "cree_le",
+     "libelle": "Créé le",
+     "description": "Horodatage de création.",
+     "type": "TEXT",
+     "usage": "technique",
+     "relations": []
+    }
+   ]
+  },
+  {
+   "nom": "facture_lignes",
+   "domaine": "facturation",
+   "versionnage": false,
+   "description": "Lignes de transaction des factures internes (format des systèmes de gestion type KEAL) : prime, taxes, frais, acompte, commission… Le total de la facture est la somme de ses lignes.",
+   "colonnes": [
+    {
+     "nom": "id",
+     "libelle": "Identifiant",
+     "description": "Clé primaire.",
+     "type": "INTEGER",
+     "usage": "technique",
+     "relations": []
+    },
+    {
+     "nom": "cabinet_id",
+     "libelle": "Cabinet",
+     "description": "Cabinet propriétaire (cloisonnement).",
+     "type": "INTEGER",
+     "usage": "technique",
+     "relations": [
+      "cabinets.id"
+     ]
+    },
+    {
+     "nom": "facture_id",
+     "libelle": "Facture",
+     "description": "Facture portant la ligne.",
+     "type": "INTEGER",
+     "usage": "technique",
+     "relations": [
+      "factures.id"
+     ]
+    },
+    {
+     "nom": "type_transaction",
+     "libelle": "Type de transaction",
+     "description": "Nature de la ligne (prime, taxe, frais, acompte, commission…).",
+     "type": "TEXT",
+     "usage": "gestion",
+     "relations": []
+    },
+    {
+     "nom": "date_effet",
+     "libelle": "Date d’effet",
+     "description": "Date d’effet de la transaction.",
+     "type": "TEXT",
+     "usage": "gestion",
+     "relations": []
+    },
+    {
+     "nom": "compagnie",
+     "libelle": "Compagnie",
+     "description": "Compagnie visée par la ligne (assureur ou grossiste).",
+     "type": "TEXT",
+     "usage": "gestion",
+     "relations": []
+    },
+    {
+     "nom": "description",
+     "libelle": "Description",
+     "description": "Description libre de la ligne.",
+     "type": "TEXT",
+     "usage": "gestion",
+     "relations": []
+    },
+    {
+     "nom": "montant",
+     "libelle": "Montant ($)",
+     "description": "Montant de la ligne (négatif pour un crédit).",
+     "type": "REAL",
+     "usage": "gestion",
+     "relations": []
+    },
+    {
+     "nom": "archive",
+     "libelle": "Archivé",
+     "description": "1 = archivé (règle d’or : jamais de suppression).",
+     "type": "INTEGER",
+     "usage": "technique",
+     "relations": []
+    },
+    {
+     "nom": "cree_le",
+     "libelle": "Créé le",
+     "description": "Horodatage de création.",
+     "type": "TEXT",
+     "usage": "technique",
+     "relations": []
+    }
+   ]
+  },
+  {
+   "nom": "fpq4_fiches",
+   "domaine": "auto",
+   "versionnage": false,
+   "description": "Volet FPQ-4 « garagistes » rattaché à une soumission FPQ-1 (dossier combiné auto) : garanties du garagiste, véhicules des clients en garde (chapitre C), terrain et sécurité, avenants 4-xx et employés par catégorie, en JSON structuré par blocs du formulaire réel.",
+   "colonnes": [
+    {
+     "nom": "id",
+     "libelle": "Identifiant",
+     "description": "Clé primaire.",
+     "type": "INTEGER",
+     "usage": "technique",
+     "relations": []
+    },
+    {
+     "nom": "cabinet_id",
+     "libelle": "Cabinet",
+     "description": "Cabinet propriétaire (cloisonnement).",
+     "type": "INTEGER",
+     "usage": "technique",
+     "relations": [
+      "cabinets.id"
+     ]
+    },
+    {
+     "nom": "soumission_id",
+     "libelle": "Soumission FPQ-1",
+     "description": "Soumission automobile portant le volet FPQ-4.",
+     "type": "INTEGER",
+     "usage": "technique",
+     "relations": [
+      "auto_soumissions.id"
+     ]
+    },
+    {
+     "nom": "donnees_json",
+     "libelle": "Données FPQ-4 (JSON)",
+     "description": "Blocs du formulaire FPQ-4 : garage, garde, terrain, employés, avenants, prime.",
+     "type": "TEXT",
+     "usage": "soumission",
+     "relations": []
+    },
+    {
+     "nom": "archive",
+     "libelle": "Archivé",
+     "description": "1 = archivé (règle d’or : jamais de suppression).",
+     "type": "INTEGER",
+     "usage": "technique",
+     "relations": []
+    },
+    {
+     "nom": "cree_le",
+     "libelle": "Créé le",
+     "description": "Horodatage de création.",
+     "type": "TEXT",
+     "usage": "technique",
+     "relations": []
+    },
+    {
+     "nom": "maj_le",
+     "libelle": "Mis à jour le",
+     "description": "Horodatage de dernière modification.",
+     "type": "TEXT",
+     "usage": "technique",
+     "relations": []
+    }
+   ]
+  },
+  {
+   "nom": "pe_calculs",
+   "domaine": "pe",
+   "versionnage": false,
+   "description": "Feuille de calcul de la perte d’exploitation (structure du formulaire de mise à jour de l’assureur) : A1 recettes brutes, A2 recettes ajustées, B autres revenus, D1-D10 dépenses variables, E/G masse salariale, F revenu d’entreprise calculé (A2 + B − ΣD).",
+   "colonnes": [
+    {
+     "nom": "id",
+     "libelle": "Identifiant",
+     "description": "Clé primaire.",
+     "type": "INTEGER",
+     "usage": "technique",
+     "relations": []
+    },
+    {
+     "nom": "cabinet_id",
+     "libelle": "Cabinet",
+     "description": "Cabinet propriétaire (cloisonnement).",
+     "type": "INTEGER",
+     "usage": "technique",
+     "relations": [
+      "cabinets.id"
+     ]
+    },
+    {
+     "nom": "soumission_id",
+     "libelle": "Soumission PE",
+     "description": "Soumission de perte d’exploitation calculée.",
+     "type": "INTEGER",
+     "usage": "technique",
+     "relations": [
+      "pe_soumissions.id"
+     ]
+    },
+    {
+     "nom": "recettes_a1",
+     "libelle": "A1 — Recettes brutes ($)",
+     "description": "Recettes brutes déclarées.",
+     "type": "REAL",
+     "usage": "soumission",
+     "relations": []
+    },
+    {
+     "nom": "recettes_a2",
+     "libelle": "A2 — Recettes ajustées ($)",
+     "description": "Recettes après ajustements.",
+     "type": "REAL",
+     "usage": "soumission",
+     "relations": []
+    },
+    {
+     "nom": "autres_revenus_b",
+     "libelle": "B — Autres revenus ($)",
+     "description": "Autres revenus d’entreprise.",
+     "type": "REAL",
+     "usage": "soumission",
+     "relations": []
+    },
+    {
+     "nom": "depenses_variables_json",
+     "libelle": "D — Dépenses variables (JSON)",
+     "description": "Postes de dépenses variables déduites (D1 à D10 : libellé + montant).",
+     "type": "TEXT",
+     "usage": "soumission",
+     "relations": []
+    },
+    {
+     "nom": "salaires_e_montant",
+     "libelle": "E — Masse salariale ($)",
+     "description": "Masse salariale ordinaire retenue.",
+     "type": "REAL",
+     "usage": "soumission",
+     "relations": []
+    },
+    {
+     "nom": "salaires_e_jours",
+     "libelle": "E — Jours couverts",
+     "description": "Nombre de jours couverts pour la masse salariale ordinaire.",
+     "type": "INTEGER",
+     "usage": "soumission",
+     "relations": []
+    },
+    {
+     "nom": "salaires_g_montant",
+     "libelle": "G — Salaires en double ($)",
+     "description": "Salaires en double retenus.",
+     "type": "REAL",
+     "usage": "soumission",
+     "relations": []
+    },
+    {
+     "nom": "salaires_g_jours",
+     "libelle": "G — Jours couverts",
+     "description": "Nombre de jours couverts pour les salaires en double.",
+     "type": "INTEGER",
+     "usage": "soumission",
+     "relations": []
+    },
+    {
+     "nom": "revenu_entreprise_f",
+     "libelle": "F — Revenu d’entreprise ($)",
+     "description": "Revenu d’entreprise calculé : A2 + B − somme des dépenses variables.",
+     "type": "REAL",
+     "usage": "soumission",
+     "relations": []
+    },
+    {
+     "nom": "archive",
+     "libelle": "Archivé",
+     "description": "1 = archivé (règle d’or : jamais de suppression).",
+     "type": "INTEGER",
+     "usage": "technique",
+     "relations": []
+    },
+    {
+     "nom": "cree_le",
+     "libelle": "Créé le",
+     "description": "Horodatage de création.",
+     "type": "TEXT",
+     "usage": "technique",
+     "relations": []
+    },
+    {
+     "nom": "maj_le",
+     "libelle": "Mis à jour le",
+     "description": "Horodatage de dernière modification.",
      "type": "TEXT",
      "usage": "technique",
      "relations": []

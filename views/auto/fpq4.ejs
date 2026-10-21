@@ -1,0 +1,48 @@
+<%- include('../partials/haut', { titre: 'Volet FPQ-4 — soumission auto #' + s.id }) %>
+<p><a href="/auto/<%= s.id %>">← Retour à la soumission FPQ-1</a></p>
+<h1>🔧 Volet FPQ-4 — garagistes / remorquage</h1>
+<p class="petit">Volet du dossier combiné auto : la FPQ-4 complète la FPQ-1 de la même entreprise
+(remorquage, garage, véhicules des clients en garde). Blocs calqués sur la proposition FPQ-4 réelle.</p>
+
+<% const d = (fiche && fiche.donnees) || {}; const sections = d.sections || {}; %>
+<form method="post" action="/auto/<%= s.id %>/fpq4">
+  <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+  <% FPQ4_SECTIONS.forEach((section) => { const vals = sections[section.cle] || {}; %>
+  <div class="carte">
+    <h2><%= section.titre %></h2>
+    <div class="grille-form">
+      <% section.champs.forEach(([cle, libelle, type]) => { const nom = section.cle + '_' + cle; const val = vals[cle]; %>
+        <% if (type === 'oui_non') { %>
+          <div class="case"><input type="checkbox" id="<%= nom %>" name="<%= nom %>"<%= val ? ' checked' : '' %>><label for="<%= nom %>"><%= libelle %></label></div>
+        <% } else if (type === 'nombre') { %>
+          <div><label for="<%= nom %>"><%= libelle %></label>
+            <input type="number" id="<%= nom %>" name="<%= nom %>" step="0.01" min="0" value="<%= val !== null && val !== undefined ? val : '' %>"></div>
+        <% } else { %>
+          <div><label for="<%= nom %>"><%= libelle %></label>
+            <input type="text" id="<%= nom %>" name="<%= nom %>" value="<%= val || '' %>"></div>
+        <% } %>
+      <% }) %>
+    </div>
+  </div>
+  <% }) %>
+
+  <div class="carte">
+    <h2>Avenants FPQ-4 demandés</h2>
+    <p>
+      <% FPQ4_AVENANTS.forEach((a) => { const nom = 'avenant_' + a.replace('-', '_'); %>
+        <span class="case" style="display:inline-flex;margin-right:14px">
+          <input type="checkbox" id="<%= nom %>" name="<%= nom %>"<%= d.avenants && d.avenants[a] ? ' checked' : '' %>>
+          <label for="<%= nom %>">Avenant <%= a %></label></span>
+      <% }) %>
+    </p>
+    <div class="grille-form">
+      <div><label for="prime_totale">Prime totale FPQ-4 ($)</label>
+        <input type="number" id="prime_totale" name="prime_totale" step="0.01" min="0" value="<%= d.prime_totale !== null && d.prime_totale !== undefined ? d.prime_totale : '' %>"></div>
+      <div style="grid-column:1/-1"><label for="notes_fpq4">Notes</label>
+        <textarea id="notes_fpq4" name="notes_fpq4" rows="2"><%= d.notes || '' %></textarea></div>
+    </div>
+  </div>
+
+  <div class="actions"><button class="btn" type="submit">Enregistrer le volet FPQ-4</button></div>
+</form>
+<%- include('../partials/bas') %>

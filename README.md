@@ -40,9 +40,12 @@ réclamations, tâches).
 - Courriel : `admin@demo.ca`
 - Mot de passe : `ChangeMoi123!`
 
-⚠️ **Au premier login, le changement du mot de passe est obligatoire**
-(un bandeau l'exige avant tout accès). Pensez ensuite à activer la
-**double authentification** dans le profil (menu → votre nom).
+ℹ️ **Compte de test : aucun changement de mot de passe forcé** à la première
+connexion (friction retirée à la demande de Patrick, 2026-10-21, jusqu'au
+déploiement sur le serveur réel). Les comptes **créés via l'Admin** gardent,
+eux, le changement forcé au premier login. Pensez à activer la
+**double authentification** dans le profil (menu → votre nom) pour les
+comptes réels.
 
 Données démo : Constructions Méthot inc. (CGL + biens), Resto Le Petit Four inc.
 (CGL + 1 réclamation en évaluation avec rappel dépassé), Garage Saint-Michel inc.
@@ -57,7 +60,7 @@ Données démo : Constructions Méthot inc. (CGL + biens), Resto Le Petit Four i
 | `COOKIE_SECURE`  | (désactivé)         | Mettre à `1` derrière HTTPS (cookies `Secure`)           |
 | `COHERE_API_KEY` | (absent)            | Clé API Cohere — sans elle, les brouillons utilisent un modèle de texte local |
 | `COHERE_MODEL`   | `command-a-03-2025` | Modèle Cohere utilisé pour les brouillons                |
-| `AUGURE_API_KEY` | (absent)            | Clé API Augure (IA canadienne) de repli — le réglage du cabinet (Admin → Clé IA) a priorité |
+| `AUGURE_API_KEY` | (absent)            | Clé API Augure (IA canadienne) **prioritaire et persistante** — réglée une fois dans l'environnement du serveur (Render → Environment), elle survit aux redéploiements ; le réglage du cabinet (Admin → Clé IA) sert de repli |
 | `AUGURE_BASE_URL` | `https://api.augureai.ca/v1` | Base de l'API Augure — surchargée par les tests (harnais local, aucun appel réel) |
 | `CHEMIN_BD`      | `./courtier.db`     | Chemin du fichier SQLite                                 |
 | `MS_CLIENT_ID` / `MS_CLIENT_SECRET` / `MS_REDIRECT_URI` | (absent) | OAuth Microsoft 365 (création auto des liens Teams) — voir « Microsoft 365 » |
@@ -4725,7 +4728,8 @@ Test : `scripts/test-menu-sections.js` (101 vérifications — chaque page princ
 
 **Réglage** — **Admin → 🔑 Clé IA (Cohere)**, section « 🇨🇦 Clé Augure (IA canadienne) », admin seulement :
 
-- **Clé API du cabinet** : stockée **chiffrée AES-256-GCM** (colonne `reglages_ia.cle_augure_chiffree`, même mécanisme que les clés Cohere et Google), affichée **masquée** (4 derniers caractères), jamais journalisée en clair ; boutons enregistrer / retirer / « Tester la connexion » (GET `/models`, repli sur un micro-appel chat). Une clé d'environnement `AUGURE_API_KEY` peut aussi servir au déploiement (le réglage du cabinet a priorité).
+- **Clé API du cabinet** : stockée **chiffrée AES-256-GCM** (colonne `reglages_ia.cle_augure_chiffree`, même mécanisme que les clés Cohere et Google), affichée **masquée** (4 derniers caractères), jamais journalisée en clair ; boutons enregistrer / retirer / « Tester la connexion » (GET `/models`, repli sur un micro-appel chat).
+- **Clé d'environnement `AUGURE_API_KEY` (prioritaire, persistante)** : si la variable est définie dans l'environnement du serveur, elle devient la **clé effective** — pour l'analyse de documents, l'assistant/commandes et les brouillons — **avec priorité sur la clé chiffrée du cabinet**, qui reste le repli quand la variable est absente. Réglage **unique** : sur Render, service → **Environment** → ajouter `AUGURE_API_KEY` ; la variable **survit aux redéploiements**, contrairement à la base de l'instance de test (réinitialisée à chaque publication, ce qui effaçait la clé saisie dans l'Admin). La page Admin « 🔑 Clé IA » affiche alors l'état « Clé fournie par l'environnement du serveur (persistante) », masquée (4 derniers caractères), et le bouton de test utilise cette clé. **Aucune clé réelle dans le code** : les tests utilisent un faux jeton passé par l'environnement du processus de test. Tests : `scripts/test-augure-env.js`.
 - **Modèle du cabinet** (colonne `reglages_ia.modele_augure`, défaut `ossington-5`), prix en CAD par 1M de jetons entrée/sortie : `ossington-5` raisonnement rapide, contexte 256K (1,50/3,00) · `ossington-4` (2,00/5,00) · `ossington-4-1` (2,50/6,00) · `rosedale-1` raisonnement premium multi-étapes, contexte 1M (2,50/6,00) · `tofino-3` léger rapide (0,60/2,00) · `open-glm-5-3` aperçu poids ouverts (3,00/7,00).
 
 **Choix du moteur** (même sélecteur qu'avant, `lib/reglages-ia.js`) : **Local / Cohere / Augure / Auto**. **Auto = Augure si sa clé est configurée, sinon Cohere si la sienne l'est, sinon Local.** En cas d'erreur d'appel du moteur externe, repli sur le moteur local, **signalé** dans le résultat comme pour Cohere.
@@ -4758,6 +4762,24 @@ La plupart des soumissions commerciales sont des **combinées** : un seul dossie
 **Alignement IA** : le dictionnaire des champs (88 tables) alimente l'analyse de documents — les nouveaux champs sont proposables par le moteur local (classe de construction convertie en code assureur, voisinage, rénovation de toiture, règle proportionnelle, umbrella, frais médicaux…) et par les moteurs externes (listes `META_LISTES.batiments` et champs `META_CHAMPS` étendus, validation inchangée), puis insérés dans la fiche emplacement. `lib/manques.js` ajoute les manques critiques de la combinée (profil entreprise, classe de construction, voisinage, liaisons PE/RC). Commandes de l'assistant : « crée une soumission combinée pour X » (confirmation d'abord) et « ouvre la soumission combinée de X ».
 
 **Tests** : `scripts/test-combine-etape1.js` à `test-combine-etape10.js` (une suite par étape du plan : en-tête + entreprise, emplacement enrichi, alarme, garanties, RC/PE, antécédents + questions, bénéficiaires, dossier combiné en HTTP, proposition HTML/PDF, alignement IA). Captures 132 à 137 dans `demo-captures/commercial/`.
+
+## Mise en marché — registre des envois aux assureurs (F15)
+
+Phase 1 de la feuille de route d'automatisation (référentiel métier, formulaire **F15**) : le système sait désormais **à qui chaque soumission a été envoyée** et où elle en est. Routes `/mise-en-marche`, moteur `lib/marche.js`, tables `marche_envois`, `marche_evenements`, `marche_courriels` (+ `courriels.envoi_id`).
+
+**Un envoi** = une transmission d'une soumission (l'un des 9 produits) **ou** d'un dossier combiné à **un marché** (assureur/grossiste de l'annuaire, ou nom libre hors annuaire). Le client est résolu **côté serveur** depuis la cible (contrôle « même client » des patrons existants) et dénormalisé pour les filtres. Le **souscripteur** se pré-remplit depuis le contact **« nouvelles affaires »** de l'assureur choisi. Sont tracés : version de la proposition transmise, documents transmis, autorité de l'intermédiaire (grossiste), date/heure de transmission et son mode (courriel ou marquage manuel), prochaine action et son échéance.
+
+**Cycle de vie** : `brouillon → envoyé → en analyse → questions → offre reçue / refusé → accepté`, `annulé` depuis tout statut actif — **jamais de suppression** (règle d'or). Chaque transition est conservée dans le **fil chronologique** de l'envoi (`marche_evenements`) et au **journal d'audit**. Actions guidées sur la fiche envoi : passer en analyse, **enregistrer les questions** du marché (texte + responsable : client / courtier / assureur, résolution = retour en analyse), **saisir une offre reçue structurée** (prime, limites/franchises, conditions préalables, date de validité — elle alimentera le comparateur de la phase 2), **enregistrer un refus avec motif**, accepter (statut du registre seulement ; la décision formelle du client, F16, est la phase 2), annuler.
+
+**Courriels** (patron de la boucle courriel, inchangé) : à la création, un brouillon **« demande de prix »** adressé au souscripteur est préparé — modifiable, **envoi au clic seulement**, **mode simulé** sans compte d'envoi actif (aucun courriel réel) ; son envoi fait passer l'envoi à « envoyé » et pose la relance à +7 jours. **🔁 Relancer** prépare un brouillon de relance (envoi au clic ; compteur de relances, dernière date et prochaine échéance mis à jour). Les **réponses des assureurs** se rattachent à l'envoi : le classement intelligent reconnaît le fil d'une demande de prix (nouvelle méthode `fil_marche`, In-Reply-To → `courriels.envoi_id`), la copie envoyée est liée dès l'envoi SMTP, et la page d'un courriel permet la **liaison manuelle** à un envoi du même client (l'envoi impose son client — jamais de rattachement croisé) ; les courriels liés s'affichent sur la fiche envoi.
+
+**Visibilité** : page **🎯 Mise en marché** (menu 📝 Soumissions) — indicateurs (en cours, relances dues, offres reçues, refus), filtres (statut, marché par annuaire ou par nom, client, « relances dues »), badges de statut ; section **« 🎯 Mise en marché »** sur les 9 fiches produit et la fiche combinée, avec le signal **« ⚠️ Aucun envoi au marché »** tant que le dossier n'a été transmis à personne, et bouton **« 📤 Envoyer à un marché »** (formulaire pré-rempli : marché, souscripteur, version courante, documents). Les **relances dues** (envoi en attente dont la date de relance est échue) apparaissent aussi aux **Échéances**. Cloisonnement cabinet + portefeuille du courtier partout.
+
+**Assistant IA** : « ouvre la mise en marché de X » (registre filtré, ou l'envoi unique) et « relances de mise en marché » (liste des relances dues) — reconnues par l'interpréteur local et par les moteurs externes (`ouvrir_mise_en_marche`, `relances_mise_en_marche`).
+
+**Limites assumées** : la saisie de l'offre est **manuelle** (l'extraction automatique depuis les courriels/documents des assureurs viendra avec le pipeline d'analyse, phase 2) ; pas de **comparateur d'offres** ni de **décision du client** (phase 2, F16) ; pas de note de couverture (phase 3).
+
+**Tests** : `scripts/test-marche-modele.js` (80 vérifications : schéma, cibles et contrôle même client, pré-remplissage annuaire, envoi simulé, transitions, questions, offre, refus, annulation sans suppression, relances, classement `fil_marche`, commandes IA) et `scripts/test-marche-http.js` (43 vérifications : registre et filtres, création depuis une fiche produit et une combinée, brouillon et envoi au clic, actions de la fiche, relance due aux Échéances, liaison manuelle d'un courriel, cloisonnement). Captures 138 à 141 dans `demo-captures/commercial/`.
 
 ## Volontairement non inclus (phases suivantes)
 

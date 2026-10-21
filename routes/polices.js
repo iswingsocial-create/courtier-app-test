@@ -94,7 +94,7 @@ function entreprisesMenu(req, cabinetId) {
 function creerVersionPolice(policeId, userId, noteAvenant = null) {
   const police = bd.prepare('SELECT * FROM polices WHERE id = ?').get(policeId);
   if (!police) return null;
-  const protections = bd.prepare('SELECT code, libelle, prime FROM police_protections WHERE police_id = ? ORDER BY code').all(policeId);
+  const protections = bd.prepare('SELECT code, libelle, prime, limite, franchise, regle_prop, code_formulaire FROM police_protections WHERE police_id = ? ORDER BY code').all(policeId);
   const maxV = bd.prepare('SELECT COALESCE(MAX(version), 0) AS m FROM police_versions WHERE police_id = ?').get(policeId).m;
   const v = maxV + 1;
   bd.prepare(`
@@ -161,11 +161,13 @@ router.post('/', (req, res) => {
   }
   try {
     const r = bd.prepare(`
-      INSERT INTO polices (cabinet_id, client_id, ligne, assureur, assureur_id, numero_police, date_effet, date_echeance, franchise, statut, notes, responsable_id)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      INSERT INTO polices (cabinet_id, client_id, ligne, assureur, assureur_id, numero_police, date_effet, date_echeance, franchise, statut, notes, responsable_id, grossiste_nom, grossiste_contrat, mode_facturation, responsabilite_proportionnelle)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `).run(res.locals.cabinetId, client.id, req.body.ligne, nomAss, Number(req.body.assureur_id),
       req.body.numero_police.trim(), req.body.date_effet, req.body.date_echeance,
-      Number(req.body.franchise || 0), req.body.statut, (req.body.notes || '').trim() || null, responsableId);
+      Number(req.body.franchise || 0), req.body.statut, (req.body.notes || '').trim() || null, responsableId,
+      (req.body.grossiste_nom || '').trim() || null, (req.body.grossiste_contrat || '').trim() || null,
+      req.body.mode_facturation || null, req.body.responsabilite_proportionnelle ? 1 : 0);
     creerVersionPolice(r.lastInsertRowid, req.utilisateur.id); // v1
     journal(res.locals.cabinetId, req.utilisateur.id, 'police_creee', `Police ${req.body.numero_police} (id ${r.lastInsertRowid})`);
     res.redirect('/echeances/police/' + r.lastInsertRowid);
@@ -209,11 +211,15 @@ router.post('/:id', (req, res) => {
   }
   bd.prepare(`
     UPDATE polices SET ligne = ?, assureur = ?, assureur_id = ?, numero_police = ?, date_effet = ?, date_echeance = ?,
-                       franchise = ?, statut = ?, notes = ?, responsable_id = ?
+                       franchise = ?, statut = ?, notes = ?, responsable_id = ?,
+                       grossiste_nom = ?, grossiste_contrat = ?, mode_facturation = ?, responsabilite_proportionnelle = ?
     WHERE id = ? AND cabinet_id = ?
   `).run(req.body.ligne, nomAss, Number(req.body.assureur_id), req.body.numero_police.trim(),
     req.body.date_effet, req.body.date_echeance, Number(req.body.franchise || 0),
-    req.body.statut, (req.body.notes || '').trim() || null, responsableId, police.id, res.locals.cabinetId);
+    req.body.statut, (req.body.notes || '').trim() || null, responsableId,
+    (req.body.grossiste_nom || '').trim() || null, (req.body.grossiste_contrat || '').trim() || null,
+    req.body.mode_facturation || null, req.body.responsabilite_proportionnelle ? 1 : 0,
+    police.id, res.locals.cabinetId);
   creerVersionPolice(police.id, req.utilisateur.id); // nouvelle version (avenant)
   journal(res.locals.cabinetId, req.utilisateur.id, 'police_modifiee', `Police id ${police.id}`);
   res.redirect('/echeances/police/' + police.id);
@@ -273,15 +279,24 @@ router.post('/:id/protections', (req, res) => {
   const cat = bd.prepare('SELECT libelle FROM catalogue_protections WHERE ligne = ? AND code = ?').get(police.ligne, code);
   const libelle = cat ? cat.libelle : String(req.body.libelle || code).trim().slice(0, 120);
 
+  // Données de la police émise (conditions particulières) : limite,
+  // franchise et règle proportionnelle par garantie, code du formulaire
+  // de l'assureur — optionnels, comme sur les déclarations réelles.
+  const numOuNull = (v) => (v === undefined || v === null || v === '' || isNaN(Number(v)) ? null : Number(v));
+  const limite = numOuNull(req.body.limite);
+  const franchiseProt = numOuNull(req.body.franchise_protection);
+  const regleProp = numOuNull(req.body.regle_prop);
+  const codeFormulaire = String(req.body.code_formulaire || '').trim().slice(0, 30) || null;
+
   try {
-    bd.prepare('INSERT INTO police_protections (police_id, code, libelle, prime) VALUES (?, ?, ?, ?)')
-      .run(police.id, code, libelle, prime);
+    bd.prepare('INSERT INTO police_protections (police_id, code, libelle, prime, limite, franchise, regle_prop, code_formulaire) VALUES (?, ?, ?, ?, ?, ?, ?, ?)')
+      .run(police.id, code, libelle, prime, limite, franchiseProt, regleProp, codeFormulaire);
     journal(res.locals.cabinetId, req.utilisateur.id, 'protection_ajoutee', `Protection ${code} sur police id ${police.id}`);
   } catch (e) {
     if (!e.message.includes('UNIQUE')) throw e;
-    // Déjà présente → on met à jour la prime
-    bd.prepare('UPDATE police_protections SET prime = ?, libelle = ? WHERE police_id = ? AND code = ?')
-      .run(prime, libelle, police.id, code);
+    // Déjà présente → on met à jour la prime et les données de garantie
+    bd.prepare('UPDATE police_protections SET prime = ?, libelle = ?, limite = ?, franchise = ?, regle_prop = ?, code_formulaire = ? WHERE police_id = ? AND code = ?')
+      .run(prime, libelle, limite, franchiseProt, regleProp, codeFormulaire, police.id, code);
   }
   creerVersionPolice(police.id, req.utilisateur.id); // l'avenant est tracé
   res.redirect('/echeances/police/' + police.id);

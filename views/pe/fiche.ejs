@@ -8,6 +8,7 @@
 
 </div>
 <%- include('../partials/manques', { sectionDemandes }) %>
+<%- include('../partials/mise-en-marche', { sectionMarche }) %>
 
 
 <div class="carte">
@@ -188,6 +189,38 @@
   </form>
 </div>
 
+<div class="carte" id="calcul">
+  <h2>🧮 Feuille de calcul de la perte d’exploitation</h2>
+  <p class="petit">Structure du formulaire de mise à jour de l’assureur : A1 recettes brutes, A2 recettes ajustées,
+  B autres revenus, D dépenses variables déduites (une ligne par poste : libellé et montant alignés), E/G masse salariale.
+  Le revenu d’entreprise <strong>F = A2 + B − ΣD</strong> est calculé automatiquement.</p>
+  <% const c = (typeof calculPe !== 'undefined' ? calculPe : null); %>
+  <% if (c && c.revenu_entreprise_f !== null) { %><p>Revenu d’entreprise calculé (F) : <strong><%= Number(c.revenu_entreprise_f).toLocaleString('fr-CA') %> $</strong></p><% } %>
+  <form method="post" action="/pe/<%= s.id %>/calcul">
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+    <div class="grille-form">
+      <div><label for="recettes_a1">A1 — Recettes brutes ($)</label>
+        <input type="number" id="recettes_a1" name="recettes_a1" step="0.01" value="<%= c && c.recettes_a1 != null ? c.recettes_a1 : '' %>"></div>
+      <div><label for="recettes_a2">A2 — Recettes ajustées ($)</label>
+        <input type="number" id="recettes_a2" name="recettes_a2" step="0.01" value="<%= c && c.recettes_a2 != null ? c.recettes_a2 : '' %>"></div>
+      <div><label for="autres_revenus_b">B — Autres revenus ($)</label>
+        <input type="number" id="autres_revenus_b" name="autres_revenus_b" step="0.01" value="<%= c && c.autres_revenus_b != null ? c.autres_revenus_b : '' %>"></div>
+      <div><label for="salaires_e_montant">E — Masse salariale ordinaire ($)</label>
+        <input type="number" id="salaires_e_montant" name="salaires_e_montant" step="0.01" value="<%= c && c.salaires_e_montant != null ? c.salaires_e_montant : '' %>"></div>
+      <div><label for="salaires_e_jours">E — Jours couverts</label>
+        <input type="number" id="salaires_e_jours" name="salaires_e_jours" value="<%= c && c.salaires_e_jours != null ? c.salaires_e_jours : '' %>"></div>
+      <div><label for="salaires_g_montant">G — Salaires en double ($)</label>
+        <input type="number" id="salaires_g_montant" name="salaires_g_montant" step="0.01" value="<%= c && c.salaires_g_montant != null ? c.salaires_g_montant : '' %>"></div>
+      <div><label for="salaires_g_jours">G — Jours couverts</label>
+        <input type="number" id="salaires_g_jours" name="salaires_g_jours" value="<%= c && c.salaires_g_jours != null ? c.salaires_g_jours : '' %>"></div>
+      <div><label for="depenses_libelles">D — Dépenses variables : libellés (un par ligne, D1 à D10)</label>
+        <textarea id="depenses_libelles" name="depenses_libelles" rows="5"><%= c ? (c.depenses_variables || []).map((d) => d.libelle || '').join('\n') : '' %></textarea></div>
+      <div><label for="depenses_montants">D — Montants ($), alignés ligne à ligne</label>
+        <textarea id="depenses_montants" name="depenses_montants" rows="5"><%= c ? (c.depenses_variables || []).map((d) => (d.montant != null ? d.montant : '')).join('\n') : '' %></textarea></div>
+    </div>
+    <div class="actions"><button class="btn btn-petit" type="submit">Enregistrer et calculer F</button></div>
+  </form>
+</div>
 <div class="carte" id="antecedents">
   <h2>📋 Antécédents d’assurance</h2>
   <% const a = s.antecedents; %>

@@ -169,11 +169,60 @@ router.get('/:id', (req, res) => {
   if (clientHorsPortefeuille(res.locals.cabinetId, req.utilisateur, facture.client_id)) return reponseHorsPortefeuille(res);
   const paiements = bd.prepare('SELECT * FROM paiements WHERE facture_id = ? ORDER BY date_paiement DESC').all(facture.id);
   const solde = Number(facture.montant) - Number(facture.montant_paye);
+  const lignes = bd.prepare('SELECT * FROM facture_lignes WHERE facture_id = ? AND archive = 0 ORDER BY id').all(facture.id);
+  const clientComplet = bd.prepare('SELECT numero_client_externe, adresse, ville, code_postal FROM clients WHERE id = ? AND cabinet_id = ?')
+    .get(facture.client_id, res.locals.cabinetId);
   res.render('factures/fiche', {
-    facture, paiements, solde, NOMS_STATUTS_FACTURE, NOMS_MODES, MODES,
+    facture, paiements, solde, lignes, clientComplet, NOMS_STATUTS_FACTURE, NOMS_MODES, MODES,
     joursRetard: facture.statut === 'en_retard' ? joursRetard(facture.date_echeance) : 0,
     mPaiement: req.query.paiement === 'ok',
   });
+});
+
+// --- Lignes de la facture (la facture interne réelle est détaillée) -----------------------------------
+// Une ligne par transaction : prime par garantie, frais d'administration
+// du cabinet, frais de l'assureur, taxe sur les primes. Quand la facture
+// a des lignes, son total devient la somme des lignes.
+function synchroniserTotalDepuisLignes(factureId, cabinetId) {
+  const lignes = bd.prepare('SELECT * FROM facture_lignes WHERE facture_id = ? AND archive = 0').all(factureId);
+  if (!lignes.length) return;
+  const total = lignes.reduce((s, l) => s + Number(l.montant || 0), 0);
+  bd.prepare('UPDATE factures SET montant = ? WHERE id = ? AND cabinet_id = ?').run(total, factureId, cabinetId);
+  recalculerFacture(factureId, cabinetId);
+}
+
+router.post('/:id/lignes', (req, res) => {
+  const facture = factureDuCabinet(req.params.id, res.locals.cabinetId);
+  if (!facture) return res.status(404).render('erreur', { titre: 'Introuvable', message: 'Facture introuvable.' });
+  if (clientHorsPortefeuille(res.locals.cabinetId, req.utilisateur, facture.client_id)) return reponseHorsPortefeuille(res);
+  if (facture.statut === 'annulee') return res.status(400).render('erreur', { titre: 'Facture annulée', message: 'On ne peut pas ajouter de ligne à une facture annulée.' });
+  const montant = Number(req.body.montant);
+  if (isNaN(montant)) return res.status(400).render('erreur', { titre: 'Montant invalide', message: 'Le montant de la ligne doit être un nombre.' });
+  if (!req.body.description || !String(req.body.description).trim()) {
+    return res.status(400).render('erreur', { titre: 'Description requise', message: 'La description de la ligne est requise.' });
+  }
+  bd.prepare(`
+    INSERT INTO facture_lignes (cabinet_id, facture_id, type_transaction, date_effet, compagnie, description, montant)
+    VALUES (?, ?, ?, ?, ?, ?, ?)
+  `).run(res.locals.cabinetId, facture.id,
+    String(req.body.type_transaction || '').trim() || null,
+    req.body.date_effet || null,
+    String(req.body.compagnie || '').trim() || null,
+    String(req.body.description).trim(), montant);
+  synchroniserTotalDepuisLignes(facture.id, res.locals.cabinetId);
+  journal(res.locals.cabinetId, req.utilisateur.id, 'facture_ligne_ajoutee', `Ligne « ${req.body.description} » (${montant} $) sur facture id ${facture.id}`);
+  res.redirect('/factures/' + facture.id);
+});
+
+router.post('/:id/lignes/:lid/archiver', (req, res) => {
+  const facture = factureDuCabinet(req.params.id, res.locals.cabinetId);
+  if (!facture) return res.status(404).render('erreur', { titre: 'Introuvable', message: 'Facture introuvable.' });
+  if (clientHorsPortefeuille(res.locals.cabinetId, req.utilisateur, facture.client_id)) return reponseHorsPortefeuille(res);
+  bd.prepare('UPDATE facture_lignes SET archive = 1 WHERE id = ? AND facture_id = ? AND cabinet_id = ?')
+    .run(req.params.lid, facture.id, res.locals.cabinetId);
+  synchroniserTotalDepuisLignes(facture.id, res.locals.cabinetId);
+  journal(res.locals.cabinetId, req.utilisateur.id, 'facture_ligne_archivee', `Ligne id ${req.params.lid} archivée sur facture id ${facture.id}`);
+  res.redirect('/factures/' + facture.id);
 });
 
 // --- Enregistrer un paiement -----------------------------------------------------------------------

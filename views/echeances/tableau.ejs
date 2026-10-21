@@ -15,6 +15,26 @@
   <div class="stat"><div class="nombre" style="<%= comptesRetard.length ? 'color:#c0392b' : '' %>"><%= comptesRetard.length %></div><div class="etiquette"><a href="/factures?statut=en_retard">Comptes en retard</a></div></div>
 </div>
 
+<% if (typeof relancesMarche !== 'undefined' && relancesMarche.length) { %>
+<div class="carte" style="border-left:4px solid #d97706">
+  <h3>🎯 Relances de mise en marché dues (<%= relancesMarche.length %>)</h3>
+  <div class="tableau-deroulant"><table>
+    <thead><tr><th>Relance due le</th><th>Marché</th><th>Entreprise</th><th>Statut</th><th></th></tr></thead>
+    <tbody>
+    <% relancesMarche.forEach((e) => { %>
+      <tr>
+        <td><span class="badge badge-echu"><%= e.date_relance %></span></td>
+        <td><strong><%= e.marche_nom %></strong><% if (e.souscripteur_nom) { %> <span class="petit">(<%= e.souscripteur_nom %>)</span><% } %></td>
+        <td><%= e.client_nom || '' %></td>
+        <td><%= (typeof NOMS_STATUTS_ENVOI !== 'undefined' && NOMS_STATUTS_ENVOI[e.statut]) || e.statut %></td>
+        <td><a class="btn btn-petit btn-secondaire" href="/mise-en-marche/<%= e.id %>">Relancer</a></td>
+      </tr>
+    <% }); %>
+    </tbody>
+  </table></div>
+</div>
+<% } %>
+
 <% if (comptesRetard.length) { %>
 <div class="carte" style="border-left:4px solid #c0392b">
   <h3>💰 Comptes en retard (<%= comptesRetard.length %>) — total dû : <strong><%= Number(totalRetard).toFixed(2) %> $</strong></h3>
@@ -120,4 +140,64 @@
   </table></div>
   <% } %>
 </div>
+<% if (typeof certificatsEcheance !== 'undefined' && certificatsEcheance.length) { %>
+<div class="carte">
+  <h3>📜 Certificats de cautionnement à renouveler (<%= certificatsEcheance.length %>)</h3>
+  <div class="tableau-deroulant"><table>
+    <thead><tr><th>Fin de validité</th><th>Certificat</th><th>Entreprise (débiteur)</th><th>Bénéficiaire</th><th>Montant</th><th></th></tr></thead>
+    <tbody>
+    <% certificatsEcheance.forEach((cc) => { %>
+      <tr>
+        <td><%= cc.date_fin %> <span class="petit">(<%= cc.jours < 0 ? 'échue depuis ' + (-cc.jours) + ' j' : 'dans ' + cc.jours + ' j' %>)</span></td>
+        <td><%= cc.numero || '—' %></td>
+        <td><%= cc.entreprise %></td>
+        <td><%= cc.beneficiaire || '—' %></td>
+        <td><%= cc.montant != null ? Number(cc.montant).toLocaleString('fr-CA') + ' $' : '—' %></td>
+        <td><% if (cc.police_id) { %><a class="btn btn-petit btn-secondaire" href="/polices/<%= cc.police_id %>/registre">Registre</a><% } else if (cc.soumission_id) { %><a class="btn btn-petit btn-secondaire" href="/cautionnement/<%= cc.soumission_id %>">Soumission</a><% } %></td>
+      </tr>
+    <% }) %>
+    </tbody>
+  </table></div>
+</div>
+<% } %>
+
+<% if (typeof prelevementsAVenir !== 'undefined' && prelevementsAVenir.length) { %>
+<div class="carte">
+  <h3>💳 Prélèvements de financement à venir ou en retard (<%= prelevementsAVenir.length %>)</h3>
+  <div class="tableau-deroulant"><table>
+    <thead><tr><th>Date</th><th>Entreprise</th><th>Police</th><th>Versement</th><th></th></tr></thead>
+    <tbody>
+    <% prelevementsAVenir.forEach((f) => { %>
+      <tr>
+        <td><%= f.prochain.date %> <span class="petit">(<%= f.jours < 0 ? 'en retard de ' + (-f.jours) + ' j' : 'dans ' + f.jours + ' j' %>)</span></td>
+        <td><%= f.entreprise %></td>
+        <td><%= f.numero_police %></td>
+        <td>nº <%= f.prochain.numero %> — <%= Number(f.prochain.paiement).toLocaleString('fr-CA') %> $</td>
+        <td><a class="btn btn-petit btn-secondaire" href="/polices/<%= f.police_id %>/registre">Registre</a></td>
+      </tr>
+    <% }) %>
+    </tbody>
+  </table></div>
+</div>
+<% } %>
+
+<% if (typeof avisNonTransmis !== 'undefined' && avisNonTransmis.length) { %>
+<div class="carte">
+  <h3>📨 Avis d’assureur reçus, à transmettre au client (<%= avisNonTransmis.length %>)</h3>
+  <div class="tableau-deroulant"><table>
+    <thead><tr><th>Reçu le</th><th>Entreprise</th><th>Émetteur</th><th>Avis</th><th></th></tr></thead>
+    <tbody>
+    <% avisNonTransmis.forEach((a) => { %>
+      <tr>
+        <td><%= a.recu_le || '—' %></td>
+        <td><%= a.entreprise %></td>
+        <td><%= a.emetteur || '—' %></td>
+        <td><%= a.titre || '—' %></td>
+        <td><a class="btn btn-petit btn-secondaire" href="/clients/<%= a.client_id %>">Fiche client</a></td>
+      </tr>
+    <% }) %>
+    </tbody>
+  </table></div>
+</div>
+<% } %>
 <%- include('../partials/bas') %>

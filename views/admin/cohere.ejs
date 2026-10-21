@@ -75,8 +75,16 @@
   <p>
     Clé du cabinet : <% if (reglageAugure.cleCabinetPresente) { %><span class="badge badge-ok">Enregistrée</span> <%= reglageAugure.masque %><% } else { %>aucune<% } %><br>
     Clé d'environnement (AUGURE_API_KEY) : <%= reglageAugure.cleEnvPresente ? 'présente' : 'absente' %><br>
+    Clé effective : <% if (reglageAugure.sourceEffective === 'environnement') { %><span class="badge badge-ok">Clé fournie par l'environnement du serveur (persistante)</span> <%= reglageAugure.masqueEffectif %> — elle a <strong>priorité</strong> sur la clé du cabinet<% } else if (reglageAugure.sourceEffective === 'cabinet') { %>clé du cabinet (repli — aucune clé d'environnement)<% } else { %>aucune clé configurée<% } %><br>
     Modèle du cabinet : <strong><%= reglageAugure.modele %></strong>
   </p>
+  <p class="petit">💡 <strong>Pour ne plus ressaisir la clé après chaque redéploiement</strong> : réglez-la
+    <strong>une seule fois</strong> dans l'environnement du serveur — sur Render : ouvrez le service →
+    <strong>Environment</strong> → ajoutez la variable <code>AUGURE_API_KEY</code> avec la clé. Elle
+    <strong>survit aux redéploiements</strong> (la base de l'instance de test, elle, est réinitialisée à
+    chaque publication) et devient la clé effective de l'analyse de documents, de l'assistant et des
+    brouillons. La clé saisie ci-dessous reste le <strong>repli</strong> si la variable est absente.
+    Le bouton « Tester la connexion » utilise toujours la clé effective.</p>
   <p class="petit"><strong>Augure AI</strong> est un fournisseur d'inférence <strong>entièrement canadien</strong>
     (aucun fournisseur américain ; entente de traitement des données — DPA — disponible). Son API est
     <strong>compatible OpenAI</strong>. La clé est stockée <strong>chiffrée AES-256-GCM</strong>, comme les clés

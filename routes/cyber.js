@@ -10,6 +10,7 @@
  */
 const express = require('express');
 const demandesInfos = require('../lib/demandes-infos');
+const marche = require('../lib/marche');
 
 const bd = require('../lib/bd');
 const cyber = require('../lib/cyber');
@@ -203,7 +204,8 @@ router.get('/:id', (req, res) => {
     assureurs = bd.prepare('SELECT id, nom FROM assureurs WHERE cabinet_id = ? AND archive = 0 ORDER BY nom')
       .all(res.locals.cabinetId);
   }
-  res.render('cyber/fiche', { sectionDemandes: demandesInfos.sectionPourFiche('cyber', s, req.utilisateur.cabinet_id), 
+  res.render('cyber/fiche', { sectionDemandes: demandesInfos.sectionPourFiche('cyber', s, req.utilisateur.cabinet_id),
+    sectionMarche: marche.sectionPourCible(req.utilisateur.cabinet_id, { produit: 'cyber', soumissionId: s.id }), NOMS_STATUTS_ENVOI: marche.NOMS_STATUTS_ENVOI, 
     s,
     clientNom: client ? client.raison_sociale : '—',
     versions,
@@ -292,6 +294,35 @@ router.post('/:id/garanties', (req, res) => {
   }
   noterAvenantPolice(s.id, res.locals.cabinetId, req.utilisateur.id, `Avenant — garanties modifiées (soumission cyber #${s.id})`);
   res.redirect('/cyber/' + s.id + '#garanties');
+});
+
+// --- Exposition aux données (questionnaire type CFC) ----------------------------------------------
+router.post('/:id/exposition', (req, res) => {
+  const s = soumissionAutorisee(req, res, false);
+  if (!s) return;
+  const lignes = (texte, cles) => {
+    const out = [];
+    for (const ligne of String(texte || '').split('\n')) {
+      const parties = ligne.split('|').map((x) => x.trim());
+      if (!parties[0]) continue;
+      const o = {};
+      cles.forEach((c, i) => { o[c] = i === cles.length - 1 && c !== 'type' && c !== 'norme' ? (parties[i] ? Number(parties[i]) : null) : (parties[i] || null); });
+      out.push(o);
+    }
+    return out;
+  };
+  try {
+    cyber.definirExposition(s.id, res.locals.cabinetId, req.utilisateur.id, {
+      nb_enregistrements: req.body.nb_enregistrements ? Number(req.body.nb_enregistrements) : null,
+      types_donnees: lignes(req.body.types_donnees, ['type', 'nombre']),
+      responsable_securite: (req.body.responsable_securite || '').trim() || null,
+      normes: lignes(req.body.normes, ['norme']),
+      revenus_territoires: lignes(req.body.revenus_territoires, ['territoire', 'montant']),
+    });
+  } catch (e) {
+    return pageErreur(res, 400, 'Enregistrement impossible', e.message);
+  }
+  res.redirect('/cyber/' + s.id + '#exposition');
 });
 
 // --- Antécédents -------------------------------------------------------------------------------

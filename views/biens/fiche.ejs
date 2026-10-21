@@ -8,6 +8,7 @@
 
 </div>
 <%- include('../partials/manques', { sectionDemandes }) %>
+<%- include('../partials/mise-en-marche', { sectionMarche }) %>
 
 
 <div class="carte">
@@ -352,6 +353,24 @@
       <input type="number" id="frc-<%= b.id %>" name="franchise_contenu" min="0" step="0.01" value="<%= g && g.franchise_contenu != null ? g.franchise_contenu : '' %>"></div>
     <div><label for="rpc-<%= b.id %>">Règle proportionnelle — contenu (%)</label>
       <input type="number" id="rpc-<%= b.id %>" name="regle_proportionnelle_contenu" min="0" max="100" step="0.01" value="<%= g && g.regle_proportionnelle_contenu != null ? g.regle_proportionnelle_contenu : '' %>"></div>
+    <div style="grid-column:1/-1"><span class="petit"><strong>Section Crime</strong> — limites par risque ($)</span></div>
+    <% const crimeG = (g && g.crime) || {}; %>
+    <div><label>Détournements par les employés</label>
+      <input type="number" name="crime_detournements" min="0" step="0.01" value="<%= crimeG.detournements_employes != null ? crimeG.detournements_employes : '' %>"></div>
+    <div><label>Vol et effraction</label>
+      <input type="number" name="crime_vol_effraction" min="0" step="0.01" value="<%= crimeG.vol_effraction != null ? crimeG.vol_effraction : '' %>"></div>
+    <div><label>Contrefaçon de billets de banque</label>
+      <input type="number" name="crime_contrefacon_billets" min="0" step="0.01" value="<%= crimeG.contrefacon_billets != null ? crimeG.contrefacon_billets : '' %>"></div>
+    <div><label>Contrefaçon de cartes</label>
+      <input type="number" name="crime_contrefacon_cartes" min="0" step="0.01" value="<%= crimeG.contrefacon_cartes != null ? crimeG.contrefacon_cartes : '' %>"></div>
+    <div><label>Destruction d’argent et de titres</label>
+      <input type="number" name="crime_destruction" min="0" step="0.01" value="<%= crimeG.destruction_argent_titres != null ? crimeG.destruction_argent_titres : '' %>"></div>
+    <div><label>Argent dans un coffre-fort</label>
+      <input type="number" name="crime_coffre_fort" min="0" step="0.01" value="<%= crimeG.coffre_fort_argent != null ? crimeG.coffre_fort_argent : '' %>"></div>
+    <div><label>Comptes clients — montant ($)</label>
+      <input type="number" name="comptes_clients_montant" min="0" step="0.01" value="<%= g && g.comptes_clients_montant != null ? g.comptes_clients_montant : '' %>"></div>
+    <div><label>Chantier / risque de constructeur — montant ($)</label>
+      <input type="number" name="chantier_montant" min="0" step="0.01" value="<%= g && g.chantier_montant != null ? g.chantier_montant : '' %>"></div>
     <div style="grid-column:1/-1"><span class="petit">Avenants</span><br>
       <% AVENANTS_BIENS.forEach(([code, libelle], i) => { %>
       <span class="case" style="display:inline-flex;margin-right:12px"><input type="checkbox" id="av-<%= b.id %>-<%= i %>" name="avenants" value="<%= code %>"<%= g && g.avenants && g.avenants[code] ? ' checked' : '' %>><label for="av-<%= b.id %>-<%= i %>"><%= libelle %></label></span>

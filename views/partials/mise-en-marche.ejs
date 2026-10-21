@@ -1,0 +1,31 @@
+<% /* Section « Mise en marché » des fiches soumission / combinée.
+      Attend : sectionMarche = { produit, soumissionId, combineDossierId,
+      envois[], aucunEnvoi } (lib/marche.js — sectionPourCible).
+      Lecture + point d'entrée : la gestion vit dans /mise-en-marche. */ %>
+<% if (typeof sectionMarche !== 'undefined' && sectionMarche) { %>
+<div class="carte" id="mise-en-marche">
+  <h3>🎯 Mise en marché <% if (sectionMarche.envois.length) { %>(<%= sectionMarche.envois.length %>)<% } %></h3>
+  <% if (sectionMarche.aucunEnvoi) { %>
+    <p>⚠️ <strong>Aucun envoi au marché</strong> — ce dossier n'a encore été transmis à aucun assureur.</p>
+  <% } else { %>
+    <% sectionMarche.envois.forEach(function (e) { %>
+      <p style="margin:6px 0;">
+        <span class="badge <%= ({ brouillon: 'badge-gris', envoye: 'badge-bleu', en_analyse: 'badge-violet', questions: 'badge-j60', offre_recue: 'badge-vert', refuse: 'badge-echu', accepte: 'badge-ok', annule: 'badge-gris' })[e.statut] || 'badge-gris' %>"><%= NOMS_STATUTS_ENVOI[e.statut] || e.statut %></span>
+        <strong><%= e.marche_nom %></strong>
+        <% if (e.transmis_le) { %><span class="petit">— transmis le <%= e.transmis_le.slice(0, 10) %></span><% } %>
+        <% if (e.statut === 'offre_recue' && e.offre_prime != null) { %><span class="petit">— offre : <%= Number(e.offre_prime).toLocaleString('fr-CA') %> $</span><% } %>
+        <% if (e.statut === 'refuse' && e.motif_refus) { %><span class="petit">— refus : <%= e.motif_refus.slice(0, 80) %></span><% } %>
+        <a class="btn btn-petit btn-secondaire" href="/mise-en-marche/<%= e.id %>">Ouvrir</a>
+      </p>
+    <% }); %>
+  <% } %>
+  <p>
+    <% if (sectionMarche.combineDossierId) { %>
+      <a class="btn" href="/mise-en-marche/nouveau?combine_id=<%= sectionMarche.combineDossierId %>">📤 Envoyer à un marché</a>
+    <% } else { %>
+      <a class="btn" href="/mise-en-marche/nouveau?produit=<%= sectionMarche.produit %>&amp;soumission_id=<%= sectionMarche.soumissionId %>">📤 Envoyer à un marché</a>
+    <% } %>
+    <a class="btn btn-secondaire" href="/mise-en-marche">🎯 Registre de mise en marché</a>
+  </p>
+</div>
+<% } %>

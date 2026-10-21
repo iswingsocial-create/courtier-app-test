@@ -79,6 +79,7 @@ app.use('/admin', require('./routes/admin'));
 app.use('/clients', require('./routes/clients'));
 app.use('/assureurs', require('./routes/assureurs'));
 app.use('/polices', require('./routes/polices'));
+app.use('/polices', require('./routes/registre-police')); // registre complet : participants, financement, attestations
 app.use('/auto', require('./routes/auto')); // soumissions FPQ1 (étape 2/10)
 app.use('/biens', require('./routes/biens')); // soumissions biens commerciaux (étape 2/10 biens)
 app.use('/rc', require('./routes/rc')); // soumissions RC commerciale (étape 2/10 RC)
@@ -87,6 +88,7 @@ app.use('/eo', require('./routes/eo')); // soumissions E&O (étape 2/10 E&O)
 app.use('/do', require('./routes/do')); // soumissions D&O (étape 2/10 D&O)
 app.use('/pe', require('./routes/pe')); // soumissions perte d'exploitation (étape 2/10 PE)
 app.use('/combinees', require('./routes/combinees')); // soumissions combinées entreprise (biens + RC + perte liées)
+app.use('/mise-en-marche', require('./routes/mise-en-marche')); // registre de mise en marché (F15)
 app.use('/flotte', require('./routes/flotte')); // soumissions flotte automobile (étape 3/10 flotte)
 app.use('/cautionnement', require('./routes/cautionnement')); // soumissions cautionnement (étape 2/10 cautionnement)
 app.use('/reclamations', require('./routes/reclamations'));

@@ -12,6 +12,7 @@
  */
 const express = require('express');
 const demandesInfos = require('../lib/demandes-infos');
+const marche = require('../lib/marche');
 
 const bd = require('../lib/bd');
 const pesoum = require('../lib/pe');
@@ -39,11 +40,13 @@ const NOMS_PERIODE_INDEMNITE = {
   24: '24 mois',
 };
 // Bases d'indemnité (CHECK en base : pe_garanties.base_montant). Libellés du dictionnaire — domaine « pe ».
-const BASES_MONTANT = ['benefice_brut', 'marge_brute', 'chiffre_affaires'];
+const BASES_MONTANT = ['benefice_brut', 'marge_brute', 'chiffre_affaires', 'loyers', 'perte_reelle_subie'];
 const NOMS_BASE_MONTANT = {
   benefice_brut: 'Bénéfice brut',
   marge_brute: 'Marge brute',
   chiffre_affaires: 'Chiffre d’affaires',
+  loyers: 'Loyers / valeur locative',
+  perte_reelle_subie: 'Perte réelle subie (ALS)',
 };
 // Bases de valeur d'un établissement (CHECK en base : pe_etablissements.base_valeur).
 const BASES_VALEUR = ['remplacement', 'depreciation'];
@@ -229,7 +232,11 @@ router.get('/:id', (req, res) => {
     assureurs = bd.prepare('SELECT id, nom FROM assureurs WHERE cabinet_id = ? AND archive = 0 ORDER BY nom')
       .all(res.locals.cabinetId);
   }
-  res.render('pe/fiche', { sectionDemandes: demandesInfos.sectionPourFiche('pe', s, req.utilisateur.cabinet_id), 
+  const calculPe = bd.prepare('SELECT * FROM pe_calculs WHERE soumission_id = ? AND cabinet_id = ? AND archive = 0')
+    .get(s.id, res.locals.cabinetId);
+  res.render('pe/fiche', { sectionDemandes: demandesInfos.sectionPourFiche('pe', s, req.utilisateur.cabinet_id),
+    calculPe: calculPe ? { ...calculPe, depenses_variables: (() => { try { return JSON.parse(calculPe.depenses_variables_json || '[]'); } catch (e) { return []; } })() } : null,
+    sectionMarche: marche.sectionPourCible(req.utilisateur.cabinet_id, { produit: 'pe', soumissionId: s.id }), NOMS_STATUTS_ENVOI: marche.NOMS_STATUTS_ENVOI, 
     s,
     clientNom: client ? client.raison_sociale : '—',
     versions,
@@ -243,6 +250,44 @@ router.get('/:id', (req, res) => {
     AVENANTS_PE, CONSENTEMENTS_PE,
     interruptionsTexte: serialiserInterruptions(s.antecedents ? s.antecedents.interruptions_5ans : null),
   });
+});
+
+// --- Feuille de calcul de la perte d'exploitation (formulaire assureur type) ----------------------
+// A1 recettes brutes · A2 recettes ajustées · B autres revenus · D1-D10
+// dépenses variables déduites · E/G masse salariale · F revenu
+// d'entreprise = A2 + B − ΣD (calculé par lib/ajustements-documents).
+router.post('/:id/calcul', (req, res) => {
+  const s = soumissionAutorisee(req, res, false);
+  if (!s) return;
+  const ajust = require('../lib/ajustements-documents');
+  const num = (k) => (req.body[k] ? Number(req.body[k]) : null);
+  const depenses = [];
+  const libelles = String(req.body.depenses_libelles || '').split('\n');
+  const montants = String(req.body.depenses_montants || '').split('\n');
+  libelles.forEach((l, i) => {
+    const libelle = l.trim();
+    const montant = montants[i] ? Number(montants[i]) : null;
+    if (libelle || montant !== null) depenses.push({ libelle, montant });
+  });
+  const revenuF = ajust.calculerRevenuEntreprise({
+    recettes_a2: num('recettes_a2'), autres_revenus_b: num('autres_revenus_b'), depenses_variables: depenses,
+  });
+  const exist = bd.prepare('SELECT id FROM pe_calculs WHERE soumission_id = ? AND cabinet_id = ?')
+    .get(s.id, res.locals.cabinetId);
+  const champs = [num('recettes_a1'), num('recettes_a2'), num('autres_revenus_b'), JSON.stringify(depenses),
+    num('salaires_e_montant'), num('salaires_e_jours'), num('salaires_g_montant'), num('salaires_g_jours'), revenuF];
+  if (exist) {
+    bd.prepare(`UPDATE pe_calculs SET recettes_a1 = ?, recettes_a2 = ?, autres_revenus_b = ?,
+      depenses_variables_json = ?, salaires_e_montant = ?, salaires_e_jours = ?,
+      salaires_g_montant = ?, salaires_g_jours = ?, revenu_entreprise_f = ?, archive = 0, maj_le = datetime('now')
+      WHERE id = ?`).run(...champs, exist.id);
+  } else {
+    bd.prepare(`INSERT INTO pe_calculs (cabinet_id, soumission_id, recettes_a1, recettes_a2, autres_revenus_b,
+      depenses_variables_json, salaires_e_montant, salaires_e_jours, salaires_g_montant, salaires_g_jours, revenu_entreprise_f)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`).run(res.locals.cabinetId, s.id, ...champs);
+  }
+  journal(res.locals.cabinetId, req.utilisateur.id, 'pe_calcul_enregistre', `Feuille de calcul PE (soumission #${s.id}) — revenu d’entreprise ${revenuF} $`);
+  res.redirect('/pe/' + s.id + '#calcul');
 });
 
 // --- Ajouter un établissement -----------------------------------------------------------------

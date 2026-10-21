@@ -1,0 +1,218 @@
+<%- include('../partials/haut', { titre: 'Mise en marché — ' + e.marche_nom }) %>
+<div class="entete-page">
+  <h1>🎯 Envoi #<%= e.id %> — <%= e.marche_nom %></h1>
+  <div>
+    <span class="badge <%= ({ brouillon: 'badge-gris', envoye: 'badge-bleu', en_analyse: 'badge-violet', questions: 'badge-j60', offre_recue: 'badge-vert', refuse: 'badge-echu', accepte: 'badge-ok', annule: 'badge-gris' })[e.statut] || 'badge-gris' %>"><%= NOMS_STATUTS_ENVOI[e.statut] || e.statut %></span>
+    <a class="btn btn-secondaire btn-petit" href="/mise-en-marche">← Registre</a>
+  </div>
+</div>
+
+<% if (cree) { %><div class="alerte alerte-succes">Envoi créé en brouillon, avec son courriel « demande de prix » prêt ci-dessous. Rien n'est parti : vérifiez le brouillon, puis cliquez « Envoyer ».</div><% } %>
+<% if (envoyeOk) { %><div class="alerte alerte-succes">Courriel <%= modeEnvoi === 'simule' ? '<strong>simulé</strong> — aucun compte d\u2019envoi configuré, aucun courriel réel n\u2019est parti' : 'envoyé (SMTP)' %>.</div><% } %>
+<% if (!compteEnvoi) { %><div class="alerte">ℹ️ Aucun compte d'envoi courriel n'est configuré pour ce cabinet : les envois se feront en <strong>mode simulé</strong> (tracés, mais aucun courriel réel).</div><% } %>
+
+<div class="carte">
+  <dl class="dl">
+    <dt>Dossier</dt><dd><a href="<%= urlCible %>"><strong><%= e.produit === 'combinee' ? 'Soumission combinée' : ('Soumission ' + (NOMS_PRODUITS[e.produit] || e.produit)) %> #<%= e.produit === 'combinee' ? e.combine_dossier_id : e.soumission_id %></strong></a></dd>
+    <dt>Client</dt><dd><%= e.client_nom || '—' %></dd>
+    <dt>Marché</dt><dd><%= e.marche_nom %><% if (e.assureur_id) { %> <span class="petit">(annuaire)</span><% } else { %> <span class="petit">(hors annuaire)</span><% } %></dd>
+    <dt>Souscripteur</dt><dd><%= e.souscripteur_nom || '—' %><% if (e.souscripteur_courriel) { %> — <%= e.souscripteur_courriel %><% } %></dd>
+    <dt>Version transmise</dt><dd><%= e.version_proposition || '—' %></dd>
+    <dt>Documents transmis</dt><dd><% if (e.documents && e.documents.length) { %><%= e.documents.join(' · ') %><% } else { %>—<% } %></dd>
+    <dt>Transmis le</dt><dd><%= e.transmis_le ? e.transmis_le.slice(0, 16).replace('T', ' ') : '—' %><% if (e.mode_transmission) { %> (<%= e.mode_transmission === 'courriel' ? 'par courriel' : 'marqué manuellement' %>)<% } %></dd>
+    <% if (e.autorite_intermediaire) { %><dt>Autorité de l'intermédiaire</dt><dd><%= e.autorite_intermediaire %></dd><% } %>
+    <dt>Relance prévue</dt><dd><%= e.date_relance || '—' %><% if (e.nb_relances) { %> — <%= e.nb_relances %> relance(s), dernière le <%= (e.derniere_relance_le || '').slice(0, 10) %><% } %></dd>
+    <% if (e.prochaine_action) { %><dt>Prochaine action</dt><dd><%= e.prochaine_action %><% if (e.prochaine_action_echeance) { %> (échéance : <%= e.prochaine_action_echeance %>)<% } %></dd><% } %>
+  </dl>
+</div>
+
+<% if (e.statut === 'questions') { %>
+<div class="carte" style="border-left:4px solid #d97706">
+  <h3>❓ Questions du marché en attente</h3>
+  <p style="white-space:pre-wrap;"><%= e.questions_en_attente %></p>
+  <p class="petit">Responsable de la réponse : <strong><%= NOMS_RESPONSABLES[e.questions_responsable] || 'Le courtier' %></strong></p>
+  <form method="post" action="/mise-en-marche/<%= e.id %>/questions-resolues" class="inline">
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+    <button class="btn btn-petit" type="submit">✔ Questions résolues — retour en analyse</button>
+  </form>
+</div>
+<% } %>
+
+<% if (e.offre_prime != null || e.statut === 'offre_recue') { %>
+<div class="carte" style="border-left:4px solid #059669">
+  <h3>💰 Offre reçue</h3>
+  <dl class="dl">
+    <dt>Prime proposée</dt><dd><strong><%= e.offre_prime != null ? Number(e.offre_prime).toLocaleString('fr-CA') + ' $' : '—' %></strong></dd>
+    <dt>Limites / franchises</dt><dd><%= e.offre_limites || '—' %></dd>
+    <dt>Conditions préalables</dt><dd><%= e.offre_conditions || '—' %></dd>
+    <dt>Valide jusqu'au</dt><dd><%= e.offre_validite || '—' %></dd>
+  </dl>
+  <p class="petit">Cette offre alimentera le tableau comparatif de la phase 2 (avec la décision du client, F16).</p>
+</div>
+<% } %>
+
+<% if (e.statut === 'refuse') { %>
+<div class="carte" style="border-left:4px solid #c0392b">
+  <h3>⛔ Refus du marché</h3>
+  <p style="white-space:pre-wrap;"><%= e.motif_refus || '—' %></p>
+</div>
+<% } %>
+
+<% const terminal = ['accepte', 'annule', 'refuse'].includes(e.statut); %>
+<% if (!terminal) { %>
+<div class="carte">
+  <h3>Actions</h3>
+  <div style="display:flex;gap:8px;flex-wrap:wrap;">
+    <% if (e.statut === 'envoye') { %>
+      <form method="post" action="/mise-en-marche/<%= e.id %>/en-analyse" class="inline"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button class="btn btn-petit btn-secondaire" type="submit">🔍 Passer en analyse</button></form>
+    <% } %>
+    <% if (['envoye', 'en_analyse', 'questions'].includes(e.statut)) { %>
+      <form method="post" action="/mise-en-marche/<%= e.id %>/relancer" class="inline"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button class="btn btn-petit" type="submit">🔁 Relancer le marché</button></form>
+    <% } %>
+    <% if (e.statut === 'offre_recue') { %>
+      <form method="post" action="/mise-en-marche/<%= e.id %>/accepter" class="inline"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button class="btn btn-petit" type="submit">✅ Marquer l'offre acceptée</button></form>
+    <% } %>
+  </div>
+  <p class="petit">L'acceptation ici est le statut du registre ; la décision formelle du client (recommandation, garanties refusées, autorisation datée — F16) relève de la phase 2.</p>
+
+  <details style="margin-top:10px;">
+    <summary>❓ Enregistrer des questions du marché</summary>
+    <form method="post" action="/mise-en-marche/<%= e.id %>/questions">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+      <label>Questions en attente
+        <textarea name="questions_en_attente" rows="3" required><%= e.statut === 'questions' ? (e.questions_en_attente || '') : '' %></textarea>
+      </label>
+      <label>Responsable de la réponse
+        <select name="questions_responsable">
+          <option value="courtier">Le courtier</option>
+          <option value="client">Le client</option>
+          <option value="assureur">L'assureur</option>
+        </select>
+      </label>
+      <button class="btn btn-petit" type="submit">Enregistrer les questions</button>
+    </form>
+  </details>
+
+  <details style="margin-top:10px;">
+    <summary>💰 Saisir une offre reçue</summary>
+    <form method="post" action="/mise-en-marche/<%= e.id %>/offre">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+      <label>Prime proposée ($)
+        <input type="number" step="0.01" min="0" name="offre_prime" required value="<%= e.offre_prime != null ? e.offre_prime : '' %>">
+      </label>
+      <label>Limites et franchises (résumé)
+        <textarea name="offre_limites" rows="2"><%= e.offre_limites || '' %></textarea>
+      </label>
+      <label>Conditions préalables
+        <textarea name="offre_conditions" rows="2"><%= e.offre_conditions || '' %></textarea>
+      </label>
+      <label>Date de validité de l'offre
+        <input type="date" name="offre_validite" value="<%= e.offre_validite || '' %>">
+      </label>
+      <button class="btn btn-petit" type="submit">Enregistrer l'offre</button>
+    </form>
+  </details>
+
+  <details style="margin-top:10px;">
+    <summary>⛔ Enregistrer un refus</summary>
+    <form method="post" action="/mise-en-marche/<%= e.id %>/refus">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+      <label>Motif du refus communiqué par le marché
+        <textarea name="motif_refus" rows="2" required></textarea>
+      </label>
+      <button class="btn btn-petit btn-secondaire" type="submit">Enregistrer le refus</button>
+    </form>
+  </details>
+
+  <details style="margin-top:10px;">
+    <summary>✏️ Modifier l'envoi</summary>
+    <form method="post" action="/mise-en-marche/<%= e.id %>/modifier">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+      <label>Nom du marché <input type="text" name="marche_nom" value="<%= e.marche_nom %>"></label>
+      <label>Souscripteur (nom) <input type="text" name="souscripteur_nom" value="<%= e.souscripteur_nom || '' %>"></label>
+      <label>Souscripteur (courriel) <input type="email" name="souscripteur_courriel" value="<%= e.souscripteur_courriel || '' %>"></label>
+      <label>Version transmise <input type="text" name="version_proposition" value="<%= e.version_proposition || '' %>"></label>
+      <label>Documents transmis (un par ligne) <textarea name="documents" rows="3"><%= (e.documents || []).join('\n') %></textarea></label>
+      <label>Autorité de l'intermédiaire <input type="text" name="autorite_intermediaire" value="<%= e.autorite_intermediaire || '' %>"></label>
+      <label>Date de relance <input type="date" name="date_relance" value="<%= e.date_relance || '' %>"></label>
+      <label>Prochaine action <input type="text" name="prochaine_action" value="<%= e.prochaine_action || '' %>"></label>
+      <label>Échéance de la prochaine action <input type="date" name="prochaine_action_echeance" value="<%= e.prochaine_action_echeance || '' %>"></label>
+      <button class="btn btn-petit" type="submit">Enregistrer</button>
+    </form>
+  </details>
+
+  <details style="margin-top:10px;">
+    <summary>🚫 Annuler cet envoi</summary>
+    <form method="post" action="/mise-en-marche/<%= e.id %>/annuler">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+      <label>Motif (optionnel) <input type="text" name="motif_annulation"></label>
+      <button class="btn btn-petit btn-secondaire" type="submit">Annuler l'envoi (il reste au registre)</button>
+    </form>
+  </details>
+</div>
+<% } %>
+
+<% if (e.statut === 'brouillon') { %>
+<div class="carte" style="border-left:4px solid #2563eb">
+  <h3>🚀 Transmettre sans courriel</h3>
+  <p class="petit">Si la transmission se fait hors application (portail de l'assureur, téléphone…), marquez-la ici : l'envoi passe à « Envoyé » avec la date du jour. Sinon, utilisez le brouillon courriel ci-dessous.</p>
+  <form method="post" action="/mise-en-marche/<%= e.id %>/transmettre" class="inline">
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+    <label>Relance prévue le <input type="date" name="date_relance"></label>
+    <button class="btn btn-petit" type="submit">Marquer comme transmis</button>
+  </form>
+</div>
+<% } %>
+
+<div class="carte">
+  <h3>✉️ Courriels de cet envoi</h3>
+  <% (e.brouillons || []).forEach((b) => { %>
+    <div id="courriel-<%= b.id %>" style="border:1px solid #ddd;border-radius:8px;padding:10px 12px;margin:10px 0;<%= relanceId === b.id ? 'border-color:#2563eb;background:#eff6ff;' : '' %>">
+      <p style="margin:0;">
+        <% if (b.type === 'demande_prix') { %>📤 <strong>Demande de prix</strong><% } else { %>🔁 <strong>Relance</strong><% } %>
+        <% if (b.statut === 'brouillon') { %> — <span class="badge badge-gris">Brouillon — rien n'est parti</span>
+        <% } else { %> — envoyée le <%= (b.envoye_le || '').slice(0, 10) %> <%= b.mode_envoi === 'simule' ? '(simulé)' : '(SMTP)' %><% } %>
+      </p>
+      <% if (b.statut === 'brouillon') { %>
+      <form method="post" action="/mise-en-marche/courriels/<%= b.id %>/modifier">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+        <label>Destinataire <input type="email" name="destinataire" value="<%= b.destinataire || '' %>" required></label>
+        <label>Sujet <input type="text" name="sujet" value="<%= b.sujet %>" required></label>
+        <label>Corps <textarea name="corps" rows="8" required><%= b.corps %></textarea></label>
+        <button class="btn btn-petit btn-secondaire" type="submit">Enregistrer le brouillon</button>
+      </form>
+      <form method="post" action="/mise-en-marche/courriels/<%= b.id %>/envoyer" style="margin-top:8px;">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+        <button class="btn btn-petit" type="submit">📤 Envoyer<%= compteEnvoi ? '' : ' (simulé)' %></button>
+      </form>
+      <% } else { %>
+      <p class="petit" style="white-space:pre-wrap;"><%= b.corps %></p>
+      <% } %>
+    </div>
+  <% }); %>
+  <% if (!(e.brouillons || []).length) { %><p class="petit">Aucun courriel préparé pour cet envoi.</p><% } %>
+
+  <% if ((e.courrielsLies || []).length) { %>
+    <h4>📥 Courriels rattachés (module Courriels)</h4>
+    <ul>
+      <% e.courrielsLies.forEach((c) => { %>
+        <li><a href="/courriels/<%= c.id %>"><%= c.sujet || '(sans sujet)' %></a> <span class="petit">— <%= c.dossier === 'envoyes' ? 'envoyé' : 'reçu' %> le <%= (c.date_courriel || c.cree_le || '').slice(0, 10) %></span></li>
+      <% }); %>
+    </ul>
+  <% } %>
+</div>
+
+<div class="carte">
+  <h3>🧵 Historique de l'envoi</h3>
+  <% if (!(e.evenements || []).length) { %><p class="petit">Aucun événement.</p><% } %>
+  <ul style="list-style:none;padding-left:0;">
+    <% (e.evenements || []).forEach((ev) => { %>
+      <li style="padding:6px 0;border-bottom:1px solid #eee;">
+        <span class="petit"><%= (ev.cree_le || '').slice(0, 16).replace('T', ' ') %></span> —
+        <%= ev.detail || ev.type %>
+        <% if (ev.auteur_nom) { %><span class="petit">(<%= ev.auteur_nom %>)</span><% } %>
+      </li>
+    <% }); %>
+  </ul>
+</div>
+<%- include('../partials/bas') %>

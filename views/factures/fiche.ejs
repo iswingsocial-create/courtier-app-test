@@ -38,6 +38,37 @@
 </div>
 
 <div class="carte">
+  <h3>Lignes de la facture (<%= (typeof lignes !== 'undefined' ? lignes : []).length %>)</h3>
+  <p class="petit">La facture interne réelle est détaillée par transaction (prime par garantie, frais d’administration du cabinet, frais de l’assureur, taxe sur les primes). Quand la facture a des lignes, son total devient la somme des lignes.<% if (typeof clientComplet !== 'undefined' && clientComplet && clientComplet.numero_client_externe) { %> N° de client externe : <strong><%= clientComplet.numero_client_externe %></strong>.<% } %></p>
+  <% const ligs = (typeof lignes !== 'undefined' ? lignes : []); %>
+  <% if (ligs.length) { %>
+  <div class="tableau-deroulant"><table>
+    <thead><tr><th>Type de transaction</th><th>Date d’effet</th><th>Compagnie</th><th>Description</th><th>Montant</th><th></th></tr></thead>
+    <tbody>
+    <% ligs.forEach((l) => { %>
+      <tr><td><%= l.type_transaction || '—' %></td><td><%= l.date_effet || '—' %></td><td><%= l.compagnie || '—' %></td>
+      <td><%= l.description || '—' %></td><td><%= Number(l.montant).toFixed(2) %> $</td>
+      <td><form method="post" action="/factures/<%= facture.id %>/lignes/<%= l.id %>/archiver" class="inline" data-confirm="Archiver cette ligne ? Le total sera recalculé.">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+        <button class="lien" type="submit">archiver</button></form></td></tr>
+    <% }) %>
+    </tbody>
+  </table></div>
+  <% } else { %><p class="petit">Aucune ligne détaillée pour l’instant.</p><% } %>
+  <% if (facture.statut !== 'annulee') { %>
+  <form method="post" action="/factures/<%= facture.id %>/lignes" class="grille-form">
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+    <div><label for="type_transaction">Type de transaction</label><input type="text" id="type_transaction" name="type_transaction" placeholder="Ex. Renew policy"></div>
+    <div><label for="date_effet_l">Date d’effet</label><input type="date" id="date_effet_l" name="date_effet"></div>
+    <div><label for="compagnie">Compagnie</label><input type="text" id="compagnie" name="compagnie" placeholder="Ex. nom du grossiste ou de l’assureur"></div>
+    <div><label for="description_l">Description *</label><input type="text" id="description_l" name="description" required placeholder="Ex. Garantie générale - R.C. / Tax on premium insurance, QC"></div>
+    <div><label for="montant_l">Montant ($) *</label><input type="number" id="montant_l" name="montant" step="0.01" required></div>
+    <div class="actions"><button class="btn btn-petit" type="submit">Ajouter la ligne</button></div>
+  </form>
+  <% } %>
+</div>
+
+<div class="carte">
   <h3>Enregistrer un paiement</h3>
   <% if (facture.statut === 'annulee') { %><p class="petit">Facture annulée — aucun paiement possible.</p><% } else { %>
   <form method="post" action="/factures/<%= facture.id %>/paiements" class="grille-form">

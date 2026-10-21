@@ -39,6 +39,14 @@
             <% }) %>
           </select>
         <% } %>
+        <% if (typeof envoisClient !== 'undefined' && envoisClient && envoisClient.length) { %>
+          <select name="envoi_id">
+            <option value="">— Envoi de mise en marché (optionnel) —</option>
+            <% envoisClient.forEach((ev) => { %>
+              <option value="<%= ev.id %>" <%= courriel.envoi_id === ev.id ? 'selected' : '' %>>🎯 Envoi #<%= ev.id %> — <%= ev.marche_nom %> (<%= ev.statut %>)</option>
+            <% }) %>
+          </select>
+        <% } %>
         <button class="btn btn-petit btn-secondaire" type="submit">Lier</button>
       </form>
       <% if (courriel.client_id && (!policesClient || !policesClient.length)) { %>
@@ -48,6 +56,10 @@
     <% if (courriel.police_numero) { %>
     <dt>Police liée</dt>
     <dd><a href="/echeances/police/<%= courriel.police_id %>">🔗 <%= courriel.police_numero %></a></dd>
+    <% } %>
+    <% if (courriel.envoi_id) { %>
+    <dt>Envoi de mise en marché</dt>
+    <dd><a href="/mise-en-marche/<%= courriel.envoi_id %>">🎯 Envoi #<%= courriel.envoi_id %><%= courriel.envoi_marche ? ' — ' + courriel.envoi_marche : '' %></a></dd>
     <% } %>
     <dt>Classement</dt>
     <dd>

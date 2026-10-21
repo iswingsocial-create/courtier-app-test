@@ -28,6 +28,8 @@
   </form>
 </div>
 
+<%- include('../partials/mise-en-marche', { sectionMarche }) %>
+
 <div class="carte" id="entete">
   <h2>🧾 En-tête du dossier</h2>
   <form method="post" action="/combinees/<%= d.id %>/entete" class="grille-form">
@@ -61,6 +63,13 @@
       <textarea id="remarques_diverses" name="remarques_diverses" rows="2"><%= d.remarques_diverses || '' %></textarea></div>
     <div style="grid-column:1/-1"><label for="commentaires_courtier">Commentaires du courtier (internes)</label>
       <textarea id="commentaires_courtier" name="commentaires_courtier" rows="2"><%= d.commentaires_courtier || '' %></textarea></div>
+    <div><label for="courtier_connait_depuis">Déclaration du courtier — client connu depuis</label>
+      <input type="text" id="courtier_connait_depuis" name="courtier_connait_depuis" maxlength="60" value="<%= d.courtier_connait_depuis || '' %>" placeholder="Ex. 2019"></div>
+    <div class="case"><input type="checkbox" id="client_nouveau" name="client_nouveau"<%= d.client_nouveau ? ' checked' : '' %>><label for="client_nouveau">Nouveau client du cabinet</label></div>
+    <div><label for="transition_entite_nom">Dossier en transition — assuré sous l’entité</label>
+      <input type="text" id="transition_entite_nom" name="transition_entite_nom" maxlength="160" value="<%= d.transition_entite_nom || '' %>" placeholder="Ex. ancienne entité propriétaire, en attendant le syndicat"></div>
+    <div style="grid-column:1/-1"><label for="transition_note">Note de transition (ce qui doit changer et quand)</label>
+      <textarea id="transition_note" name="transition_note" rows="2"><%= d.transition_note || '' %></textarea></div>
     <div class="actions" style="grid-column:1/-1"><button class="btn btn-petit" type="submit">Enregistrer l’en-tête</button></div>
   </form>
   <form method="post" action="/combinees/<%= d.id %>/archiver" data-confirm="Archiver ce dossier combiné ? Les soumissions liées ne sont pas touchées.">

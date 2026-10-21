@@ -12,6 +12,7 @@
  */
 const express = require('express');
 const demandesInfos = require('../lib/demandes-infos');
+const marche = require('../lib/marche');
 
 const bd = require('../lib/bd');
 const flotte = require('../lib/flotte');
@@ -385,7 +386,8 @@ router.get('/:id', (req, res) => {
   ).all(res.locals.cabinetId);
   const conducteursParId = {};
   for (const c of s.conducteurs) conducteursParId[c.id] = `${c.prenom} ${c.nom}`;
-  res.render('flotte/fiche', { sectionDemandes: demandesInfos.sectionPourFiche('flotte', s, req.utilisateur.cabinet_id), 
+  res.render('flotte/fiche', { sectionDemandes: demandesInfos.sectionPourFiche('flotte', s, req.utilisateur.cabinet_id),
+    sectionMarche: marche.sectionPourCible(req.utilisateur.cabinet_id, { produit: 'flotte', soumissionId: s.id }), NOMS_STATUTS_ENVOI: marche.NOMS_STATUTS_ENVOI, 
     s,
     clientNom: client ? client.raison_sociale : '—',
     versions,

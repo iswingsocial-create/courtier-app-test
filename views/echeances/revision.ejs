@@ -3,6 +3,7 @@
   <h1>📋 Fiche de révision</h1>
   <div class="actions" style="margin-top:0">
     <a class="btn btn-petit" href="/polices/<%= police.id %>/modifier">✏️ Nouvelle version (avenant)</a>
+    <a class="btn btn-secondaire btn-petit" href="/polices/<%= police.id %>/registre">📑 Registre complet (grossiste, participants, financement, certificats)</a>
     <a class="btn btn-secondaire btn-petit" href="/echeances">← Échéances</a>
   </div>
 </div>
@@ -13,7 +14,9 @@
     <dt>Entreprise</dt><dd><a href="/clients/<%= police.client_id %>"><%= police.client_raison_sociale %></a>
       (<%= police.client_prenom %> <%= police.client_nom %><%= police.client_courriel ? ' · ' + police.client_courriel : '' %><%= police.client_telephone ? ' · ' + police.client_telephone : '' %>)</dd>
     <dt>Produit</dt><dd><%= NOMS_LIGNES[police.ligne] %></dd>
-    <dt>Assureur</dt><dd><%= police.assureur %></dd>
+    <dt>Assureur</dt><dd><%= police.assureur %><% if (police.responsabilite_proportionnelle) { %> <span class="badge badge-j">Souscription partagée — responsabilité proportionnelle</span><% } %></dd>
+    <% if (police.grossiste_nom) { %><dt>Grossiste</dt><dd><%= police.grossiste_nom %><%= police.grossiste_contrat ? ' — contrat-cadre nº ' + police.grossiste_contrat : '' %> (le cabinet agit comme sous-agent)</dd><% } %>
+    <% if (police.mode_facturation) { %><dt>Facturation</dt><dd><%= police.mode_facturation === 'perception_assure' ? 'Perception assuré' : (police.mode_facturation === 'facturation_agence' ? 'Facturation agence' : 'Facturation directe au client') %></dd><% } %>
     <dt>Effet / Échéance</dt><dd><%= police.date_effet %> → <strong><%= police.date_echeance %></strong>
       (<%= jours < 0 ? 'échue depuis ' + (-jours) + ' j' : 'dans ' + jours + ' j' %>)</dd>
     <dt>Statut</dt><dd><span class="badge badge-gris"><%= NOMS_STATUTS[police.statut] %></span></dd>
@@ -500,10 +503,14 @@
   <h3>Protections — prime totale : <%= primeTotale.toFixed(2) %> $</h3>
   <p class="petit">Ajouter ou retirer une protection crée automatiquement une nouvelle version (avenant) de la police.</p>
   <div class="tableau-deroulant"><table>
-    <thead><tr><th>Code</th><th>Protection</th><th>Prime</th><th></th></tr></thead>
+    <thead><tr><th>Code</th><th>Protection</th><th>Formulaire</th><th>Limite</th><th>Franchise</th><th>R.P.</th><th>Prime</th><th></th></tr></thead>
     <tbody>
     <% protections.forEach((p) => { %>
       <tr><td><span class="badge badge-gris"><%= p.code %></span></td><td><%= p.libelle %></td>
+      <td><%= p.code_formulaire || '—' %></td>
+      <td><%= p.limite != null ? Number(p.limite).toLocaleString('fr-CA') + ' $' : '—' %></td>
+      <td><%= p.franchise != null ? Number(p.franchise).toLocaleString('fr-CA') + ' $' : '—' %></td>
+      <td><%= p.regle_prop != null ? p.regle_prop + ' %' : '—' %></td>
       <td><%= Number(p.prime).toFixed(2) %> $</td>
       <td><form method="post" action="/polices/<%= police.id %>/protections/<%= p.id %>/retirer" class="inline" data-confirm="Retirer cette protection ? Une nouvelle version sera créée.">
         <input type="hidden" name="_csrf" value="<%= csrfToken %>">
@@ -526,6 +533,22 @@
     <div>
       <label for="prime">Prime ($)</label>
       <input type="number" id="prime" name="prime" step="0.01" min="0" required>
+    </div>
+    <div>
+      <label for="limite">Limite de garantie ($) — police émise</label>
+      <input type="number" id="limite" name="limite" step="0.01" min="0">
+    </div>
+    <div>
+      <label for="franchise_protection">Franchise de la garantie ($)</label>
+      <input type="number" id="franchise_protection" name="franchise_protection" step="0.01" min="0">
+    </div>
+    <div>
+      <label for="regle_prop">Règle proportionnelle (%)</label>
+      <input type="number" id="regle_prop" name="regle_prop" step="0.1" min="0" max="100">
+    </div>
+    <div>
+      <label for="code_formulaire">Code du formulaire de l’assureur</label>
+      <input type="text" id="code_formulaire" name="code_formulaire" placeholder="Ex. 034.0-8">
     </div>
     <div class="actions"><button class="btn btn-petit" type="submit">Ajouter</button></div>
   </form>

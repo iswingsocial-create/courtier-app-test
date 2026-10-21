@@ -111,6 +111,11 @@
     <div><label for="ville">Ville</label><input type="text" id="ville" name="ville" value="<%= client && client.ville ? client.ville : '' %>"></div>
     <div><label for="province">Province</label><input type="text" id="province" name="province" value="<%= client && client.province ? client.province : '' %>" placeholder="QC"></div>
     <div><label for="code_postal">Code postal</label><input type="text" id="code_postal" name="code_postal" value="<%= client && client.code_postal ? client.code_postal : '' %>"></div>
+    <div><label for="pays">Pays</label><input type="text" id="pays" name="pays" value="<%= client && client.pays ? client.pays : '' %>" placeholder="Canada"></div>
+    <div><label for="telecopieur">Télécopieur de l’entreprise</label><input type="tel" id="telecopieur" name="telecopieur" value="<%= client && client.telecopieur ? client.telecopieur : '' %>"></div>
+    <div><label for="numero_client_externe">Nº de client externe (système de gestion)</label><input type="text" id="numero_client_externe" name="numero_client_externe" value="<%= client && client.numero_client_externe ? client.numero_client_externe : '' %>"></div>
+    <div><label for="fin_exercice_mois">Mois de fin d’exercice financier (1 à 12)</label><input type="number" id="fin_exercice_mois" name="fin_exercice_mois" min="1" max="12" value="<%= client && client.fin_exercice_mois ? client.fin_exercice_mois : '' %>"></div>
+    <div><label for="assure_via_entite">Assuré temporairement sous une autre entité (dossier en transition)</label><input type="text" id="assure_via_entite" name="assure_via_entite" value="<%= client && client.assure_via_entite ? client.assure_via_entite : '' %>" placeholder="Ex. nom de l’ancienne entité propriétaire, en attendant le syndicat"></div>
     <div><label for="langue">Langue</label>
       <select id="langue" name="langue">
         <option value="FR" <%= client && client.langue === 'FR' ? 'selected' : '' %>>Français</option>
